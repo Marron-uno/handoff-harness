@@ -1,0 +1,50 @@
+{
+  "goal": "G-1",
+  "diffHash": "8c91fb4544549ad4",
+  "at": "2026-10-14T19:10:00.000Z",
+  "items": [
+    {
+      "id": "I-1",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "file", "path": "profiles/default.json", "quote": "\"bundleBytes\": {}" },
+        { "type": "file", "path": "scripts/lib/preflight.mjs", "quote": "if (!caps.length) return { status: \"skip\", details: \"no budgets.bundleBytes set\" };" }
+      ],
+      "note": "Default profile declares an empty map; the check skips when it is empty, so unconfigured projects are unaffected."
+    },
+    {
+      "id": "I-2",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "file", "path": "scripts/lib/preflight.mjs", "quote": "if (size > cap) over.push(`${file} is ${size} bytes, cap ${cap}`);" },
+        { "type": "file", "path": "scripts/lib/preflight.mjs", "quote": "if (!existsSync(path)) { missing.push(file); continue; }" },
+        { "type": "file", "path": "scripts/lib/preflight.mjs", "quote": "checks.push(timed(\"bundle_size\", () => bundleSizeCheck(cwd, profile)));" }
+      ],
+      "note": "Fail with file/size/cap (C-2), pass at or under cap and skip on empty or absent map (C-3), missing files skipped and listed (C-4). Wired into runPreflight."
+    },
+    {
+      "id": "I-3",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "file", "path": "tests/bundle-size.test.mjs", "quote": "a file over its cap fails and the details name file, size and cap" },
+        { "type": "file", "path": "tests/bundle-size.test.mjs", "quote": "a file at its cap passes" },
+        { "type": "file", "path": "tests/bundle-size.test.mjs", "quote": "an empty or absent map is skipped" },
+        { "type": "file", "path": "tests/bundle-size.test.mjs", "quote": "a missing file is skipped, listed, and does not hide another file over its cap" }
+      ],
+      "note": "All four required cases covered; project:test passed in preflight."
+    },
+    {
+      "id": "I-4",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "file", "path": "docs/rules.md", "quote": "| Bundle size budget: each file in `budgets.bundleBytes` stays at or under its byte cap | preflight |" }
+      ],
+      "note": "Row present with where = preflight and an evidence column."
+    }
+  ],
+  "newSlices": []
+}

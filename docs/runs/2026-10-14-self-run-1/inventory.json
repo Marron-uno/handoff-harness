@@ -1,0 +1,48 @@
+{
+  "goal": "G-1",
+  "sources": [],
+  "items": [
+    {
+      "id": "I-1",
+      "kind": "other",
+      "title": "Profile budget budgets.bundleBytes",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-1", "text": "budgets.bundleBytes in the profile maps file paths to a byte cap; the default profile declares it as an empty map, so projects that do not set it are unaffected." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-2",
+      "kind": "block",
+      "title": "Preflight check bundle_size",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-2", "text": "Preflight fails when a file named in budgets.bundleBytes is larger than its cap, and the failure details name the file, its size and its cap." },
+        { "id": "C-3", "text": "Preflight passes when every file named in budgets.bundleBytes is at or under its cap, and skips when the map is empty or absent." },
+        { "id": "C-4", "text": "A file named in budgets.bundleBytes that does not exist is skipped, not failed, and the details list it." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-3",
+      "kind": "criterion",
+      "title": "Test for the bundle size check",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-5", "text": "A test in tests/ covers the over-cap, at-cap, empty-map and missing-file cases of the check." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-4",
+      "kind": "string",
+      "title": "rules.md row for the bundle size budget",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-6", "text": "docs/rules.md has a row for the bundle size budget with where (preflight) and evidence columns." }
+      ],
+      "ui": false
+    }
+  ]
+}

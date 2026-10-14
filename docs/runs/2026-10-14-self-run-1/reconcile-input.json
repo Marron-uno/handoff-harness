@@ -1,0 +1,480 @@
+{
+  "goal": "G-1",
+  "diffHash": "8c91fb4544549ad4",
+  "at": "2026-10-14T19:06:22.106Z",
+  "items": [
+    {
+      "id": "I-1",
+      "kind": "other",
+      "title": "Profile budget budgets.bundleBytes",
+      "criteria": [
+        {
+          "id": "C-1",
+          "text": "budgets.bundleBytes in the profile maps file paths to a byte cap; the default profile declares it as an empty map, so projects that do not set it are unaffected."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/README.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/README.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/events.jsonl",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/jev.jsonl",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/spec-a1-spec-reviewer.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "tests/e2e-machine.test.mjs",
+          "quote": "I-1"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-2",
+      "kind": "block",
+      "title": "Preflight check bundle_size",
+      "criteria": [
+        {
+          "id": "C-2",
+          "text": "Preflight fails when a file named in budgets.bundleBytes is larger than its cap, and the failure details name the file, its size and its cap."
+        },
+        {
+          "id": "C-3",
+          "text": "Preflight passes when every file named in budgets.bundleBytes is at or under its cap, and skips when the map is empty or absent."
+        },
+        {
+          "id": "C-4",
+          "text": "A file named in budgets.bundleBytes that does not exist is skipped, not failed, and the details list it."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/spec-a1-spec-reviewer.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/fixture.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/jev.test.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/judge-aids.test.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/spec-stage.test.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "commit",
+          "quote": "C-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/analysis.md",
+          "quote": "C-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/goal-card.md",
+          "quote": "C-2"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-3",
+      "kind": "criterion",
+      "title": "Test for the bundle size check",
+      "criteria": [
+        {
+          "id": "C-5",
+          "text": "A test in tests/ covers the over-cap, at-cap, empty-map and missing-file cases of the check."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "tests/jev.test.mjs",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "tests/spec-stage.test.mjs",
+          "quote": "I-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/analysis.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/drive.log",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/goal-card.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/plan.json",
+          "quote": "C-5"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-4",
+      "kind": "string",
+      "title": "rules.md row for the bundle size budget",
+      "criteria": [
+        {
+          "id": "C-6",
+          "text": "docs/rules.md has a row for the bundle size budget with where (preflight) and evidence columns."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/S-2-a1-r1-critic.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "tests/fixture.mjs",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "tests/jev.test.mjs",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "tests/spec-stage.test.mjs",
+          "quote": "I-4"
+        },
+        {
+          "type": "commit",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/analysis.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/goal-card.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "C-6"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    }
+  ]
+}

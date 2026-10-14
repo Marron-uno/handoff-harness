@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-1",
+  "slice": "S-1",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "5aa29d91b65b36eb",
+  "verdict": "pass",
+  "summary": "All six criteria are met by the diff. profiles/default.json declares budgets.bundleBytes as an empty map. scripts/lib/preflight.mjs adds bundleSizeCheck, which fails with file, size and cap in the details, passes at or under cap, skips on an empty or absent map, and skips missing files while listing them. tests/bundle-size.test.mjs covers over-cap, at-cap, empty/absent map and missing-file cases. docs/rules.md has a row with where=preflight and an evidence column. npm test passes 82 of 82 and npm run check reports 10 passed, 0 failed. One minor coverage note: the pass case is asserted only at exactly the cap.",
+  "findings": [
+    {
+      "severity": "minor",
+      "authority": "criterion:C-3",
+      "summary": "The pass path is asserted only with a file exactly at its cap. A strictly under-cap file runs the same branch, but no test asserts it.",
+      "preExisting": false,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "test(\"a file at its cap passes\"",
+          "line": 18
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "diff",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/profiles/default.json",
+          "quote": "\"bundleBytes\": {}",
+          "line": 25
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/scripts/lib/preflight.mjs",
+          "quote": "if (over.length) return { status: \"fail\", details: over.join(\"; \") + note };",
+          "line": 23
+        },
+        {
+          "type": "test",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "a file over its cap fails and the details name file, size and cap",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/scripts/lib/preflight.mjs",
+          "quote": "if (!checked) return { status: \"skip\", details: `no named file exists${note}` };",
+          "line": 23
+        },
+        {
+          "type": "test",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "an empty or absent map is skipped",
+          "line": 24
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/scripts/lib/preflight.mjs",
+          "quote": "if (!existsSync(path)) { missing.push(file); continue; }",
+          "line": 23
+        },
+        {
+          "type": "test",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "a missing file is skipped, listed, and does not hide another file over its cap",
+          "line": 30
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "over-cap (line 8), at-cap (line 18), empty or absent map (line 24), missing file (line 30)",
+          "line": 8
+        },
+        {
+          "type": "command",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/tests/bundle-size.test.mjs",
+          "quote": "npm test: tests 82, pass 82, fail 0",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/Users/jmarron/Developer/personal/handoff-harness/docs/rules.md",
+          "quote": "| Bundle size budget: each file in `budgets.bundleBytes` stays at or under its byte cap | preflight | A slice can pass every check and still ship a built file past the size a project allows |",
+          "line": 29
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-14T19:04:44.364Z"
+}
