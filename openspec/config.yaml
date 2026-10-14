@@ -1,0 +1,14 @@
+schema: spec-driven
+
+context: |
+  handoff-harness is a Claude Code plugin. Its specs describe what the scripts enforce, not what
+  the model is asked to do: a requirement here must be something a test or a hook checks.
+  Every artifact is written in English. A change that loosens a guard must say which recorded
+  run motivates it and which eval tier will measure it (docs/evals.md).
+
+rules:
+  proposal:
+    - Name the recorded run or retro proposal that motivates the change
+    - State the hypothesis as a metric name from scripts/lib/metrics.mjs and a direction
+  tasks:
+    - One task per file group; a task names the test that covers it
