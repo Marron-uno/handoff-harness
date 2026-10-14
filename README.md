@@ -119,6 +119,12 @@ The Claude Code transcript carries token counts per message. The harness counts 
 
 [Jev](https://typesafe.ai) is a decision model that answers typed questions with calibrated probabilities and generates no text. With `--jev` on the goal and `jev.enabled` in the profile, it gates verdict plausibility, prefilters reconciliation and classifies trace events into lessons. It can send a verdict back to its judge or add a question; it never grants a pass. On run 3 it answered eleven questions for $0.00034 and changed nothing, since every decision was accept. Calibration needs more outcomes than three runs provide, so it is off by default. [docs/jev.md](docs/jev.md) has the Vercel AI Gateway setup and `harness jev ping`.
 
+## Retro and evals
+
+After a run rests, `/handoff-harness:retro` writes a proposal under `.harness/proposals/`: the run's metrics, the signals a script can see (held slices, rejected verdicts by pattern, denials with the denied command, judges that stopped twice, a critic that explored, Jev answers within reach of a threshold), and findings the model fills in with a cause by file, the smallest change, and a hypothesis as a metric and a direction. The retro never edits the harness; the proposal is the handoff to this repository, where the change goes through the harness's own `openspec/`.
+
+Whether a change helped is measured in three tiers, written up in [docs/evals.md](docs/evals.md): replay evals in CI run the current code over the recorded runs and their rejected verdicts; a paid bench drives N headless runs per version and compares them metric by metric, marking each hypothesis supported, weak or not supported from the ranges; and a `claude plugin eval` case checks that the goal skill steers the model as intended. The honest summary is that the bench sees large effects on one fixture, the replay proves a fix addressed a recorded failure, and neither proves the harness is better in general.
+
 ## Headless runs
 
 Claude Code stops a session after eight consecutive Stop-hook continuations. `node scripts/drive.mjs --cwd <project>` loops headless sessions until the run rests, records each session's cost, and refreshes the report with it. All three recorded runs used it.
@@ -137,14 +143,16 @@ schemas/          state, verdict, plan, inventory, reconcile, event
 profiles/         default.json, jev-questions.v1.json
 briefs/           one markdown brief per stage
 agents/           critic, critic-strong, reviewer, reviewer-strong, spec-reviewer, reconciler
-skills/           goal, status, resume, init, jev
+skills/           goal, status, resume, init, jev, retro
 fixture/          synthetic project with a handoff and an OpenSpec change
 tests/            node:test, no network, no key
-docs/             rules.md, jev.md, architecture.md, runs/
+docs/             rules.md, jev.md, architecture.md, evals.md, runs/
+openspec/         the harness's own specs and changes
+evals/            plugin eval cases; bench results land here, ignored by git
 ```
 
 ## Status
 
-Version 0.3.3. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. Open: a recorded run of the authored-change path (a feature goal with no document), a stage-managed dev server, git-side hooks for commit messages, the bundle-size check, and an `openspec/` for the harness itself so its own changes go through its own spec stage. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Version 0.4.0. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. The harness now carries its own `openspec/` with baseline specs derived from the rule catalog, and the retro and evals work is its first change, `openspec/changes/add-retro-and-evals`, left for a human to archive. Open: a bench of the current version against the recorded runs, a recorded run of the authored-change path (a feature goal with no document), running the harness against its own repository (the path guard forbids it today), a stage-managed dev server, git-side hooks for commit messages, and the bundle-size check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

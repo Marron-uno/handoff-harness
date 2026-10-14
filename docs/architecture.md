@@ -65,6 +65,10 @@ The critic runs on the cheap model first. After two rejections of the same slice
 
 A plan question of kind `hold` blocks the slices named in `blocks`; `nextReadySlice` never starts a blocked slice and the goal predicate does not count it as missing. When every unheld slice is done and a hold still blocks a pending one, `decideReport` rests the run in `awaiting_human` with code `holds_open` after the report is written, instead of moving to `done`. `harness hold answer --id H-n --answer "..."` (`answerHold` in `machine.mjs`) removes the hold, records the answer as the next applied default, and, when the run was resting on it, calls `advance` so the held slice starts with the build brief. Hold ids are numbered past every hold ever raised. The headless driver, once a run rests, runs `harness report --refresh` so the committed report carries the session cost it just recorded.
 
+## Retro and metrics
+
+`scripts/lib/metrics.mjs` is the one definition of a run's numbers over a `.harness/` directory or a snapshot; `analyze`, `retro`, the replay evals and the bench share it. `harness retro` (`scripts/lib/retro.mjs`) refuses mid-goal, computes the metrics and the mechanical signals, and writes a proposal skeleton with stable finding ids under `.harness/proposals/`; the `retro` skill fills in the findings. SubagentStop copies every rejected verdict to `.harness/verdicts/rejected/` so a replay eval has inputs. The evals are in `docs/evals.md`; the harness's own specs live in `openspec/` and `npm run check` validates them.
+
 ## Jev
 
 `scripts/lib/jev/` is optional and off by default. See `docs/jev.md`.

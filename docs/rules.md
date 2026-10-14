@@ -56,3 +56,6 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Claude Code's own session cost recorded as the number of record | headless driver, report | A price table is an estimate; the figure Claude Code reports is what the user sees |
 | Judges start from a script-written verdict skeleton that cannot pass unedited | `verdict template` | 5 of 14 verdict writes in run 2 fumbled keys, ids or the hash |
 | The critic reads a packet written by preflight | preflight, critic brief | Haiku spent 17 to 27 tool calls exploring the tree per slice |
+| A retro reads a resting run and edits nothing but its proposal | `harness retro`, path guard | Three retros done by hand; the harness must not rewrite itself from inside a run |
+| Rejected verdicts are kept as replay fixtures | SubagentStop | Invalid attempts left only an error message in the log, so the validator had no inputs to replay |
+| A change to the harness states a hypothesis as a metric and a direction | `openspec/config.yaml` rules, bench | Fixes were asserted, not measured |
