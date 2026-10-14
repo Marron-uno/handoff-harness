@@ -225,7 +225,15 @@ const commands = {
   report() {
     const state = requireState();
     const text = renderReport(cwd, state);
-    out({ ok: true, path: harnessPaths(cwd).report, bytes: text.length, next: "Stop now; the Stop hook runs the goal check." });
+    // The report and lessons are the only run artifacts that belong in the branch.
+    const own = [`.harness/reports/${state.goal.id}.md`, ".harness/lessons.md"].filter((f) => existsSync(join(cwd, f)) && git(cwd, ["status", "--porcelain", "--", f]).out !== "");
+    let commit = null;
+    if (own.length) {
+      git(cwd, ["add", "--", ...own]);
+      const c = git(cwd, ["commit", "-q", "-m", `docs: harness report [${state.goal.id}]`, "--", ...own]);
+      if (c.code === 0) { commit = headSha(cwd); if (git(cwd, ["remote", "get-url", "origin"]).code === 0) git(cwd, ["push", "-q", "-u", "origin", state.branch]); }
+    }
+    out({ ok: true, path: harnessPaths(cwd).report, bytes: text.length, commit, next: "Stop now; the Stop hook runs the goal check." });
   },
 
   resume() {

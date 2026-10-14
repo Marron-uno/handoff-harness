@@ -155,7 +155,8 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   // Report, then the goal predicate decides done.
   assert.equal(runCli(dir, ["goal", "check"]).json.done, false);
   assert.equal(runCli(dir, ["report"]).json.ok, true);
-  assert.equal(runCli(dir, ["goal", "check"]).json.done, true);
+  const check = runCli(dir, ["goal", "check"]).json;
+  assert.equal(check.done, true, JSON.stringify(check));
   r = stop(dir);
   assert.equal(r.json.decision, undefined, r.stdout);
   assert.match(r.json.systemMessage, /Goal G-1 complete/);

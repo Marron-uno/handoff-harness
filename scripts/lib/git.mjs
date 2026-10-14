@@ -36,9 +36,10 @@ export function hasCommits(cwd) {
   return headSha(cwd) !== null;
 }
 
-export function untrackedFiles(cwd) {
+export function untrackedFiles(cwd, { includeHarness = false } = {}) {
   const r = git(cwd, ["ls-files", "--others", "--exclude-standard"]);
-  return r.code === 0 && r.out ? r.out.split("\n") : [];
+  const files = r.code === 0 && r.out ? r.out.split("\n") : [];
+  return includeHarness ? files : files.filter((f) => !f.startsWith(".harness/"));
 }
 
 export function changedFiles(cwd) {
@@ -56,9 +57,21 @@ export function isClean(cwd) {
   return git(cwd, ["status", "--porcelain"]).out === "";
 }
 
+// The harness's own folder never counts as work: diffs, hashes and untracked lists exclude it.
+const EXCLUDE_HARNESS = ["--", ".", ":(exclude).harness"];
+
 export function diffText(cwd) {
-  if (!hasCommits(cwd)) return git(cwd, ["diff", "--cached"]).out;
-  return git(cwd, ["diff", "HEAD"]).out;
+  if (!hasCommits(cwd)) return git(cwd, ["diff", "--cached", ...EXCLUDE_HARNESS]).out;
+  return git(cwd, ["diff", "HEAD", ...EXCLUDE_HARNESS]).out;
+}
+
+// Hash of the committed tree minus .harness/, so a commit that only records harness artifacts
+// does not change it.
+export function treeHash(cwd) {
+  const r = git(cwd, ["ls-tree", "-r", "HEAD"]);
+  if (r.code !== 0) return "no-head";
+  const lines = r.out.split("\n").filter((l) => l && !/\t\.harness\//.test(l));
+  return createHash("sha256").update(lines.join("\n")).digest("hex").slice(0, 16);
 }
 
 export function diffStat(cwd) {
@@ -115,7 +128,7 @@ export function sha256(text) {
 // so it is the freshness key for verdicts, preflight and reconcile results.
 export function workHash(cwd) {
   const h = createHash("sha256");
-  h.update(headSha(cwd) ?? "no-head");
+  h.update(treeHash(cwd));
   h.update("\n");
   h.update(diffHash(cwd));
   return h.digest("hex").slice(0, 16);
