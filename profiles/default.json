@@ -21,7 +21,8 @@
       "report": 30
     },
     "browserActionsPerReview": 60,
-    "diffLinesPerSlice": 1200
+    "diffLinesPerSlice": 1200,
+    "bundleBytes": {}
   },
   "models": {
     "critic": "haiku",
