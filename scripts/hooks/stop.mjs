@@ -5,6 +5,8 @@ import { projectDir, hasHarness } from "../lib/paths.mjs";
 import { loadState, saveState } from "../lib/state.mjs";
 import { loadProfile } from "../lib/profile.mjs";
 import { decide } from "../lib/machine.mjs";
+import { attributeByStage } from "../lib/usage.mjs";
+import { readEvents } from "../lib/events.mjs";
 
 const input = await readStdinJson();
 const cwd = projectDir(input);
@@ -19,6 +21,14 @@ try {
   process.exit(1);
 }
 if (input.transcript_path && state.transcriptPath !== input.transcript_path) state.transcriptPath = input.transcript_path;
+
+// Attribute usage before deciding so the cost budget sees this session's spend.
+try {
+  const agentRows = readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent").map((e) => ({ stage: e.stage, agent: e.agent, model: e.model, input: e.input, cacheWrite: e.cacheWrite, cacheRead: e.cacheRead, output: e.output }));
+  attributeByStage(cwd, state, profile, { agentRows });
+} catch (err) {
+  process.stderr.write(`handoff-harness: usage attribution skipped: ${err.message}\n`);
+}
 
 let result;
 try {
