@@ -1,0 +1,62 @@
+{
+  "goal": "G-1",
+  "diffHash": "5485bc247fdd8f9c",
+  "at": "2026-10-14T14:50:00Z",
+  "items": [
+    {
+      "id": "I-1",
+      "status": "out_of_scope",
+      "bucket": "model",
+      "evidence": [
+        { "type": "file", "path": "handoff/HANDOFF.md", "quote": "I-1" },
+        { "type": "file", "path": "src/notes.mjs", "quote": "if (!title || !title.trim()) throw new Error(\"title is required\");" }
+      ],
+      "note": "The inventory marks this item inScope: false, so it is out of scope. createNote was already in src/notes.mjs before this goal. It rejects empty titles (C-1) and returns id, title, body, tags and createdAt (C-2). This goal did not build or verify it."
+    },
+    {
+      "id": "I-2",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "commit", "quote": "b94e130 feat: Listing: newest first and tag filter [S-1] (G-1)" },
+        { "type": "file", "path": "src/notes.mjs", "quote": ".sort((a, b) => b.createdAt.localeCompare(a.createdAt))" }
+      ],
+      "note": "Decided deterministically. A spot check agrees: filter() makes a new array before the sort, so the store is not reordered (C-4)."
+    },
+    {
+      "id": "I-3",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "commit", "quote": "b94e130 feat: Listing: newest first and tag filter [S-1] (G-1)" },
+        { "type": "file", "path": "src/notes.mjs", "quote": "n.tags.some((t) => t.toLowerCase() === wanted)" }
+      ],
+      "note": "Decided deterministically. Tag matching ignores case, per default D-1."
+    },
+    {
+      "id": "I-4",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "commit", "quote": "ca2c19e feat: Markdown export [S-2] (G-1)" }
+      ],
+      "note": "Decided deterministically."
+    },
+    {
+      "id": "I-5",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        { "type": "commit", "quote": "794b117 feat: Note count: verifiable with a seeded store [S-4] (G-1)" },
+        { "type": "file", "path": "src/server.mjs", "quote": "export function startServer(store, port) {" },
+        { "type": "file", "path": "public/index.html", "quote": "<p id=\"count\">Loading notes…</p>" },
+        { "type": "file", "path": "tests/server.test.mjs", "quote": "assert.equal((await res.json()).length, 3);" },
+        { "type": "screenshot", "path": ".harness/evidence/S-4/count-3.jpg", "quote": "Lantern Notes / 3 notes" },
+        { "type": "verdict", "path": ".harness/verdicts/S-4-a1-r1-reviewer.json", "quote": "With LANTERN_SEED=3 the page at / renders '3 notes' in the browser, matching /api/notes (3 items)" },
+        { "type": "command", "quote": "npm test: tests 6, pass 6, fail 0; LANTERN_SEED=4 PORT=4391 node src/server.mjs -> /api/notes returned 4 items" }
+      ],
+      "note": "Was 'partial' in the first pass. S-4 fixed the gaps found then. The server now takes a store through the exported startServer(store, port), with a LANTERN_SEED dev seed. The hardcoded '0 notes' is replaced by the neutral 'Loading notes…'. tests/server.test.mjs seeds 3 notes and checks that /api/notes returns 3. The reviewer's browser screenshot (count-3.jpg, which I opened) shows '3 notes' for a seeded store of 3. The placeholder no longer contains a count, so the screenshot can only show '3 notes' if the fetch-and-render path actually ran. I re-ran npm test (6/6 pass) and started a server with LANTERN_SEED=4: /api/notes returned 4 items. Remaining minor gaps, not blocking C-7: no automated DOM-level test runs the inline script, and the fetch has no error handler, so a failed fetch leaves 'Loading notes…' on screen."
+    }
+  ],
+  "newSlices": []
+}

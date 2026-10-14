@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "agent": "reviewer",
+  "goal": "G-1",
+  "slice": "S-2",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "8b561626e7e62063",
+  "verdict": "pass",
+  "summary": "S-2 meets C-6. exportMarkdown emits one '## title' section per note with the body below it. Changes stay within declared paths (src/export.mjs, tests/**). No secrets, no weakened tests, no non-English text. npm test passes 5/5. Only a minor coverage gap remains (empty store).",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "file": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/tests/export.test.mjs",
+      "line": 5,
+      "issue": "Test covers only a two-note store; an empty store is untested. Not required by C-6.",
+      "suggestion": "Optionally add an empty-store case.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        { "type": "command", "quote": "npm test: tests 5, pass 5, fail 0" }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/src/export.mjs",
+          "line": 2,
+          "quote": "return store.map((n) => `## ${n.title}\\n\\n${n.body}\\n`).join(\"\\n\");"
+        },
+        { "type": "command", "quote": "npm test: tests 5, pass 5, fail 0" }
+      ]
+    }
+  ],
+  "browser": null,
+  "writtenAt": "2026-10-14T14:40:00Z"
+}

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-1",
+  "slice": "S-2",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "8b561626e7e62063",
+  "verdict": "pass",
+  "summary": "S-2 (Markdown export) meets C-6. exportMarkdown(store) maps each note to '## title\\n\\nbody\\n' and joins them, giving one '## title' section per note with the body directly below it. npm test passes 5/5, including the export test that checks section count and order. No block or major findings.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "file": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/tests/export.test.mjs",
+      "line": 5,
+      "issue": "The export test covers only a two-note store. It does not cover an empty store (exportMarkdown returns an empty string) or a note whose body is empty. Neither is required by C-6, so this is a coverage gap, not a defect.",
+      "suggestion": "Optionally add a case for an empty store asserting the output has zero '## ' headings.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/tests/export.test.mjs",
+          "line": 5,
+          "quote": "test(\"exportMarkdown writes one section per note with the body below\", () => {"
+        },
+        {
+          "type": "command",
+          "quote": "npm test: tests 5, pass 5, fail 0"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/src/export.mjs",
+          "line": 2,
+          "quote": "return store.map((n) => `## ${n.title}\\n\\n${n.body}\\n`).join(\"\\n\");"
+        },
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/tests/export.test.mjs",
+          "line": 12,
+          "quote": "assert.ok(md.indexOf(\"## First\\n\\nalpha\") < md.indexOf(\"## Second\\n\\nbeta\"));"
+        },
+        {
+          "type": "command",
+          "quote": "npm test: tests 5, pass 5, fail 0"
+        }
+      ],
+      "note": "Spec: handoff/HANDOFF.md section I-4 ('Export to markdown'), criterion C-6 text: exportMarkdown(store) returns one '## title' section per note with the body below it. Implementation and test match this text."
+    }
+  ],
+  "browser": null,
+  "writtenAt": "2026-10-14T14:31:57Z"
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "agent": "reviewer",
+  "goal": "G-1",
+  "slice": "S-1",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "99f1fc7634394128",
+  "verdict": "pass",
+  "summary": "Fresh-context review of S-1. listNotes filters (new array, so the store is untouched) and sorts by createdAt descending, with case-insensitive tag filtering per default D-1. npm test passes 4/4. The diff touches only src/notes.mjs and tests/notes.test.mjs, inside the slice paths. No tests were weakened and no secrets or non-English text were found. Slice is non-UI, so no browser check was needed. One minor unguarded-input finding.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "file": "src/notes.mjs",
+      "line": 10,
+      "issue": "tag?.toLowerCase() throws a TypeError for a non-string truthy tag, and a null tag also throws on t.toLowerCase() path only if tags contain non-strings. Not covered by C-5, so not blocking.",
+      "suggestion": "Coerce or validate tag as a string.",
+      "authority": "criterion:C-5",
+      "evidence": [{ "type": "file", "path": "src/notes.mjs", "line": 10 }],
+      "preExisting": false,
+      "disputed": false
+    }
+  ],
+  "criteria": [
+    { "id": "C-3", "status": "met", "evidence": [{ "type": "test", "path": "tests/notes.test.mjs", "line": 17 }, { "type": "command", "quote": "npm test: 4 pass, 0 fail" }], "note": "Descending sort by createdAt verified by test." },
+    { "id": "C-4", "status": "met", "evidence": [{ "type": "test", "path": "tests/notes.test.mjs", "line": 9 }], "note": "filter creates a new array before sort; copy test passes and the new sort test asserts the store order is unchanged." },
+    { "id": "C-5", "status": "met", "evidence": [{ "type": "test", "path": "tests/notes.test.mjs", "line": 26 }], "note": "Tag filter returns only matching notes, case-insensitive per D-1." }
+  ],
+  "browser": { "used": false, "note": "Slice is not UI-bearing; no browser verification required." },
+  "writtenAt": "2026-10-14T14:40:00Z"
+}

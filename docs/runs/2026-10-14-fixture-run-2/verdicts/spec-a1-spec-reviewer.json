@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "agent": "spec-reviewer",
+  "goal": "G-1",
+  "slice": null,
+  "attempt": 1,
+  "diffHash": "75f8b209d4870333",
+  "verdict": "pass",
+  "summary": "All in-scope criteria (C-3..C-7) are covered by SHALL requirements with checkable scenarios and tasks. D-1 (case-insensitive tags) is recorded as a default in plan.json and H-1 as a hold; nothing is silently decided. Minor gaps: the export scenario does not check the body, and 'in store order' goes slightly beyond the source.",
+  "findings": [
+    {
+      "severity": "minor",
+      "authority": "criterion:C-6",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "the output contains two `## ` headings in store order (C-6)"
+        }
+      ],
+      "id": "F-1",
+      "issue": "Export scenario does not verify the body below each heading. C-6 requires a '## title' section per note with the body below it. The requirement says 'followed by its body', but the only scenario checks just the count of '## ' headings. A critic cannot verify the body placement from the scenarios."
+    },
+    {
+      "severity": "minor",
+      "authority": "handoff:handoff/HANDOFF.md",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "two `## ` headings in store order"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "returns one `## title` section per note with the body below it"
+        }
+      ],
+      "id": "F-2",
+      "issue": "'in store order' is not stated in the sources. The handoff does not specify the ordering of exported sections. The phrase is a small addition and may conflict with the newest-first listing."
+    },
+    {
+      "severity": "minor",
+      "authority": "criterion:C-7",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/proposal.md",
+          "quote": "`src/notes.mjs`, `src/export.mjs`, `public/index.html`"
+        },
+        {
+          "type": "file",
+          "path": ".harness/plan.json",
+          "quote": "\"paths\":[\"public/**\",\"src/server.mjs\"]"
+        }
+      ],
+      "id": "F-3",
+      "issue": "Page task and impact list a different code path than the plan. The proposal lists public/index.html as affected code, while plan.json slice S-3 owns public/** and src/server.mjs. The page scenario also does not say how N is obtained (for example, whether '1 notes' is acceptable). Clarity only."
+    },
+    {
+      "severity": "note",
+      "authority": "criterion:C-4",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "1.1 Sort newest first (I-2, C-3)"
+        }
+      ],
+      "id": "F-4",
+      "issue": "C-4 has no task. C-4 is covered by the Copy scenario in the modified requirement and already holds in the current spec. No task is needed, but plan.json assigns it to S-1, so a regression test task could be added."
+    }
+  ],
+  "criteria": [],
+  "writtenAt": "2026-10-14T14:35:00.000Z"
+}

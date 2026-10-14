@@ -1,0 +1,261 @@
+{
+  "goal": "G-1",
+  "diffHash": "5485bc247fdd8f9c",
+  "at": "2026-10-14T14:38:40.259Z",
+  "items": [
+    {
+      "id": "I-1",
+      "kind": "block",
+      "title": "Create a note",
+      "criteria": [
+        {
+          "id": "C-1",
+          "text": "createNote rejects an empty title."
+        },
+        {
+          "id": "C-2",
+          "text": "A created note has an id, title, body, tags and createdAt."
+        }
+      ],
+      "ui": false,
+      "inScope": false,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-1"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-2"
+        }
+      ],
+      "bucket": "model",
+      "decided": null
+    },
+    {
+      "id": "I-2",
+      "kind": "block",
+      "title": "List notes newest first",
+      "criteria": [
+        {
+          "id": "C-3",
+          "text": "listNotes returns notes sorted by createdAt descending."
+        },
+        {
+          "id": "C-4",
+          "text": "The returned array is a copy, not the store."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "commit",
+          "quote": "C-3"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "C-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-4"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "C-4"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-3,C-4"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-3",
+      "kind": "block",
+      "title": "Filter by tag",
+      "criteria": [
+        {
+          "id": "C-5",
+          "text": "listNotes(store, { tag }) returns only notes carrying that tag."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-5"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-4",
+      "kind": "block",
+      "title": "Export to markdown",
+      "criteria": [
+        {
+          "id": "C-6",
+          "text": "exportMarkdown(store) returns one '## title' section per note with the body below it."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "commit",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-6"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-5",
+      "kind": "screen",
+      "title": "Note count on the page",
+      "criteria": [
+        {
+          "id": "C-7",
+          "text": "The page at / shows 'N notes' where N is the number of notes in the store."
+        }
+      ],
+      "ui": true,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-5"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-5"
+        },
+        {
+          "type": "commit",
+          "quote": "C-7"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-7"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+          "quote": "C-7"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-7"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-7"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    }
+  ]
+}

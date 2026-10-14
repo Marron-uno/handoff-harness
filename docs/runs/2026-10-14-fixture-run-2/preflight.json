@@ -1,0 +1,74 @@
+{
+  "diffHash": "1fa4eab484d9822f",
+  "passed": true,
+  "at": "2026-10-14T14:36:02.135Z",
+  "durationMs": 851,
+  "checks": [
+    {
+      "id": "branch",
+      "durationMs": 9,
+      "status": "pass",
+      "details": "goal/G-1"
+    },
+    {
+      "id": "diff_budget",
+      "durationMs": 25,
+      "status": "pass",
+      "details": "61 lines in 3 files"
+    },
+    {
+      "id": "protected_paths",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "none touched"
+    },
+    {
+      "id": "slice_paths",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "3 files within declared paths"
+    },
+    {
+      "id": "openspec_validate",
+      "durationMs": 495,
+      "status": "pass",
+      "details": "Totals: 2 passed, 0 failed (2 items)"
+    },
+    {
+      "id": "project:test",
+      "durationMs": 230,
+      "status": "pass",
+      "details": "ℹ duration_ms 82.993375"
+    },
+    {
+      "id": "language",
+      "durationMs": 2,
+      "status": "pass",
+      "details": "3 files English"
+    },
+    {
+      "id": "secrets",
+      "durationMs": 1,
+      "status": "pass",
+      "details": "no secrets in changed files"
+    },
+    {
+      "id": "prose",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "prose clean"
+    },
+    {
+      "id": "test_weakening",
+      "durationMs": 28,
+      "status": "pass",
+      "details": "+0 -0 test blocks"
+    },
+    {
+      "id": "dependencies",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "no dependency manifest changed"
+    }
+  ]
+}

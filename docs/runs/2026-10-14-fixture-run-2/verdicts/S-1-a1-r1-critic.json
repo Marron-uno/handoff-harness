@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-1",
+  "slice": "S-1",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "99f1fc7634394128",
+  "verdict": "pass",
+  "summary": "S-1 (listing: newest first and tag filter) meets C-3, C-4 and C-5. listNotes sorts a filtered copy by createdAt descending, returns a new array so the store is not mutated, and filters by tag case-insensitively per the D-1 default. npm test passes 4/4, including the three new listing tests. Two non-blocking findings: a non-string tag argument throws a TypeError, and ties on createdAt keep insertion order.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "file": "src/notes.mjs",
+      "line": 10,
+      "issue": "tag?.toLowerCase() throws a TypeError when tag is a non-string truthy value (for example a number or array). C-5 only covers string tags, so this does not fail a criterion, but the failure mode is unguarded.",
+      "suggestion": "Validate that tag is a string, or coerce with String(tag), and document the accepted type.",
+      "authority": "criterion:C-5",
+      "evidence": [
+        { "type": "diff", "path": "src/notes.mjs", "line": 10 },
+        { "type": "file", "path": "src/notes.mjs", "line": 10 }
+      ],
+      "preExisting": false,
+      "disputed": false
+    },
+    {
+      "id": "F-2",
+      "severity": "note",
+      "file": "src/notes.mjs",
+      "line": 13,
+      "issue": "createdAt uses millisecond ISO timestamps, so notes created within the same millisecond tie and keep insertion order (oldest first among the tied notes). The descending order is correct for distinct timestamps; ties are unspecified by C-3.",
+      "suggestion": "Optional: break ties on id descending if strict newest-first order within a millisecond matters.",
+      "authority": "criterion:C-3",
+      "evidence": [
+        { "type": "file", "path": "src/notes.mjs", "line": 4 },
+        { "type": "file", "path": "src/notes.mjs", "line": 13 }
+      ],
+      "preExisting": false,
+      "disputed": false
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        { "type": "diff", "path": "src/notes.mjs", "line": 13 },
+        { "type": "test", "path": "tests/notes.test.mjs", "line": 17 },
+        { "type": "command", "quote": "npm test: tests 4, pass 4, fail 0 (listNotes sorts newest first)" }
+      ],
+      "note": "The sort comparator b.createdAt.localeCompare(a.createdAt) yields descending order for the ISO timestamps produced by createNote."
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        { "type": "file", "path": "src/notes.mjs", "line": 11 },
+        { "type": "test", "path": "tests/notes.test.mjs", "line": 9 },
+        { "type": "command", "quote": "npm test: listNotes returns a copy passed" }
+      ],
+      "note": "store.filter always builds a new array before sort runs, so the sort and pop do not touch the store. The pre-existing copy test still passes."
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        { "type": "file", "path": "src/notes.mjs", "line": 12 },
+        { "type": "test", "path": "tests/notes.test.mjs", "line": 26 },
+        { "type": "command", "quote": "npm test: listNotes filters by tag case-insensitively passed" }
+      ],
+      "note": "Filter keeps notes with any tag whose lowercase equals the lowercase query, and returns all notes when tag is omitted. This follows the D-1 default (case-insensitive)."
+    }
+  ],
+  "writtenAt": "2026-10-14T14:30:46Z"
+}

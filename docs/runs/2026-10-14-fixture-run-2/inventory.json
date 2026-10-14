@@ -1,0 +1,16 @@
+{
+  "goal": "G-1",
+  "sources": ["handoff/HANDOFF.md"],
+  "items": [
+    {"id":"I-1","kind":"block","title":"Create a note","source":"handoff/HANDOFF.md","ui":false,"inScope":false,
+     "criteria":[{"id":"C-1","text":"createNote rejects an empty title."},{"id":"C-2","text":"A created note has an id, title, body, tags and createdAt."}]},
+    {"id":"I-2","kind":"block","title":"List notes newest first","source":"handoff/HANDOFF.md","ui":false,
+     "criteria":[{"id":"C-3","text":"listNotes returns notes sorted by createdAt descending."},{"id":"C-4","text":"The returned array is a copy, not the store."}]},
+    {"id":"I-3","kind":"block","title":"Filter by tag","source":"handoff/HANDOFF.md","ui":false,
+     "criteria":[{"id":"C-5","text":"listNotes(store, { tag }) returns only notes carrying that tag."}]},
+    {"id":"I-4","kind":"block","title":"Export to markdown","source":"handoff/HANDOFF.md","ui":false,
+     "criteria":[{"id":"C-6","text":"exportMarkdown(store) returns one '## title' section per note with the body below it."}]},
+    {"id":"I-5","kind":"screen","title":"Note count on the page","source":"handoff/HANDOFF.md","ui":true,
+     "criteria":[{"id":"C-7","text":"The page at / shows 'N notes' where N is the number of notes in the store."}]}
+  ]
+}

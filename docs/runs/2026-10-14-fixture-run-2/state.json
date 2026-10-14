@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "goal": {
+    "id": "G-1",
+    "sentence": "build all of the handoff",
+    "mode": "handoff",
+    "sources": [
+      "handoff/HANDOFF.md"
+    ],
+    "createdAt": "2026-10-14T14:28:08.875Z",
+    "approvedAt": "2026-10-14T14:30:03.836Z",
+    "autoApprove": true,
+    "budget": {
+      "usd": 8,
+      "minutes": 45,
+      "maxSlices": 20
+    },
+    "environments": {
+      "prod": false,
+      "preview": null
+    },
+    "jev": false
+  },
+  "stage": "done",
+  "stageEnteredAt": "2026-10-14T14:39:36.355Z",
+  "branch": "goal/G-1",
+  "defaultBranch": "main",
+  "slice": null,
+  "slices": [
+    {
+      "id": "S-1",
+      "title": "Listing: newest first and tag filter",
+      "status": "done",
+      "dependsOn": [],
+      "criteria": [
+        "C-3",
+        "C-4",
+        "C-5"
+      ],
+      "paths": [
+        "src/notes.mjs",
+        "tests/**"
+      ],
+      "attempts": 1,
+      "ui": false,
+      "tasks": [
+        "1.1",
+        "1.2"
+      ],
+      "diffHash": "c3e474165be5282b",
+      "commit": "b94e130042686697ebe9b28b95fe31eb9f287750",
+      "origin": "plan"
+    },
+    {
+      "id": "S-2",
+      "title": "Markdown export",
+      "status": "done",
+      "dependsOn": [],
+      "criteria": [
+        "C-6"
+      ],
+      "paths": [
+        "src/export.mjs",
+        "tests/**"
+      ],
+      "attempts": 1,
+      "ui": false,
+      "tasks": [
+        "2.1"
+      ],
+      "diffHash": "e89f410b0d5e8900",
+      "commit": "ca2c19e5fcd32646a5c550c06fa48742465123ac",
+      "origin": "plan"
+    },
+    {
+      "id": "S-3",
+      "title": "Note count on the page",
+      "status": "done",
+      "dependsOn": [],
+      "criteria": [
+        "C-7"
+      ],
+      "paths": [
+        "public/**",
+        "src/server.mjs"
+      ],
+      "attempts": 1,
+      "ui": true,
+      "tasks": [
+        "3.1"
+      ],
+      "diffHash": "b4b7f6950cfe0790",
+      "commit": "86da41a9a63381c2ef2aa516fc850b206bfff19b",
+      "origin": "plan"
+    },
+    {
+      "id": "S-4",
+      "title": "Note count: verifiable with a seeded store",
+      "status": "done",
+      "dependsOn": [],
+      "criteria": [
+        "C-7"
+      ],
+      "paths": [
+        "src/server.mjs",
+        "public/**",
+        "tests/**"
+      ],
+      "attempts": 1,
+      "ui": true,
+      "diffHash": "5485bc247fdd8f9c",
+      "commit": "794b11731f5303164e2a618ef2988962f85b25ba",
+      "origin": "reconcile"
+    }
+  ],
+  "review": {
+    "rounds": 0,
+    "roundsAuthorized": 3
+  },
+  "preflight": {
+    "diffHash": "1fa4eab484d9822f",
+    "passed": true,
+    "at": "2026-10-14T14:36:02.135Z",
+    "durationMs": 851,
+    "checks": [
+      {
+        "id": "branch",
+        "durationMs": 9,
+        "status": "pass",
+        "details": "goal/G-1"
+      },
+      {
+        "id": "diff_budget",
+        "durationMs": 25,
+        "status": "pass",
+        "details": "61 lines in 3 files"
+      },
+      {
+        "id": "protected_paths",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "none touched"
+      },
+      {
+        "id": "slice_paths",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "3 files within declared paths"
+      },
+      {
+        "id": "openspec_validate",
+        "durationMs": 495,
+        "status": "pass",
+        "details": "Totals: 2 passed, 0 failed (2 items)"
+      },
+      {
+        "id": "project:test",
+        "durationMs": 230,
+        "status": "pass",
+        "details": "ℹ duration_ms 82.993375"
+      },
+      {
+        "id": "language",
+        "durationMs": 2,
+        "status": "pass",
+        "details": "3 files English"
+      },
+      {
+        "id": "secrets",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "no secrets in changed files"
+      },
+      {
+        "id": "prose",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "prose clean"
+      },
+      {
+        "id": "test_weakening",
+        "durationMs": 28,
+        "status": "pass",
+        "details": "+0 -0 test blocks"
+      },
+      {
+        "id": "dependencies",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "no dependency manifest changed"
+      }
+    ]
+  },
+  "verdicts": {
+    "critic": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/.harness/verdicts/S-4-a1-r1-critic.json",
+    "review": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/.harness/verdicts/S-4-a1-r1-reviewer.json"
+  },
+  "guards": {
+    "blocks": 0,
+    "diffHashes": [
+      "99f1fc7634394128",
+      "c3e474165be5282b",
+      "8b561626e7e62063",
+      "e89f410b0d5e8900",
+      "73d0a1aac249fb01",
+      "b4b7f6950cfe0790",
+      "1fa4eab484d9822f",
+      "5485bc247fdd8f9c"
+    ],
+    "continuations": 0
+  },
+  "counters": {
+    "toolCalls": {
+      "intake": 7,
+      "spec_review": 1,
+      "building": 10,
+      "preflight": 2,
+      "critic": 5,
+      "review": 7,
+      "record": 3,
+      "reconcile": 4,
+      "report": 1
+    },
+    "browserActions": 8
+  },
+  "browser": {
+    "lastHost": "localhost"
+  },
+  "holds": [
+    {
+      "id": "H-1",
+      "question": "What is the public URL of the deployed page?",
+      "blocks": [],
+      "raisedAt": "2026-10-14T14:30:03.892Z"
+    }
+  ],
+  "defaults": [
+    {
+      "id": "D-1",
+      "question": "Should tags be case-insensitive?",
+      "chosen": "Yes, compare lowercased.",
+      "appliedAt": "2026-10-14T14:30:03.892Z"
+    }
+  ],
+  "reconcile": {
+    "diffHash": "5485bc247fdd8f9c",
+    "at": "2026-10-14T14:39:33.908Z",
+    "missing": 0,
+    "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/.harness/verdicts/reconcile.json"
+  },
+  "spec": {
+    "change": "lantern-v0-2",
+    "attempt": 1,
+    "verdict": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-2/.harness/verdicts/spec-a1-spec-reviewer.json",
+    "summary": "3 requirement(s), 5 scenario(s), 4 task(s), 5/5 criteria cited, validate pass",
+    "committed": "0bc5bf8fcb13f23175f7c80ccc09b71d7bbbc0b7"
+  },
+  "transcriptPath": "/Users/jmarron/.claude/projects/-private-tmp-claude-501--Users-jmarron-Developer-personal-6f536223-e803-4e47-b49c-3f5d7ded0fb5-scratchpad-run-2/ac2abb7c-9256-4964-8118-5cbdb34c89a5.jsonl",
+  "pluginRoot": "/Users/jmarron/Developer/personal/handoff-harness",
+  "halt": null,
+  "updatedAt": "2026-10-14T14:39:43.161Z",
+  "reconcilePasses": 2
+}

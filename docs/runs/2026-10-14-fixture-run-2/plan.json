@@ -1,0 +1,12 @@
+{
+  "goal": "G-1",
+  "slices": [
+    {"id":"S-1","title":"Listing: newest first and tag filter","criteria":["C-3","C-4","C-5"],"paths":["src/notes.mjs","tests/**"],"dependsOn":[],"ui":false,"tasks":["1.1","1.2"],"estimate":{"usd":0.5,"minutes":10}},
+    {"id":"S-2","title":"Markdown export","criteria":["C-6"],"paths":["src/export.mjs","tests/**"],"dependsOn":[],"ui":false,"tasks":["2.1"],"estimate":{"usd":0.3,"minutes":6}},
+    {"id":"S-3","title":"Note count on the page","criteria":["C-7"],"paths":["public/**","src/server.mjs"],"dependsOn":[],"ui":true,"tasks":["3.1"],"estimate":{"usd":0.6,"minutes":12}}
+  ],
+  "questions": [
+    {"id":"D-1","question":"Should tags be case-insensitive?","kind":"default","chosen":"Yes, compare lowercased."},
+    {"id":"H-1","question":"What is the public URL of the deployed page?","kind":"hold","blocks":[]}
+  ]
+}
