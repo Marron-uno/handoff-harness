@@ -134,7 +134,7 @@ export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
   }
 }
 
-function decideIntake(cwd, state, profile) {
+export function intakeMissing(cwd) {
   const p = harnessPaths(cwd);
   const missing = [];
   if (!existsSync(p.inventory)) missing.push("inventory.json");
@@ -148,6 +148,11 @@ function decideIntake(cwd, state, profile) {
     if (errs.length) missing.push(`plan.json invalid: ${errs.slice(0, 3).join("; ")}`);
   }
   if (!existsSync(p.goalCard)) missing.push("goal-card.md");
+  return missing;
+}
+
+function decideIntake(cwd, state, profile) {
+  const missing = intakeMissing(cwd);
   if (missing.length) {
     return block(cwd, state, "intake_incomplete", renderBrief("intake", { ...sliceVars(state, profile), missing: missing.join("\n- ") }));
   }
@@ -307,7 +312,7 @@ function decideReport(cwd, state, profile) {
 export function briefFor(cwd, state, profile) {
   const vars = sliceVars(state, profile);
   switch (state.stage) {
-    case "intake": return renderBrief("intake", { ...vars, missing: "(run the stop hook to see what is missing)" });
+    case "intake": return renderBrief("intake", { ...vars, missing: intakeMissing(cwd).join("\n- ") || "nothing; stop to let the hook verify" });
     case "planning": return renderBrief("planning", vars);
     case "building": return renderBrief("build", vars);
     case "preflight": return renderBrief("preflight", vars);
