@@ -74,7 +74,7 @@
     "bannedPhrases": ["delve", "leverage", "seamless", "robust solution", "it's worth noting", "in today's fast-paced", "game-changer"]
   },
   "secrets": {
-    "allow": ["fixture-token-not-real", "Password123!", "example.com", "555-0100"],
+    "allow": ["fixture-token-not-real", "example.com", "555-0100"],
     "extraPatterns": []
   },
   "checks": [],

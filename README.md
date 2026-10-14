@@ -15,7 +15,7 @@ Then, in any git repository:
 /handoff-harness:goal "build all of the handoff" --source docs/HANDOFF.md
 ```
 
-The run prints a goal card and waits. `harness goal approve` starts it. From there the Stop hook drives every stage until the goal predicate is satisfied or a cap hands control back to you.
+The run prints a goal card and waits. `harness goal approve` starts it. Throughout this README, `harness` stands for `node <plugin-root>/scripts/cli.mjs`; the skills and stage briefs always spell out the full path. From there the Stop hook drives every stage until the goal predicate is satisfied or a cap hands control back to you.
 
 ## Why this exists
 
@@ -76,7 +76,7 @@ Verdicts carry the work hash of the change set they judged. An edit after the ju
 
 ## Cost and evaluation
 
-Every assistant message in the transcript carries token counts. The Stop hook buckets them by the stage active at that moment and prices them from a table in the profile; subagent transcripts are attributed to their stage at SubagentStop. The report ends with a table of calls, tokens and dollars per stage. Budgets in the goal (`--budget-usd`, `--budget-minutes`, `--max-slices`) stop the run when exceeded.
+Every assistant message in the transcript carries token counts. The Stop hook buckets them by the stage active at that moment and prices them from a table in the profile; subagent transcripts are attributed to their stage at SubagentStop. The report ends with a table of calls, tokens and dollars per stage. The price table is a profile value and the default is approximate; set `pricing.perMillion` to your contract. Budgets in the goal (`--budget-usd`, `--budget-minutes`, `--max-slices`) stop the run when exceeded.
 
 The harness is tested on a synthetic fixture (`fixture/`, a deliberately incomplete notes library with its own handoff and OpenSpec change). The end-to-end test drives a two-slice goal through every stage with synthetic verdicts, and the guard tests exercise every cap. `npm test` runs them in a few seconds with no API key.
 
@@ -106,6 +106,6 @@ docs/             rules.md, jev.md, architecture.md
 
 ## Status
 
-Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. A headless smoke run (`claude -p --plugin-dir .` on the fixture at the report stage, haiku) confirmed that SessionStart injects the brief, the CLI commits the report, the Stop hook blocks on an unsatisfied goal predicate, and usage lands in `usage.json`; it cost about one cent. Not yet done: a recorded run of the fixture with real judges and its published cost table, git-side hooks for commit messages, and the bundle-size budget check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. A headless smoke run (`claude -p --plugin-dir .` on the fixture at the report stage, haiku) confirmed that SessionStart injects the brief, the CLI commits the report, the Stop hook blocks on an unsatisfied goal predicate, and usage lands in `usage.json`; it cost about one cent. Not yet done: a recorded run of the fixture with real judges and its published cost table, a stage step that starts the project's dev server before the reviewer opens the fixture host (today the reviewer brief points at a host nobody launches), git-side hooks for commit messages, and the bundle-size budget check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

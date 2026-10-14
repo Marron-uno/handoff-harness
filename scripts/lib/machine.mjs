@@ -296,7 +296,8 @@ function decideReport(cwd, state, profile) {
   const fresh = existsSync(p) && statSync(p).mtimeMs >= Date.parse(state.stageEnteredAt) - 1000;
   if (!fresh) return block(cwd, state, "report_missing", renderBrief("report", sliceVars(state, profile)));
   const check = goalCheck(cwd, state, profile);
-  if (!check.done) return block(cwd, state, "goal_incomplete", `Report written but the goal predicate is not satisfied:\n- ${check.reasons.join("\n- ")}\nFix what is listed, then stop again.`);
+  // The report stage cannot edit source, so an unsatisfied predicate here is a human decision.
+  if (!check.done) return rest(cwd, state, "awaiting_human", "goal_incomplete", `Report written but the goal predicate is not satisfied:\n- ${check.reasons.join("\n- ")}\nA human decides: skip or hold the gaps, raise the slice budget, or fix by hand, then \`harness retry\`.`);
   transition(cwd, state, "done", "goal_check_passed");
   appendEvent(cwd, { type: "goal", action: "done" });
   return { action: "allow", code: "done", systemMessage: `Goal ${state.goal.id} complete. Report: .harness/report.md` };
