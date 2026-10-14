@@ -145,6 +145,11 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   assert.equal(prep.json.decidedDeterministically, 2);
   const input = JSON.parse(readFileSync(join(dir, ".harness/reconcile-input.json"), "utf8"));
   assert.equal(input.items.find((i) => i.id === "I-1").bucket, "model");
+  // A gap with no proposed slice and no explicit decision is rejected.
+  writeFileSync(join(dir, ".harness/verdicts/reconcile.json"), JSON.stringify({ goal: "G-1", diffHash: hash(dir), items: [{ id: "I-1", status: "missing" }], newSlices: [] }));
+  const rejected = runCli(dir, ["reconcile", "load"]);
+  assert.equal(rejected.json.ok, false);
+  assert.match(rejected.json.errors[0], /I-1\) but newSlices is empty/);
   writeFileSync(join(dir, ".harness/verdicts/reconcile.json"), JSON.stringify({ goal: "G-1", diffHash: hash(dir), items: [{ id: "I-1", status: "done", evidence: [{ type: "test", path: "tests/notes.test.mjs" }] }], newSlices: [] }));
   const loaded = runCli(dir, ["reconcile", "load"]);
   assert.equal(loaded.json.ok, true, loaded.stdout);

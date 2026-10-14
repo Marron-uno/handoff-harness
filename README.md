@@ -106,6 +106,6 @@ docs/             rules.md, jev.md, architecture.md
 
 ## Status
 
-Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. Not yet done: a recorded run of the fixture with real judges and its published cost table, git-side hooks for commit messages, and the bundle-size budget check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. A headless smoke run (`claude -p --plugin-dir .` on the fixture at the report stage, haiku) confirmed that SessionStart injects the brief, the CLI commits the report, the Stop hook blocks on an unsatisfied goal predicate, and usage lands in `usage.json`; it cost about one cent. Not yet done: a recorded run of the fixture with real judges and its published cost table, git-side hooks for commit messages, and the bundle-size budget check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

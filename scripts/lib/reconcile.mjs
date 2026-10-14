@@ -67,6 +67,13 @@ export function loadReconcile(cwd, state, profile, path = join(harnessPaths(cwd)
   const statuses = new Map(result.items.map((i) => [i.id, i.status]));
   for (const [id, s] of decided) if (!statuses.has(id)) statuses.set(id, s);
   const missing = [...statuses.values()].filter((s) => s === "missing" || s === "partial").length;
+  // A gap must become work or an explicit decision. Silence is not an option.
+  if (missing > 0 && result.newSlices.length === 0) {
+    const ids = [...statuses.entries()].filter(([, s]) => s === "missing" || s === "partial").map(([id]) => id);
+    return { ok: false, errors: [`${missing} item(s) are missing or partial (${ids.join(", ")}) but newSlices is empty. Propose a slice per gap, or set the item to "held" (with a note naming the hold) or "out_of_scope" (with a note).`] };
+  }
+  const heldWithoutNote = result.items.filter((i) => (i.status === "held" || i.status === "out_of_scope") && !i.note);
+  if (heldWithoutNote.length) return { ok: false, errors: [`held or out_of_scope items need a note: ${heldWithoutNote.map((i) => i.id).join(", ")}`] };
   let nextId = state.slices.reduce((m, s) => Math.max(m, Number(s.id.slice(2))), 0) + 1;
   const added = [];
   for (const ns of result.newSlices) {
