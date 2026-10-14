@@ -1,0 +1,14 @@
+{
+  "name": "marron-uno",
+  "owner": { "name": "Joe Marron", "url": "https://github.com/Marron-uno" },
+  "description": "Plugins by Marron.uno",
+  "plugins": [
+    {
+      "name": "handoff-harness",
+      "source": ".",
+      "description": "Multi-stage coding harness: handoff in, reviewed and committed code out, under deterministic guards.",
+      "category": "engineering",
+      "tags": ["harness", "review-loop", "hooks"]
+    }
+  ]
+}
