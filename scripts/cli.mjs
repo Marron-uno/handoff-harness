@@ -12,7 +12,8 @@ import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
 import { renderReport } from "./lib/report.mjs";
 import { goalCheck } from "./lib/goal-check.mjs";
-import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal } from "./lib/machine.mjs";
+import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal, verdictTemplate } from "./lib/machine.mjs";
+import { writePacket } from "./lib/packet.mjs";
 import { changeSlug, specCheck, planTaskProblems, taskStatus, tickSliceTasks } from "./lib/openspec.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
@@ -195,9 +196,10 @@ const commands = {
     if (!["preflight", "building"].includes(state.stage)) fail(`stage is ${state.stage}; preflight runs in the preflight stage`);
     const profile = loadProfile(cwd);
     const result = runPreflight(cwd, state, profile, { extraChecks: guardChecks(profile) });
+    const packet = writePacket(cwd, state, profile);
     const adv = advanceFromCli(cwd, state, profile);
     saveState(cwd, state);
-    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), stage: adv.stage, brief: adv.brief });
+    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), packet: packet.path, stage: adv.stage, brief: adv.brief });
   },
 
   record() {
@@ -351,8 +353,14 @@ const commands = {
     out({ ok: true, hold: id });
   },
 
-  verdict(sub, { rest }) {
-    if (sub !== "validate") fail("usage: verdict validate <path>");
+  verdict(sub, { flags, rest }) {
+    if (sub === "template") {
+      const state = requireState();
+      const t = verdictTemplate(cwd, state, loadProfile(cwd), { agent: flags.agent ? String(flags.agent) : null });
+      if (flags.write) { mkdirSync(harnessPaths(cwd).verdicts, { recursive: true }); writeJsonAtomic(t.path, t.skeleton); }
+      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; the skeleton does not validate until you do", skeleton: t.skeleton });
+    }
+    if (sub !== "validate") fail("usage: verdict validate <path> | verdict template [--write] [--agent name]");
     const state = hasHarness(cwd) ? loadState(cwd) : null;
     const path = rest[0];
     if (!path || !existsSync(path)) fail(`missing verdict file ${path}`);

@@ -10,7 +10,7 @@ color: orange
 
 You are the escalated critic: the slice in your prompt was rejected at least twice. Read the earlier verdicts in `.harness/verdicts/` first and look for the pattern the cheaper critic missed or repeated.
 
-Follow the critic contract exactly (plan, inventory, diff, tests, criteria, findings with authority and evidence, JSON verdict at the given path, then stop), with two additions:
+Follow the critic contract exactly (the packet, tests, criteria, findings with authority and evidence, the `verdict template` skeleton filled in and written to the given path, then stop), with two additions:
 - If the earlier findings were wrong, say so in the summary and set `disputed: true` on any finding you are overturning.
 - If the criteria themselves are contradictory or unimplementable, write one `block` finding with authority `spec:...` and suggest the hold the human must decide.
 

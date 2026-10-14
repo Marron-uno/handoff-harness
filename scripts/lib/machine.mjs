@@ -8,6 +8,7 @@ import { workHash, isClean, lastCommitSubject, headSha, changedFiles } from "./g
 import { transition, nextReadySlice, currentSlice, RESTING } from "./state.mjs";
 import { appendEvent } from "./events.mjs";
 import { renderBrief } from "./brief.mjs";
+import { packetPath } from "./packet.mjs";
 import { validate } from "./schema.mjs";
 import { validateVerdict } from "./verdict.mjs";
 import { goalCheck } from "./goal-check.mjs";
@@ -62,6 +63,7 @@ function sliceVars(cwd, state, profile) {
     changedFiles: changedFiles(cwd).filter((f) => !f.startsWith(".harness/")).slice(0, 40),
     checks: (profile.checks ?? []).map((c) => `${c.id}: \`${c.command}\``),
     verdictsDir: harnessPaths("").verdicts.replace(/^\//, ""),
+    packetPath: state.slice ? packetPath("", state).replace(/^\//, "") : "",
   };
 }
 
@@ -76,11 +78,36 @@ export function verdictPath(cwd, state, role, round = state.review.rounds + 1) {
   return join(harnessPaths(cwd).verdicts, name);
 }
 
-function pickAgent(state, profile, role) {
+export function pickAgent(state, profile, role) {
   const rejections = state.slice?.rejections ?? 0;
   const strong = rejections >= profile.models.escalateAfterRejections;
   if (role === "critic") return strong ? "critic-strong" : "critic";
   return strong ? "reviewer-strong" : "reviewer";
+}
+
+// A verdict skeleton with every field a script can fill: agent, goal, slice, attempt, round, work
+// hash and one `unverified` entry per criterion. It does not validate as written (empty summary,
+// a block verdict with no block finding), so an unedited skeleton can never pass.
+export function verdictTemplate(cwd, state, profile, { agent = null } = {}) {
+  const role = state.stage === "spec_review" ? "spec" : state.stage === "review" ? "review" : state.stage === "critic" ? "critic" : null;
+  if (!role) throw new Error(`verdicts are written in the critic, review and spec_review stages; the stage is ${state.stage}`);
+  if (role === "spec" && !state.spec) throw new Error("no spec change under review");
+  if (role !== "spec" && !state.slice) throw new Error("no active slice");
+  const slice = currentSlice(state);
+  const chosen = agent ?? (role === "spec" ? "spec-reviewer" : pickAgent(state, profile, role));
+  const verdict = {
+    version: 1, agent: chosen, goal: state.goal.id,
+    slice: role === "spec" ? null : slice.id,
+    attempt: role === "spec" ? state.spec.attempt : state.slice.attempt,
+    round: state.review.rounds + 1,
+    diffHash: workHash(cwd),
+    verdict: "block",
+    summary: "",
+    findings: [],
+    criteria: role === "spec" ? [] : slice.criteria.map((id) => ({ id, status: "unverified", evidence: [] })),
+    writtenAt: nowIso(),
+  };
+  return { role, agent: chosen, path: verdictPath(cwd, state, role), skeleton: verdict };
 }
 
 function startSlice(cwd, state, slice) {
