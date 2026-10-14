@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "agent": "spec-reviewer",
+  "goal": "G-1",
+  "slice": null,
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "7cb437f94c277324",
+  "verdict": "pass",
+  "summary": "All six criteria (C-1..C-6) are covered by a requirement and a task that describe their behavior, not only their ids. Nothing is invented beyond the goal sentence. The open questions (exact paths vs globs, missing file, raw vs gzip) are recorded as defaults D-1..D-3 in plan.json. Everything is in English. Four minor clarity gaps are noted: the empty default map has no scenario, the mixed missing and over-cap case is unspecified, and the rules row's evidence column is not specified. The at-cap scenario also does not test the boundary.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "issue": "C-1 says the default profile declares bundleBytes as an empty map. Only task 1.1 states this. No requirement or scenario checks it, and the 'No budget set' scenario covers only the check's skip behavior.",
+      "authority": "criterion:C-1",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "Add `budgets.bundleBytes` as an empty map to `profiles/default.json` (I-1, C-1)"
+        }
+      ],
+      "suggestion": "Add a scenario: WHEN the default profile is loaded THEN budgets.bundleBytes is an empty map."
+    },
+    {
+      "id": "F-2",
+      "severity": "minor",
+      "issue": "The requirement uses 'skip' for both an empty map and a missing file. It does not say what happens when one file is missing and another is over its cap (should fail), or when every named file is missing (skipped or passed). A critic could read it either way.",
+      "authority": "criterion:C-4",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/specs/preflight/spec.md",
+          "quote": "SHALL skip when the map is empty or a named file does not exist"
+        }
+      ],
+      "suggestion": "State that a missing file is skipped per file and the check still fails if another file is over its cap. Add a scenario for the mixed case."
+    },
+    {
+      "id": "F-3",
+      "severity": "minor",
+      "issue": "C-6 requires a rules.md row with where and evidence columns. The scenario checks only the rule name and the preflight stage, and the requirement does not mention evidence, so an empty evidence cell would pass.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/specs/preflight/spec.md",
+          "quote": "it holds a row naming the bundle size budget and the preflight stage (C-6)"
+        }
+      ],
+      "suggestion": "Add that the row's evidence column is non-empty."
+    },
+    {
+      "id": "F-4",
+      "severity": "minor",
+      "issue": "The 'File at its cap' scenario says 'at or under' but gives no concrete boundary values. The exact-cap case (size equals cap) is the one a critic needs to verify.",
+      "authority": "criterion:C-3",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-1-add-a-bundle-size-preflight-check-budgets-bundle/specs/preflight/spec.md",
+          "quote": "WHEN every file named in `budgets.bundleBytes` is at or under its cap"
+        }
+      ],
+      "suggestion": "Use a concrete example, such as a file of exactly 1000 bytes with a cap of 1000."
+    }
+  ],
+  "criteria": [],
+  "writtenAt": "2026-10-14T19:03:31.177Z"
+}

@@ -1,0 +1,6 @@
+{
+  "note": "Replay expectations for the first self-run: the harness built a feature on its own checkout, enforced by the installed 0.4.0 copy, with an authored OpenSpec change. The rejected critic write under verdicts/rejected/ must keep failing the schema.",
+  "metrics": { "stage": "done", "slicesDone": 1, "slicesTotal": 1, "blocks": 0, "guardDenials": 0, "halts": 0, "sessions": 1, "costReported": 0.773, "verdictWrites": 4, "invalidVerdicts": 1, "judgeStopsExtra": 1, "specAttempts": 1, "specFindings": 4, "criticCalls.max": 7, "reviewerCalls.max": 4 },
+  "heldPending": [],
+  "schemaValidVerdicts": true
+}
