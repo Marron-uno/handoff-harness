@@ -21,6 +21,7 @@
           "paths": { "type": "array", "items": { "type": "string" } },
           "ui": { "type": "boolean" },
           "tasks": { "description": "OpenSpec task ids from tasks.md this slice completes; record ticks them.", "type": "array", "items": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)*$" } },
+          "origin": { "description": "Set by the harness on slices reconciliation added.", "enum": ["plan", "reconcile"] },
           "estimate": { "type": "object", "properties": { "usd": { "type": "number" }, "minutes": { "type": "number" } } }
         }
       }

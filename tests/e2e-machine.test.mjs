@@ -166,6 +166,17 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   const loaded = runCli(dir, ["reconcile", "load"]);
   assert.equal(loaded.json.ok, true, loaded.stdout);
   assert.equal(loaded.json.missing, 0);
+  // A proposed slice lands in state and in plan.json, where the judges look for it.
+  writeFileSync(join(dir, ".harness/verdicts/reconcile.json"), JSON.stringify({ goal: "G-1", diffHash: hash(dir), items: [{ id: "I-1", status: "partial", note: "no test" }], newSlices: [{ title: "Create-note tests", criteria: ["C-1", "C-2"], paths: ["tests/**"], ui: false }] }));
+  const again = runCli(dir, ["reconcile", "load"]).json;
+  assert.deepEqual(again.added, ["S-3"], JSON.stringify(again));
+  const planAfter = JSON.parse(readFileSync(join(dir, ".harness/plan.json"), "utf8"));
+  assert.equal(planAfter.slices.at(-1).id, "S-3");
+  assert.equal(planAfter.slices.at(-1).origin, "reconcile");
+  // Undo the extra slice for the rest of the flow: skip it.
+  runCli(dir, ["slice", "skip", "--id", "S-3", "--reason", "test only"]);
+  writeFileSync(join(dir, ".harness/verdicts/reconcile.json"), JSON.stringify({ goal: "G-1", diffHash: hash(dir), items: [{ id: "I-1", status: "done", evidence: [{ type: "test", path: "tests/notes.test.mjs" }] }], newSlices: [] }));
+  assert.equal(runCli(dir, ["reconcile", "load"]).json.ok, true);
   r = stop(dir);
   assert.match(r.json.reason, /Stage: report/);
 

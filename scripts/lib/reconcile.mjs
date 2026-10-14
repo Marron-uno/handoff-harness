@@ -76,12 +76,18 @@ export function loadReconcile(cwd, state, profile, path = join(harnessPaths(cwd)
   if (heldWithoutNote.length) return { ok: false, errors: [`held or out_of_scope items need a note: ${heldWithoutNote.map((i) => i.id).join(", ")}`] };
   let nextId = state.slices.reduce((m, s) => Math.max(m, Number(s.id.slice(2))), 0) + 1;
   const added = [];
+  // New slices also go into plan.json, because judges read the plan to find their slice.
+  // Run 2's reviewer flagged a reconcile slice as "not in the plan" for exactly this reason.
+  const planPath = harnessPaths(cwd).plan;
+  const plan = existsSync(planPath) ? readJson(planPath, null) : null;
   for (const ns of result.newSlices) {
     if (state.slices.length >= state.goal.budget.maxSlices) { appendEvent(cwd, { type: "note", text: `slice budget reached, dropped proposed slice "${ns.title}"` }); break; }
     const id = `S-${nextId++}`;
-    state.slices.push({ id, title: ns.title, status: "pending", dependsOn: ns.dependsOn ?? [], criteria: ns.criteria, paths: ns.paths, attempts: 0, ui: ns.ui, diffHash: null, commit: null, origin: "reconcile" });
+    state.slices.push({ id, title: ns.title, status: "pending", dependsOn: ns.dependsOn ?? [], criteria: ns.criteria, paths: ns.paths, attempts: 0, ui: ns.ui, tasks: [], diffHash: null, commit: null, origin: "reconcile" });
+    if (plan?.slices) plan.slices.push({ id, title: ns.title, criteria: ns.criteria, paths: ns.paths, dependsOn: ns.dependsOn ?? [], ui: ns.ui, origin: "reconcile" });
     added.push(id);
   }
+  if (added.length && plan?.slices) writeJsonAtomic(planPath, plan);
   state.reconcile = { diffHash: wh, at: nowIso(), missing, path };
   state.reconcilePasses = (state.reconcilePasses ?? 0) + 1;
   appendEvent(cwd, { type: "stage", from: "reconcile", to: "reconcile", reason: "reconcile_loaded", missing, added, pass: state.reconcilePasses });

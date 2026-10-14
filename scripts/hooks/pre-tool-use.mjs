@@ -13,7 +13,10 @@ const tool = input.tool_name ?? "";
 const agentType = agentTypeOf(input);
 
 function deny(result) {
-  ctx.event({ type: "guard", guard: result.guard, tool, stage: state.stage, slice: state.slice?.id ?? null, agent: agentType ?? undefined, reason: result.reason.slice(0, 300) });
+  // The denied command (secrets masked) goes in the event, so a false positive can be diagnosed
+  // from the log instead of guessed at.
+  const command = tool === "Bash" && typeof input.tool_input?.command === "string" ? input.tool_input.command.replace(/(api[_-]?key|token|secret|password)\s*[:=]\s*\S+/gi, "$1=***").slice(0, 300) : undefined;
+  ctx.event({ type: "guard", guard: result.guard, tool, stage: state.stage, slice: state.slice?.id ?? null, agent: agentType ?? undefined, reason: result.reason.slice(0, 300), command });
   ctx.save();
   hookDeny(result.reason);
 }

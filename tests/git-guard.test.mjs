@@ -37,6 +37,15 @@ test("state files are written only through the cli; sensitive files are never re
   assert.equal(checkBashCommand("sed -i '' 's/a/b/' .harness/events.jsonl", ctx).guard, "state");
   assert.equal(checkBashCommand("node /x/scripts/cli.mjs goal status", ctx).deny, false);
   assert.equal(checkBashCommand("cat .harness/state.json", ctx).deny, false);
+  // Reads that write somewhere else are reads.
+  assert.equal(checkBashCommand("jq .slices .harness/state.json > /tmp/slices.json", ctx).deny, false);
+  assert.equal(checkBashCommand("cp .harness/state.json /tmp/state-copy.json", ctx).deny, false);
+  assert.equal(checkBashCommand("grep stage .harness/events.jsonl | tee /tmp/stages.txt", ctx).deny, false);
+  assert.equal(checkBashCommand("cp /tmp/x.json .harness/state.json", ctx).guard, "state");
+  assert.equal(checkBashCommand("mv state.json .harness/state.json", ctx).guard, "state");
+  assert.equal(checkBashCommand("cat x | tee .harness/events.jsonl", ctx).guard, "state");
+  assert.equal(checkBashCommand("rm -f .harness/plugin-root", ctx).guard, "state");
+  assert.equal(checkBashCommand("echo x >> .harness/events.jsonl", ctx).guard, "state");
   assert.equal(checkBashCommand("cat .env", ctx).guard, "sensitive");
   assert.equal(checkBashCommand("cat .env.production", ctx).guard, "sensitive");
   assert.equal(checkBashCommand("cat ./config/id_rsa", ctx).guard, "sensitive");

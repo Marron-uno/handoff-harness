@@ -9,6 +9,22 @@ const STATE_FILES = /\.harness\/(state\.json|events\.jsonl|plugin-root)/;
 
 function stripQuotes(s) { return s.replace(/^["']|["']$/g, ""); }
 
+// True when a state file is the target of a write, not merely read by a command that writes
+// elsewhere (`jq . .harness/state.json > /tmp/out.json` is a read). Run 2's reconciler was
+// denied for exactly that shape.
+function writesStateFile(text) {
+  if (/(?:>>?|\btee\b(?:\s+-a)?)\s*["']?[^\s"'|;&]*\.harness\/(state\.json|events\.jsonl|plugin-root)/.test(text)) return true;
+  if (/\bsed\s+-i[^|;&]*\.harness\/(state\.json|events\.jsonl|plugin-root)/.test(text)) return true;
+  if (/\brm\b[^|;&]*\.harness\/(state\.json|events\.jsonl|plugin-root)/.test(text)) return true;
+  for (const seg of text.split(/[|;&]+/)) {
+    const m = seg.match(/\b(mv|cp)\b(.*)$/);
+    if (!m) continue;
+    const args = m[2].trim().split(/\s+/).filter((a) => a && !a.startsWith("-"));
+    if (args.length && STATE_FILES.test(args[args.length - 1])) return true;
+  }
+  return false;
+}
+
 export function checkBashCommand(command, { profile, state, cwd }) {
   const text = String(command ?? "");
   for (const p of profile.git.denyPatterns) {
@@ -31,7 +47,7 @@ export function checkBashCommand(command, { profile, state, cwd }) {
     const sw = text.match(/git\s+(checkout|switch)\s+([^\s;&|]+)/);
     if (sw && profile.git.noWorkOnDefaultBranch && (sw[2] === def || sw[2] === "-")) return { deny: true, guard: "git", reason: `Blocked: switching to ${def} during a goal. Work stays on ${state.branch}.` };
   }
-  if (STATE_FILES.test(text) && !/cli\.mjs|(?:^|[\s;&|])harness\s/.test(text) && /(>|>>|\btee\b|sed\s+-i|\bmv\b|\brm\b|\bcp\b)/.test(text)) {
+  if (STATE_FILES.test(text) && !/cli\.mjs|(?:^|[\s;&|])harness\s/.test(text) && writesStateFile(text)) {
     return { deny: true, guard: "state", reason: "Blocked: .harness/state.json, events.jsonl and plugin-root are written only by the harness CLI." };
   }
   // Only path-like tokens are tested: a word such as "secrets" inside a grep pattern is not a file.
