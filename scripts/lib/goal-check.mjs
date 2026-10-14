@@ -4,6 +4,12 @@ import { harnessPaths } from "./paths.mjs";
 import { workHash } from "./git.mjs";
 import { taskStatus } from "./openspec.mjs";
 
+// Pure: which pending slices a hold blocks, from the state alone. Replay evals use it on recorded runs.
+export function heldPendingSlices(state) {
+  const held = new Set((state.holds ?? []).flatMap((h) => h.blocks));
+  return (state.slices ?? []).filter((s) => s.status !== "done" && s.status !== "skipped" && held.has(s.id)).map((s) => s.id);
+}
+
 export function goalCheck(cwd, state, profile) {
   const reasons = [];
   const held = new Set(state.holds.flatMap((h) => h.blocks));

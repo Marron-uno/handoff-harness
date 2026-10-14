@@ -1,0 +1,6 @@
+{
+  "note": "Replay expectations for run 2: the spec stage on, one slice added by reconciliation, five rejected verdict writes the skeleton was built for.",
+  "metrics": { "stage": "done", "slicesDone": 4, "slicesFromReconcile": 1, "blocks": 0, "halts": 0, "sessions": 1, "costReported": 1.737, "verdictWrites": 14, "invalidVerdicts": 5, "guardDenials": 2, "screenshots": 2, "specAttempts": 1, "specFindings": 4 },
+  "heldPending": [],
+  "schemaValidVerdicts": true
+}

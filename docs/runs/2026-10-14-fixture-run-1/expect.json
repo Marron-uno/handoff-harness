@@ -1,0 +1,6 @@
+{
+  "note": "Replay expectations for run 1, the baseline: the halt and the 24 blocks are the bugs fixed before run 2.",
+  "metrics": { "stage": "done", "slicesDone": 3, "blocks": 24, "halts": 1, "sessions": 2, "costReported": 1.241, "verdictWrites": 6, "invalidVerdicts": 0, "screenshots": 1, "guardDenials": 1 },
+  "heldPending": [],
+  "schemaValidVerdicts": true
+}

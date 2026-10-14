@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: goal-intake
+context:
+  # A path, run as you and only with --scaffold: the fixture as a git repo with one commit.
+  scaffold_script: scaffold.sh

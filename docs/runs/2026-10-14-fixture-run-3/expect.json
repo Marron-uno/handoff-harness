@@ -1,0 +1,6 @@
+{
+  "note": "Replay expectations for run 3: recorded as done with S-3 pending behind H-1. The predicate must report the held slice, which is what 0.3.3 rests on instead of ending done.",
+  "metrics": { "stage": "done", "slicesDone": 2, "slicesHeld": 1, "blocks": 0, "guardDenials": 0, "verdictWrites": 7, "invalidVerdicts": 2, "judgeStopsExtra": 2, "sessions": 1, "costReported": 0.884, "costRatio": 0.88, "jevAnswers": 11 },
+  "heldPending": ["S-3"],
+  "schemaValidVerdicts": true
+}

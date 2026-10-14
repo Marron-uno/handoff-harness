@@ -4,3 +4,5 @@ node_modules/
 .harness/
 !fixture/.harness/
 !fixture/.harness/profile.json
+evals/bench/
+evals/results/
