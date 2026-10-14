@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync, existsSync, appendFileSync } from "node:fs";
+import { appendEvent } from "./lib/events.mjs";
 
 const args = process.argv.slice(2);
 const flag = (name, def) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : def; };
@@ -47,6 +48,9 @@ for (let i = 1; i <= maxIterations; i++) {
   const line = `[drive] session ${i}: ${Math.round((Date.now() - started) / 1000)}s, turns ${summary.turns}, $${summary.usd?.toFixed?.(3) ?? "?"}, error ${summary.isError}${r.stderr.trim() ? `, stderr: ${r.stderr.trim().split("\n").pop().slice(0, 200)}` : ""}`;
   console.log(line);
   if (logFile) appendFileSync(logFile, `${new Date().toISOString()} iteration ${i} stage ${state.stage} ${JSON.stringify(summary)}\n`);
+  // Claude Code's own figure for the session is the number of record; the report prints it next
+  // to the harness price table.
+  try { appendEvent(cwd, { type: "session", scope: "driver", iteration: i, stage: state.stage, seconds: Math.round((Date.now() - started) / 1000), turns: summary.turns, usd: summary.usd, isError: summary.isError }); } catch (err) { console.error(`[drive] cannot record the session: ${err.message}`); }
 }
 console.log(`[drive] stopped after ${maxIterations} iterations`);
 process.exit(3);

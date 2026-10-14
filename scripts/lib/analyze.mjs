@@ -50,12 +50,14 @@ export function analyzeRun(cwd, { driveLog = null } = {}) {
     const walk = (d) => { for (const n of readdirSync(d)) { const f = join(d, n); if (statSync(f).isDirectory()) walk(f); else screenshots.push({ path: f.replace(cwd + "/", ""), bytes: statSync(f).size }); } };
     walk(p.evidence);
   }
-  const drive = driveLog && existsSync(driveLog) ? readLines(driveLog).map((l) => { const m = l.match(/^(\S+) iteration (\d+) stage (\S+) (.*)$/); if (!m) return null; let j = {}; try { j = JSON.parse(m[4]); } catch { /* skip */ } return { ts: m[1], iteration: Number(m[2]), stage: m[3], ...j }; }).filter(Boolean) : [];
+  const fromLog = driveLog && existsSync(driveLog) ? readLines(driveLog).map((l) => { const m = l.match(/^(\S+) iteration (\d+) stage (\S+) (.*)$/); if (!m) return null; let j = {}; try { j = JSON.parse(m[4]); } catch { /* skip */ } return { ts: m[1], iteration: Number(m[2]), stage: m[3], ...j }; }).filter(Boolean) : [];
+  // The driver also records each session as an event, so the figure survives without the log.
+  const drive = fromLog.length ? fromLog : events.filter((e) => e.type === "session").map((e) => ({ ts: e.ts, iteration: e.iteration, stage: e.stage, turns: e.turns, usd: e.usd, isError: e.isError, result: "" }));
   const driveUsd = drive.reduce((s, d) => s + (d.usd ?? 0), 0);
 
   return { state: state && { goal: state.goal.id, sentence: state.goal.sentence, stage: state.stage, halt: state.halt, slices: state.slices.map((s) => ({ id: s.id, title: s.title, status: s.status, attempts: s.attempts, origin: s.origin })), holds: state.holds, defaults: state.defaults, reconcile: state.reconcile },
     totalMs: events.length ? Date.parse(events[events.length - 1].ts) - Date.parse(events[0].ts) : 0,
-    perStage, blocks: blocks.length, blocksByCode, guards: guards.length, guardsByGuard, halts, verdictEvents: verdictEvents.map((e) => ({ role: e.role, agent: e.agent, valid: e.valid, verdict: e.verdict, findings: e.findings, errors: e.errors })), verdicts, screenshots, browser: browser.map((b) => ({ host: b.host, kind: b.kind, stage: b.stage, agent: b.agent })), records: records.length, jev: jev.length, subagentUsage: subagentUsage.map((u) => ({ agent: u.agent, stage: u.stage, model: u.model, calls: u.calls, usd: u.usd })), usage, drive, driveUsd };
+    perStage, blocks: blocks.length, blocksByCode, guards: guards.length, guardsByGuard, halts, verdictEvents: verdictEvents.map((e) => ({ role: e.role, agent: e.agent, valid: e.valid, verdict: e.verdict, findings: e.findings, errors: e.errors })), verdicts, screenshots, browser: browser.map((b) => ({ host: b.host, kind: b.kind, stage: b.stage, agent: b.agent })), records: records.length, jev: jev.length, subagentUsage: subagentUsage.map((u) => ({ agent: u.agent, stage: u.stage, model: u.model, calls: u.calls, usd: u.usd, stops: u.stops ?? 1 })), usage, drive, driveUsd };
 }
 
 function count(list, key) {
@@ -74,7 +76,7 @@ export function renderAnalysis(a) {
   if (a.usage?.byStage) {
     L.push("", "## Cost per stage (harness price table)", "", "| Stage | Calls | Input | Cache read | Output | USD |", "|---|---|---|---|---|---|");
     for (const [stage, u] of Object.entries(a.usage.byStage)) L.push(`| ${stage} | ${u.calls} | ${u.input} | ${u.cacheRead} | ${u.output} | ${u.usd.toFixed(3)} |`);
-    L.push("", `Harness total: $${a.usage.totalUsd.toFixed(3)}. Driver total as reported by Claude Code: $${a.driveUsd.toFixed(3)} over ${a.drive.length} sessions.`);
+    L.push("", `Harness total: $${a.usage.totalUsd.toFixed(3)} (main $${(a.usage.mainUsd ?? 0).toFixed(3)}, subagents $${(a.usage.subagentUsd ?? 0).toFixed(3)}). Reported by Claude Code: $${a.driveUsd.toFixed(3)} over ${a.drive.length} sessions.`);
   }
   if (a.drive.length) {
     L.push("", "## Headless sessions", "", "| # | Stage at start | Turns | USD | Error | Result |", "|---|---|---|---|---|---|");
@@ -91,7 +93,7 @@ export function renderAnalysis(a) {
   L.push("", "## Browser", "", `${a.browser.length} host changes, ${a.screenshots.length} evidence files.`, "");
   for (const b of a.browser) L.push(`- ${b.agent ?? "main"} opened ${b.host} (${b.kind}) in stage ${b.stage}`);
   for (const s of a.screenshots) L.push(`- ${s.path} (${s.bytes} bytes)`);
-  if (a.subagentUsage.length) { L.push("", "## Subagent usage", "", "| Agent | Stage | Model | Calls | USD |", "|---|---|---|---|---|"); for (const u of a.subagentUsage) L.push(`| ${u.agent} | ${u.stage} | ${u.model} | ${u.calls} | ${u.usd} |`); }
+  if (a.subagentUsage.length) { L.push("", "## Subagent usage", "", "| Agent | Stage | Model | Calls | Stop | USD |", "|---|---|---|---|---|---|"); for (const u of a.subagentUsage) L.push(`| ${u.agent} | ${u.stage} | ${u.model} | ${u.calls} | ${u.stops} | ${u.usd} |`); }
   L.push("", "## Halts and holds", "");
   for (const h of a.halts) L.push(`- halt ${h.code} in ${h.stage}: ${h.reason}`);
   for (const h of a.state?.holds ?? []) L.push(`- hold ${h.id}: ${h.question} (blocks ${h.blocks.join(", ") || "nothing"})`);

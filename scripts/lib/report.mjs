@@ -46,7 +46,10 @@ export function renderReport(cwd, state) {
   if (usage?.byStage) {
     lines.push("## Cost per stage", "", "| Stage | Calls | Input | Cache read | Output | USD |", "|---|---|---|---|---|---|");
     for (const [stage, u] of Object.entries(usage.byStage)) lines.push(`| ${stage} | ${u.calls} | ${u.input} | ${u.cacheRead} | ${u.output} | ${u.usd.toFixed(3)} |`);
-    lines.push("", `Total: $${usage.totalUsd.toFixed(3)}`, "");
+    const sessions = events.filter((e) => e.type === "session" && typeof e.usd === "number");
+    lines.push("", `Total from the price table: $${usage.totalUsd.toFixed(3)} (main session $${(usage.mainUsd ?? 0).toFixed(3)}, subagents $${(usage.subagentUsd ?? 0).toFixed(3)}).`);
+    if (sessions.length) lines.push(`Reported by Claude Code: $${sessions.reduce((s, e) => s + e.usd, 0).toFixed(3)} over ${sessions.length} headless session(s). This is the number of record; the table is an estimate.`);
+    lines.push("");
   }
   if (state.holds.length) {
     lines.push("## Holds (need a human)", "");
