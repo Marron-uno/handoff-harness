@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // harness CLI. Every command prints one JSON object so the model and tests parse the same thing.
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic, nowIso } from "./lib/io.mjs";
 import { harnessPaths, hasHarness, pluginRoot } from "./lib/paths.mjs";
@@ -344,6 +344,28 @@ const commands = {
       out({ ok: true });
     }
     fail(`unknown jev subcommand ${sub}`);
+  },
+
+  // Copies a run's artifacts and its analysis into a folder, for recorded runs in docs/runs/.
+  snapshot(_, { flags }) {
+    if (!flags.to) fail("usage: snapshot --to <dir> [--log <drive log>]");
+    const p = harnessPaths(cwd);
+    const dest = join(cwd, String(flags.to)).startsWith("/") && String(flags.to).startsWith("/") ? String(flags.to) : join(cwd, String(flags.to));
+    mkdirSync(dest, { recursive: true });
+    const copied = [];
+    for (const f of ["events.jsonl", "usage.json", "report.md", "goal-card.md", "plan.json", "inventory.json", "preflight.json", "reconcile-input.json", "jev.jsonl", "lessons.md", "state.json"]) {
+      const src = join(p.dir, f);
+      if (existsSync(src)) { cpSync(src, join(dest, f)); copied.push(f); }
+    }
+    for (const d of ["verdicts", "evidence"]) {
+      const src = join(p.dir, d);
+      if (existsSync(src)) { cpSync(src, join(dest, d), { recursive: true }); copied.push(d + "/"); }
+    }
+    if (flags.log && existsSync(String(flags.log))) { cpSync(String(flags.log), join(dest, "drive.log")); copied.push("drive.log"); }
+    const analysis = renderAnalysis(analyzeRun(cwd, { driveLog: flags.log ? String(flags.log) : null }));
+    writeFileSync(join(dest, "analysis.md"), analysis);
+    copied.push("analysis.md");
+    out({ ok: true, dest, copied });
   },
 
   analyze(_, { flags }) {

@@ -187,6 +187,13 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   assert.match(analysis, /S-1-a1-r1-reviewer\.json \| reviewer \| block \| 1 \| 1 \|/);
   assert.match(analysis, /Invalid verdict attempts: 1/);
 
+  // A snapshot copies the artifacts and the analysis for a recorded run.
+  const snap = runCli(dir, ["snapshot", "--to", "docs/runs/test"]);
+  assert.equal(snap.json.ok, true, snap.stdout);
+  assert.ok(existsSync(join(dir, "docs/runs/test/analysis.md")));
+  assert.ok(existsSync(join(dir, "docs/runs/test/verdicts/S-1-a1-r1-critic.json")));
+  assert.ok(existsSync(join(dir, "docs/runs/test/events.jsonl")));
+
   // A second goal gets the next id and a fresh branch.
   const g2 = runCli(dir, ["goal", "new", "--sentence", "Add tag filtering", "--mode", "feature"]);
   assert.equal(g2.json.goal.id, "G-2");
