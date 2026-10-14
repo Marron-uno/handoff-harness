@@ -1,0 +1,50 @@
+{
+  "goal": "G-1",
+  "diffHash": "397e40f34afccce9",
+  "at": "2026-10-14T18:10:00.000Z",
+  "items": [
+    {
+      "id": "I-1",
+      "status": "out_of_scope",
+      "bucket": "jev_uncertain",
+      "evidence": [
+        { "type": "file", "path": "openspec/specs/notes/spec.md", "quote": "The library SHALL reject a note without a non-empty title and SHALL assign an id, the trimmed title, a body, tags and a creation timestamp to every created note." },
+        { "type": "file", "path": "src/notes.mjs", "quote": "if (!title || !title.trim()) throw new Error(\"title is required\");" }
+      ],
+      "note": "inScope: false. Already shipped before this goal and lives in the baseline spec openspec/specs/notes. createNote in src/notes.mjs rejects empty titles and sets id, title, body, tags, createdAt. No work for G-1."
+    },
+    {
+      "id": "I-2",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [ { "type": "verdict", "quote": "C-3,C-4" } ],
+      "note": "Already decided deterministically (S-1, commit 6481adf)."
+    },
+    {
+      "id": "I-3",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [ { "type": "verdict", "quote": "C-5" } ],
+      "note": "Already decided deterministically (S-1, commit 6481adf)."
+    },
+    {
+      "id": "I-4",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [ { "type": "verdict", "quote": "C-6" } ],
+      "note": "Already decided deterministically (S-2, commit 8522a62)."
+    },
+    {
+      "id": "I-5",
+      "status": "held",
+      "bucket": "jev_uncertain",
+      "evidence": [
+        { "type": "file", "path": "public/index.html", "quote": "<p id=\"count\">0 notes</p>" },
+        { "type": "file", "path": "src/server.mjs", "quote": "const file = join(root, req.url === \"/\" ? \"index.html\" : req.url);" },
+        { "type": "file", "path": ".harness/state.json", "quote": "H-1: What is the public URL of the deployed page? Only the owner knows. blocks S-3" }
+      ],
+      "note": "Not implemented. The page has a hardcoded \"0 notes\" and the server only serves static files, with no route or script that reads the store, so C-7 is not met. There are no tests for it. Slice S-3 (C-7) is still pending with 0 attempts and is blocked by hold H-1 (public URL). I am marking it held instead of proposing a new slice. S-3 already covers it and can go ahead once the owner answers H-1."
+    }
+  ],
+  "newSlices": []
+}

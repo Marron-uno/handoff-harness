@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-1",
+  "slice": "S-2",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "463f22c5ddd09869",
+  "verdict": "pass",
+  "summary": "C-6 is met. exportMarkdown(store) in src/export.mjs maps each note to a '## title' heading followed by the body, joined per note, so the output has one section per note with the body below it. The project check (npm test) passes 5 of 5, including the new test that counts '## ' headings and checks the body follows each title. No block findings and no unmet criteria. One note: the packet's diff section is empty, so the judgment rests on the new-file listing in the packet.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "note",
+      "file": null,
+      "line": null,
+      "issue": "The packet's 'Diff against HEAD' section is empty because both files are untracked (git status shows them as ??). The judgment used the 'New files' listing in the packet instead. The verdict is unaffected because the file contents match the listing.",
+      "suggestion": "Include untracked new files in the packet diff so that the diff section is not blank.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/.harness/packets/S-2-a1.md",
+          "quote": "## Diff against HEAD"
+        }
+      ],
+      "preExisting": false,
+      "disputed": false
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/src/export.mjs",
+          "quote": "export function exportMarkdown(store) {"
+        },
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/tests/export.test.mjs",
+          "quote": "assert.equal(md.match(/^## /gm).length, 2);"
+        },
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/handoff/HANDOFF.md",
+          "quote": "- C-6: `exportMarkdown(store)` returns one `## title` section per note with the body below it."
+        },
+        {
+          "type": "command",
+          "quote": "✔ exportMarkdown writes one section per note with the body below (1.147584ms)"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-14T18:02:34.825Z"
+}

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-1",
+  "slice": "S-1",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "d5f5d92b50618bd1",
+  "verdict": "pass",
+  "summary": "Slice S-1 meets C-3, C-4 and C-5. listNotes in src/notes.mjs now copies the store before filtering and sorting, sorts by createdAt descending, and filters by tag case-insensitively. The project check 'npm test' passes (4 tests, 0 failures). Observations only, none blocking: createdAt comparison relies on the ISO-8601 strings produced by createNote, and notes with identical createdAt keep insertion order (stable sort), which is acceptable for newest-first.",
+  "findings": [],
+  "criteria": [
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "return notes.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "assert.deepEqual(listNotes(store).map((n) => n.title), [\"new\", \"old\"]);"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes sorts newest first\", () => {"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "let notes = [...store];"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "assert.equal(store.length, 1);"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes returns a copy\", () => {"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "notes = notes.filter((n) => n.tags.some((t) => t.toLowerCase() === wanted));"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "assert.deepEqual(listNotes(store, { tag: \"work\" }).map((n) => n.title), [\"a\"]);"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes filters by tag, case-insensitively\", () => {"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-14T18:01:09.363Z"
+}

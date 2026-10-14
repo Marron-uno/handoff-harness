@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "agent": "spec-reviewer",
+  "goal": "G-1",
+  "slice": null,
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "744fb42f7f74539f",
+  "verdict": "pass",
+  "summary": "All five in-scope criteria (C-3 to C-7) are covered by behavioral requirements, scenarios and tasks. The tag case-insensitivity question is recorded as default D-1 in plan.json, and the deploy-URL hold H-1 is not decided in any requirement. One major finding: the export scenario asserts a store-order guarantee the handoff does not state. One minor finding on the page-count scenario. No block findings.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "major",
+      "issue": "The export scenario says headings appear 'in store order'. The handoff only says one `## title` section per note with the body below it. Ordering is not described in the source, so the scenario adds unrequested behavior. It is also ambiguous next to the newest-first sorting of listNotes. A critic cannot tell whether export should follow store order or sorted order.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        {"type": "file", "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md", "quote": "the output contains two `## ` headings in store order (C-6)"},
+        {"type": "file", "path": "handoff/HANDOFF.md", "quote": "`exportMarkdown(store)` returns one `## title` section per note with the body below it."}
+      ],
+      "file": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+      "suggestion": "Drop 'in store order', or record export ordering as a default in .harness/plan.json. Add a check that each body appears below its heading."
+    },
+    {
+      "id": "F-2",
+      "severity": "minor",
+      "issue": "The Export requirement's body clause is not exercised by its scenario, which checks only the two headings. The count scenario covers only a generic N and does not exercise 0 or 1. The handoff does not say whether '1 notes' is acceptable, so the spec does not pin that down.",
+      "authority": "criterion:C-7",
+      "evidence": [
+        {"type": "file", "path": "openspec/changes/lantern-v0-2/specs/notes/spec.md", "quote": "it shows \"N notes\" (C-7)"}
+      ],
+      "file": "openspec/changes/lantern-v0-2/specs/notes/spec.md",
+      "suggestion": "Add a concrete N (for example 3 notes gives '3 notes') and an empty-store scenario."
+    },
+    {
+      "id": "F-3",
+      "severity": "note",
+      "issue": "I-1 (C-1, C-2) is marked inScope false in the inventory and is already in the current spec. Leaving it out of the delta is correct. The hold H-1 (public URL) appears in no requirement, which is correct, but S-3 stays blocked on it in plan.json.",
+      "authority": "handoff:handoff/HANDOFF.md",
+      "evidence": [
+        {"type": "file", "path": "handoff/HANDOFF.md", "quote": "What is the public URL of the deployed page? Hold: only the owner knows."}
+      ]
+    }
+  ],
+  "criteria": [],
+  "writtenAt": "2026-10-14T18:00:11.338Z"
+}

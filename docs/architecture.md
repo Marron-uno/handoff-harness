@@ -61,6 +61,10 @@ The critic runs on the cheap model first. After two rejections of the same slice
 
 `harness preflight` writes `.harness/packets/<slice>-a<attempt>.md` (`scripts/lib/packet.mjs`): the slice, the text of its criteria from the inventory, declared paths, changed files with line counts, the diff against HEAD capped at the slice diff budget, and the content of new files, which the diff omits. The critic and review briefs name it. `harness verdict template` (`verdictTemplate` in `machine.mjs`) prints a skeleton for the current stage: agent from the escalation rule, goal, slice, attempt, round, work hash and one `unverified` entry per criterion, with an empty summary and a block verdict with no block finding so it fails validation until filled. Both are run artifacts under `.harness/` and never count as work.
 
+## Holds
+
+A plan question of kind `hold` blocks the slices named in `blocks`; `nextReadySlice` never starts a blocked slice and the goal predicate does not count it as missing. When every unheld slice is done and a hold still blocks a pending one, `decideReport` rests the run in `awaiting_human` with code `holds_open` after the report is written, instead of moving to `done`. `harness hold answer --id H-n --answer "..."` (`answerHold` in `machine.mjs`) removes the hold, records the answer as the next applied default, and, when the run was resting on it, calls `advance` so the held slice starts with the build brief. Hold ids are numbered past every hold ever raised. The headless driver, once a run rests, runs `harness report --refresh` so the committed report carries the session cost it just recorded.
+
 ## Jev
 
 `scripts/lib/jev/` is optional and off by default. See `docs/jev.md`.

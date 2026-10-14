@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "agent": "reviewer",
+  "goal": "G-1",
+  "slice": "S-1",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "d5f5d92b50618bd1",
+  "verdict": "pass",
+  "summary": "Diff touches only declared paths (src/notes.mjs, tests/**). listNotes copies the store before filtering and sorting, so the store is never mutated; it sorts createdAt descending and filters tags case-insensitively, which matches decision D-1. npm test passes 4 of 4. No secrets, no weakened tests, no scope creep. Minor note: the 'copy' test does not exercise the sort path, but the copy is made before sort, so C-4 holds.",
+  "findings": [],
+  "criteria": [
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "return notes.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes sorts newest first\", () => {"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "let notes = [...store];"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes returns a copy\", () => {"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "src/notes.mjs",
+          "quote": "notes = notes.filter((n) => n.tags.some((t) => t.toLowerCase() === wanted));"
+        },
+        {
+          "type": "file",
+          "path": "tests/notes.test.mjs",
+          "quote": "test(\"listNotes filters by tag, case-insensitively\", () => {"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-14T18:02:30.000Z"
+}

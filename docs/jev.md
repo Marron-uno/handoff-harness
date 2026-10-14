@@ -35,6 +35,8 @@ Checked against the Vercel docs on 2026-10-14. The gateway exposes TypeSafe's ow
 5. `.harness/profile.json`: `"jev": { "enabled": true, "provider": "vercel" }`. Create the goal with `--jev`.
 6. After the run, `harness jev calibrate --markdown` is the measure of what the layer was worth.
 
+Measured on [run 3](runs/2026-10-14-fixture-run-3/README.md): eleven answers through the gateway for $0.00034, 253 to 595 ms each, every gate decision `accept`, two inventory items prefiltered into the uncertain bucket and both outcomes recorded.
+
 ## Failure policy
 
 429 retries once after `retry-after`, then skips. 529, timeouts and auth errors skip. 400 with `guardrail_uninspectable` skips and logs it. 422 fails loudly because it means the questions file is wrong. A skip always falls back to the full judge path, so a vendor outage never blocks a run.

@@ -1,7 +1,7 @@
 {
   "name": "handoff-harness",
   "displayName": "Handoff Harness",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Multi-stage coding harness for Claude Code: turns a handoff into shipped code under deterministic guards, JSON verdicts, and per-stage cost accounting.",
   "author": {
     "name": "Joe Marron",

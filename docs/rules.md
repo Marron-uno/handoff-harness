@@ -47,6 +47,9 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Oscillation on the work hash (A B A B) | Stop hook | Revert loops |
 | Time and cost budgets per goal | Stop hook | Spend is attributed, so it can be capped |
 | Goal completion is a script predicate | `goal check` | The model never declares itself done |
+| A slice still blocked by a hold rests the run in `awaiting_human`, never `done` | Stop hook, report stage | Run 3 ended "done" with the UI slice unbuilt behind a hold; the model noticed, the script did not |
+| Hold ids never repeat, and an answer becomes an applied default | `hold answer` | The events log must name one question per id |
+| The driver refreshes the committed report with Claude Code's session cost | headless driver, `report --refresh` | The report is written inside the session, before the figure exists |
 | Harness artifacts never count as work | work hash | Writing a report must not make a verdict stale |
 | Transcript usage counted once per message id | usage attribution | Run 2's table read 3.2x Claude Code's figure: one row per content block, each summed |
 | Subagent usage recorded as the delta since the agent's last stop | SubagentStop | A judge sent back by the hook stopped twice and its whole transcript was billed twice |

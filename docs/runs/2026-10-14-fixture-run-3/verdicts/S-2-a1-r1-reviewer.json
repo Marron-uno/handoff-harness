@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "agent": "reviewer",
+  "goal": "G-1",
+  "slice": "S-2",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "463f22c5ddd09869",
+  "verdict": "pass",
+  "summary": "C-6 is met. exportMarkdown(store) emits a '## title' heading followed by the body for each note. The change is confined to the declared paths (src/export.mjs and tests/export.test.mjs, both new). npm test passes 5 of 5, including the new export test. No existing tests were weakened and I found no secrets or placeholder data.",
+  "findings": [],
+  "criteria": [
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/src/export.mjs",
+          "quote": "return store.map((n) => `## ${n.title}\\n\\n${n.body}\\n`).join(\"\\n\");"
+        },
+        {
+          "type": "file",
+          "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-3/tests/export.test.mjs",
+          "quote": "assert.match(md, /## first\\n+body one/);"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-14T18:04:00.000Z"
+}
