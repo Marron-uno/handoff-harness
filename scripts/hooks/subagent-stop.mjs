@@ -7,7 +7,7 @@ import { readJson, hookBlock } from "../lib/io.mjs";
 import { verdictPath } from "../lib/machine.mjs";
 import { validateVerdict } from "../lib/verdict.mjs";
 import { workHash } from "../lib/git.mjs";
-import { summarizeAgentTranscript, costOf } from "../lib/usage.mjs";
+import { summarizeAgentTranscript, usageDelta, costOf } from "../lib/usage.mjs";
 import { jevVerdictGate } from "../lib/jev/verdict-gate.mjs";
 import { readEvents } from "../lib/events.mjs";
 
@@ -19,9 +19,15 @@ const JUDGES = { critic: "critic", "critic-strong": "critic", reviewer: "review"
 
 if (input.agent_transcript_path && existsSync(input.agent_transcript_path)) {
   // Attribute to the stage the agent was spawned in, not the stage at the time it finished.
-  const start = readEvents(cwd, (e) => e.type === "note" && e.text === "subagent start" && e.agentId && e.agentId === input.agent_id).pop();
-  const row = summarizeAgentTranscript(input.agent_transcript_path, { stage: start?.stage ?? state.stage, agent: agent ?? "unknown" });
-  ctx.event({ type: "usage", scope: "subagent", agent: row.agent, stage: row.stage, slice: state.slice?.id ?? null, model: row.model, calls: row.calls, input: row.input, cacheWrite: row.cacheWrite, cacheRead: row.cacheRead, output: row.output, usd: Number(costOf(row, profile.pricing).toFixed(4)) });
+  const agentId = input.agent_id ?? null;
+  const start = readEvents(cwd, (e) => e.type === "note" && e.text === "subagent start" && e.agentId && e.agentId === agentId).pop();
+  const total = summarizeAgentTranscript(input.agent_transcript_path, { stage: start?.stage ?? state.stage, agent: agent ?? "unknown" });
+  // This hook fires again when a blocked judge stops a second time; record only what is new.
+  const previous = agentId ? readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent" && e.agentId === agentId) : [];
+  const row = usageDelta(total, previous);
+  if (row.calls > 0 || row.output > 0) {
+    ctx.event({ type: "usage", scope: "subagent", agentId, agent: row.agent, stage: row.stage, slice: state.slice?.id ?? null, model: row.model, calls: row.calls, input: row.input, cacheWrite: row.cacheWrite, cacheWrite1h: row.cacheWrite1h, cacheRead: row.cacheRead, output: row.output, usd: Number(costOf(row, profile.pricing).toFixed(4)), stops: previous.length + 1, totalCalls: total.calls });
+  }
 }
 
 const role = agent ? JUDGES[agent] : null;

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { runCli, runHook, sh } from "./helpers.mjs";
 import { fixtureRepo, writeIntake, state, stop, writeVerdict, hash } from "./fixture.mjs";
@@ -93,7 +93,7 @@ test("SubagentStop blocks a judge that wrote no verdict and accepts a valid one 
   const s = JSON.parse(readFileSync(join(dir, ".harness/state.json"), "utf8"));
   s.stage = "critic"; s.slice.buildDone = true;
   writeFileSync(join(dir, ".harness/state.json"), JSON.stringify(s));
-  const transcript = join(dir, "agent.jsonl");
+  const transcript = join(dir, ".harness", "agent.jsonl"); // outside the work tree, so appending to it keeps the work hash
   writeFileSync(transcript, [
     JSON.stringify({ type: "assistant", timestamp: new Date().toISOString(), message: { model: "claude-haiku-5-5", usage: { input_tokens: 1000, cache_creation_input_tokens: 200, cache_read_input_tokens: 5000, output_tokens: 300 } } }),
     JSON.stringify({ type: "user", message: { content: "x" } }),
@@ -113,10 +113,22 @@ test("SubagentStop blocks a judge that wrote no verdict and accepts a valid one 
   writeVerdict(dir, path, { agent: "critic", slice: "S-1", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-3", status: "met" }] });
   r = runHook("subagent-stop", input);
   assert.equal(r.json, null, r.stdout + r.stderr);
-  const usage = runCli(dir, ["events", "--type", "usage"]).json.events;
-  assert.equal(usage.length, 4, "one usage event per SubagentStop call");
+  let usage = runCli(dir, ["events", "--type", "usage"]).json.events;
+  assert.equal(usage.length, 1, "four stops of the same transcript record its usage once");
   assert.equal(usage[0].input, 1500);
   assert.equal(usage[0].cacheRead, 5000);
   assert.equal(usage[0].agent, "critic");
+  assert.equal(usage[0].agentId, "a1");
   assert.ok(usage[0].usd > 0);
+  // The judge keeps working after a block and stops again: only the new calls are recorded.
+  appendFileSync(transcript, "\n" + JSON.stringify({ type: "assistant", timestamp: new Date().toISOString(), message: { id: "msg_x", model: "claude-haiku-5-5", usage: { input_tokens: 40, output_tokens: 7 } } }) + "\n" + JSON.stringify({ type: "assistant", timestamp: new Date().toISOString(), message: { id: "msg_x", model: "claude-haiku-5-5", usage: { input_tokens: 40, output_tokens: 7 } } }));
+  r = runHook("subagent-stop", input);
+  assert.equal(r.json, null, r.stdout + r.stderr);
+  usage = runCli(dir, ["events", "--type", "usage"]).json.events;
+  assert.equal(usage.length, 2);
+  assert.equal(usage[1].calls, 1, "two rows with one message id are one call");
+  assert.equal(usage[1].input, 40);
+  assert.equal(usage[1].output, 7);
+  assert.equal(usage[1].stops, 2);
+  assert.equal(usage[1].totalCalls, 3);
 });

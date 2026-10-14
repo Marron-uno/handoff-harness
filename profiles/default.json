@@ -179,35 +179,49 @@
     "note": "author: true adds the spec stage: intake writes or adopts an OpenSpec change that cites the inventory, `harness spec check` verifies it, the spec-reviewer judges it before the goal card, approval commits it, record ticks its tasks, and the goal needs every task ticked. `--openspec` or `--no-openspec` on `goal new` overrides it per goal."
   },
   "pricing": {
+    "note": "USD per million tokens from the published price list of 2026-10-14. cacheWrite is the five-minute write, cacheWrite1h the one-hour write Claude Code uses for the main conversation on a subscription. Haiku has a long-context tier over 100k prompt tokens. Set these to your contract.",
     "perMillion": {
       "default": {
-        "input": 3,
-        "output": 15,
-        "cacheWrite": 3.75,
-        "cacheRead": 0.3
-      },
-      "haiku": {
-        "input": 1,
-        "output": 5,
-        "cacheWrite": 1.25,
+        "input": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite1h": 4,
         "cacheRead": 0.1
       },
+      "haiku": {
+        "input": 0.1,
+        "output": 0.5,
+        "cacheWrite": 0.125,
+        "cacheWrite1h": 0.2,
+        "cacheRead": 0.01,
+        "longContext": {
+          "over": 100000,
+          "input": 0.5,
+          "output": 2.5,
+          "cacheWrite": 0.625,
+          "cacheWrite1h": 1,
+          "cacheRead": 0.05
+        }
+      },
       "sonnet": {
-        "input": 3,
-        "output": 15,
-        "cacheWrite": 3.75,
-        "cacheRead": 0.3
+        "input": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite1h": 4,
+        "cacheRead": 0.1
       },
       "opus": {
-        "input": 5,
-        "output": 25,
-        "cacheWrite": 6.25,
-        "cacheRead": 0.5
+        "input": 4,
+        "output": 20,
+        "cacheWrite": 5,
+        "cacheWrite1h": 8,
+        "cacheRead": 0.2
       },
       "fable": {
         "input": 15,
         "output": 75,
         "cacheWrite": 18.75,
+        "cacheWrite1h": 30,
         "cacheRead": 1.5
       }
     }
