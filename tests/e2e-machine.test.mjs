@@ -141,7 +141,10 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   nx = runCli(dir, ["next"]).json;
   assert.equal(nx.stage, "record");
   assert.match(nx.brief, /Stage: record, slice S-2/);
-  assert.equal(state(dir).guards.blocks, blocksBefore, "cli advances are not stop-hook blocks");
+  // A transition resets the counter, so the check is "never increased": no block event was logged.
+  assert.ok(state(dir).guards.blocks <= blocksBefore, "cli advances are not stop-hook blocks");
+  const blockEvents = runCli(dir, ["events", "--type", "block", "--last", "500"]).json.events;
+  assert.ok(!blockEvents.some((e) => e.stage === "review" && e.slice === "S-2"), "no block event for a cli-driven review transition");
   assert.equal(runCli(dir, ["record"]).json.ok, true);
   r = stop(dir);
   assert.match(r.json.reason, /Stage: reconcile/);
