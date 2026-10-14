@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync, appendFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { runCli, runHook, sh } from "./helpers.mjs";
 import { fixtureRepo, writeIntake, state, stop, writeVerdict, hash } from "./fixture.mjs";
@@ -113,6 +113,7 @@ test("SubagentStop blocks a judge that wrote no verdict and accepts a valid one 
   writeVerdict(dir, path, { agent: "critic", slice: "S-1", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-3", status: "met" }] });
   r = runHook("subagent-stop", input);
   assert.equal(r.json, null, r.stdout + r.stderr);
+  assert.deepEqual(readdirSync(join(dir, ".harness/verdicts/rejected")).sort(), ["S-1-a1-r1-critic-rejected-1.json", "S-1-a1-r1-critic-rejected-2.json"], "each rejected verdict is kept as a fixture");
   let usage = runCli(dir, ["events", "--type", "usage"]).json.events;
   assert.equal(usage.length, 1, "four stops of the same transcript record its usage once");
   assert.equal(usage[0].input, 1500);

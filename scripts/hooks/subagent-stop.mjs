@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // SubagentStop: a judge may not finish without a valid verdict. Usage from the subagent
 // transcript is attributed to the stage. The optional Jev gate runs on valid verdicts.
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync, readdirSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
 import { bootstrap, agentTypeOf } from "./_common.mjs";
 import { readJson, hookBlock } from "../lib/io.mjs";
 import { verdictPath } from "../lib/machine.mjs";
@@ -42,6 +43,14 @@ if (role && judging) {
   }
   const result = validateVerdict(cwd, readJson(path, null), { state, profile, workHash: workHash(cwd), role });
   if (!result.ok && !input.stop_hook_active) {
+    // Keep the rejected file: it is the fixture a replay eval needs to prove a brief or
+    // skeleton change would have prevented the fumble.
+    try {
+      const dir = join(dirname(path), "rejected");
+      mkdirSync(dir, { recursive: true });
+      const n = readdirSync(dir).filter((f) => f.startsWith(basename(path, ".json"))).length + 1;
+      copyFileSync(path, join(dir, `${basename(path, ".json")}-rejected-${n}.json`));
+    } catch { /* the event below still records the errors */ }
     ctx.event({ type: "verdict", role, agent, path, valid: false, errors: result.errors.slice(0, 10) });
     ctx.save();
     hookBlock(`The verdict at ${path} is invalid:\n- ${result.errors.join("\n- ")}\nFix the file, then stop.`);

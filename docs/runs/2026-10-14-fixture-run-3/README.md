@@ -12,7 +12,7 @@ Goal: `build all of the handoff` on the Lantern Notes fixture, the same command 
 | Invalid verdict writes | 2 of 7 (one critic, twice on the same file) | 5 of 14 |
 | Critic tool calls per slice | 4 then 2 then 2 across the retries, and 10 | 17, 18, 20, 27 |
 | Reviewer tool calls per slice | 2 and 3, no browser (the UI slice was never built) | 3 to 17, two screenshots |
-| Jev | 11 answers over 18 events, all 6 gate decisions `accept`, 2 inventory items prefiltered, 2 outcomes recorded, $0.00034 billed by the gateway, 253 to 595 ms per call | off |
+| Jev | 11 answers over 18 events, all 5 gate decisions `accept`, 2 inventory items prefiltered, 2 outcomes recorded, $0.00034 billed by the gateway, 253 to 595 ms per call | off |
 
 ## Timeline (UTC)
 
@@ -30,7 +30,7 @@ Goal: `build all of the handoff` on the Lantern Notes fixture, the same command 
 
 ## What Jev did
 
-Every call went through `https://ai-gateway.vercel.sh/typesafe/v1/systemone` with the model `typesafe-ai/jev`, the request and response shapes of the direct API, and the gateway's own cost in the response. Eleven answers cost $0.00034 in total and took a quarter to half a second each, so the layer added about four seconds and nothing to the bill. All six gate decisions were `accept`; the closest call was the spec reviewer's third finding at 0.42 against a 0.4 threshold for evidence support. The inventory prefilter put both undecided items in the uncertain bucket, which is the honest answer for an out-of-scope item and a held one. With two outcomes, `harness jev calibrate` has one bin and nothing to say yet; calibration needs tens of outcomes, which means more runs.
+Every call went through `https://ai-gateway.vercel.sh/typesafe/v1/systemone` with the model `typesafe-ai/jev`, the request and response shapes of the direct API, and the gateway's own cost in the response. Eleven answers cost $0.00034 in total and took a quarter to half a second each, so the layer added about four seconds and nothing to the bill. All five gate decisions (the spec verdict, two critics, two reviewers) were `accept`; the closest call was the spec reviewer's third finding at 0.42 against a 0.4 threshold for evidence support. The inventory prefilter put both undecided items in the uncertain bucket, which is the honest answer for an out-of-scope item and a held one. With two outcomes, `harness jev calibrate` has one bin and nothing to say yet; calibration needs tens of outcomes, which means more runs.
 
 ## What the run-2 fixes did
 
@@ -44,7 +44,7 @@ Every call went through `https://ai-gateway.vercel.sh/typesafe/v1/systemone` wit
 2. **The report could not carry Claude Code's figure.** The driver records the session cost after the session, and the report is written inside it. Fixed in 0.3.3: once the run rests, the driver runs `harness report --refresh`, which re-renders and re-commits the report without advancing the machine; this run's `report.md` is the first with both numbers.
 3. **The hold itself was misplaced.** A public URL is not needed to build or verify the page on the dev server; run 2's intake knew that and this one did not. Model judgment, so only the intake briefs changed: a hold blocks a slice only when the slice cannot be built or verified without the answer, and a deployment URL never blocks dev-server verification.
 4. **Evidence shape fumbles** are the remaining verdict failures. Fixed in the briefs and the skeleton note; to be measured on the next run.
-5. **Jev accepted everything.** Six gate decisions, no re-review, no block. Either the judges were right or the thresholds are low; two outcomes cannot tell. The layer is cheap enough to leave on and let calibration accumulate.
+5. **Jev accepted everything.** Five gate decisions, no re-review, no block. Either the judges were right or the thresholds are low; two outcomes cannot tell. The layer is cheap enough to leave on and let calibration accumulate.
 
 ## What to run next
 

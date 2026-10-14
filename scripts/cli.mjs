@@ -19,6 +19,8 @@ import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
 import { attributeByStage, subagentUsageRows } from "./lib/usage.mjs";
 import { analyzeRun, renderAnalysis } from "./lib/analyze.mjs";
+import { runMetrics } from "./lib/metrics.mjs";
+import { retroSignals, renderProposal, harnessVersion } from "./lib/retro.mjs";
 import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
 import { askJev, resolveJevConfig } from "./lib/jev/client.mjs";
 import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
@@ -444,6 +446,23 @@ const commands = {
     writeFileSync(join(dest, "analysis.md"), analysis);
     copied.push("analysis.md");
     out({ ok: true, dest, copied });
+  },
+
+  // The deterministic half of a retrospective. Writes a proposal skeleton under .harness/proposals/;
+  // the retro skill fills in the findings. Refuses to run mid-goal unless --force.
+  retro(_, { flags }) {
+    const state = requireState();
+    if (!RESTING.has(state.stage) && !flags.force) fail(`the run is in ${state.stage}, not resting; a retro reads a finished run (use --force to override)`);
+    const profile = loadProfile(cwd);
+    const p = harnessPaths(cwd);
+    const metrics = runMetrics(p.dir, { driveLog: flags.log ? String(flags.log) : null });
+    const signals = retroSignals(p.dir, metrics, { profile });
+    const date = nowIso().slice(0, 10);
+    const path = flags.out ? String(flags.out) : join(p.dir, "proposals", `${date}-${state.goal.id}-retro.md`);
+    const text = renderProposal({ metrics, signals, state, version: harnessVersion(), date });
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, text);
+    out({ ok: true, path, signals: signals.map((s) => `${s.id} [${s.severity}] ${s.text.slice(0, 100)}`), metrics: { stage: metrics.stage, slicesDone: metrics.slicesDone, slicesHeld: metrics.slicesHeld, minutes: metrics.minutes, costReported: metrics.costReported, costRatio: metrics.costRatio, blocks: metrics.blocks, guardDenials: metrics.guardDenials, invalidVerdicts: metrics.invalidVerdicts, verdictWrites: metrics.verdictWrites, criticCalls: metrics.criticCalls } });
   },
 
   analyze(_, { flags }) {

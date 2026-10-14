@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { readJson, readLines } from "./io.mjs";
 import { harnessPaths } from "./paths.mjs";
 import { readEvents } from "./events.mjs";
+import { runMetrics } from "./metrics.mjs";
 
 function fmtMin(ms) { return `${(ms / 60000).toFixed(1)} min`; }
 
@@ -55,7 +56,8 @@ export function analyzeRun(cwd, { driveLog = null } = {}) {
   const drive = fromLog.length ? fromLog : events.filter((e) => e.type === "session").map((e) => ({ ts: e.ts, iteration: e.iteration, stage: e.stage, turns: e.turns, usd: e.usd, isError: e.isError, result: "" }));
   const driveUsd = drive.reduce((s, d) => s + (d.usd ?? 0), 0);
 
-  return { state: state && { goal: state.goal.id, sentence: state.goal.sentence, stage: state.stage, halt: state.halt, slices: state.slices.map((s) => ({ id: s.id, title: s.title, status: s.status, attempts: s.attempts, origin: s.origin })), holds: state.holds, defaults: state.defaults, reconcile: state.reconcile },
+  const metrics = runMetrics(p.dir, { driveLog: driveLog && existsSync(driveLog) ? driveLog : null });
+  return { metrics, state: state && { goal: state.goal.id, sentence: state.goal.sentence, stage: state.stage, halt: state.halt, slices: state.slices.map((s) => ({ id: s.id, title: s.title, status: s.status, attempts: s.attempts, origin: s.origin })), holds: state.holds, defaults: state.defaults, reconcile: state.reconcile },
     totalMs: events.length ? Date.parse(events[events.length - 1].ts) - Date.parse(events[0].ts) : 0,
     perStage, blocks: blocks.length, blocksByCode, guards: guards.length, guardsByGuard, halts, verdictEvents: verdictEvents.map((e) => ({ role: e.role, agent: e.agent, valid: e.valid, verdict: e.verdict, findings: e.findings, errors: e.errors })), verdicts, screenshots, browser: browser.map((b) => ({ host: b.host, kind: b.kind, stage: b.stage, agent: b.agent })), records: records.length, jev: jev.length, subagentUsage: subagentUsage.map((u) => ({ agent: u.agent, stage: u.stage, model: u.model, calls: u.calls, usd: u.usd, stops: u.stops ?? 1 })), usage, drive, driveUsd };
 }
@@ -69,6 +71,12 @@ function count(list, key) {
 export function renderAnalysis(a) {
   const L = [];
   if (a.state) L.push(`# Run analysis: ${a.state.goal} "${a.state.sentence}"`, "", `Final stage: ${a.state.stage}${a.state.halt ? ` (${a.state.halt.code}: ${a.state.halt.reason})` : ""}. Wall clock from first to last event: ${fmtMin(a.totalMs)}.`, "");
+  if (a.metrics) {
+    const m = a.metrics;
+    L.push("## Metrics", "", "| Metric | Value |", "|---|---|");
+    for (const [k, v] of [["slices done / held / total", `${m.slicesDone} / ${m.slicesHeld} / ${m.slicesTotal}`], ["minutes", m.minutes], ["sessions, turns", `${m.sessions}, ${m.turns}`], ["cost reported by Claude Code", m.costReported], ["cost from the price table", `${m.costTable ?? "n/a"} (${m.costRatio ?? "n/a"}x)`], ["stop-hook blocks", m.blocks], ["guard denials", m.guardDenials], ["halts", m.halts], ["verdict writes, invalid", `${m.verdictWrites}, ${m.invalidVerdicts}`], ["judges that stopped more than once", m.judgeStopsExtra], ["critic tool calls per slice", m.criticCallsPerSlice.map((c) => `${c.slice}: ${c.calls}`).join(", ") || "none"], ["reviewer tool calls per slice", m.reviewerCallsPerSlice.map((c) => `${c.slice}: ${c.calls}`).join(", ") || "none"], ["screenshots", m.screenshots], ["jev answers, routes", `${m.jevAnswers}, ${Object.entries(m.jevRoutes).map(([k, v]) => `${k} ${v}`).join(" ") || "none"}`]]) L.push(`| ${k} | ${v} |`);
+    L.push("");
+  }
   L.push("## Slices", "", "| Slice | Title | Status | Attempts | Origin |", "|---|---|---|---|---|");
   for (const s of a.state?.slices ?? []) L.push(`| ${s.id} | ${s.title} | ${s.status} | ${s.attempts} | ${s.origin ?? ""} |`);
   L.push("", "## Time per stage", "", "| Stage | Visits | Time |", "|---|---|---|");
