@@ -12,7 +12,7 @@ Goal: `build all of the handoff` on the Lantern Notes fixture, with the spec sta
 | Cost from the harness price table | $5.48 (3.2x) | $2.27 (1.8x) |
 | Guard denials | 2, one false positive hit twice | 1, a false positive |
 | Invalid verdict attempts caught by the validator | 5 of 14 writes, all corrected by the judge after the SubagentStop reminder | 0 |
-| Browser | the reviewer opened `localhost:4173` twice, two screenshots as evidence | once, one screenshot |
+| Browser | the reviewer verified both UI slices in Chrome on `localhost:4173`, two screenshots as evidence (the events log shows one host change because the host never changed; the S-4 visit is recorded in that verdict's `browser` note) | once, one screenshot |
 | Spec stage | change amended by intake, 3 requirements, 5 scenarios, 4 tasks, 5 of 5 criteria cited, spec reviewer passed with 4 minor findings, change committed at approval, 4 of 4 tasks ticked by record | not available |
 
 ## Timeline (UTC)
