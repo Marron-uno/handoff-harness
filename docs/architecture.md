@@ -5,17 +5,25 @@
 `.harness/state.json` is the single source of truth for a goal. It is written only by `scripts/cli.mjs` and by the hooks; the model never edits it. Its schema is `schemas/state.schema.json`, and every write validates against it. `.harness/events.jsonl` is the append-only log that every report, lesson and cost table is rendered from.
 
 ```
-goal new ─▶ intake ─▶ awaiting_approval ─▶ planning ─▶ building ─▶ preflight ─▶ critic ─▶ review ─▶ record ─┐
-                                                          ▲                                                  │
-                                                          └──────────── next slice ◀─────────────────────────┤
-                                                                                                             ▼
-                                                   report ◀── reconcile (adds slices for missing items) ◀────┘
-                                                     │
-                                                     ▼
-                                                   done
+goal new ─▶ intake ─▶ [spec_review] ─▶ awaiting_approval ─▶ planning ─▶ building ─▶ preflight ─▶ critic ─▶ review ─▶ record ─┐
+              ▲             │                                                 ▲                                                  │
+              └── block ────┘                                                 └──────────── next slice ◀─────────────────────────┤
+                                                                                                                                ▼
+                                                                      report ◀── reconcile (adds slices for missing items) ◀────┘
+                                                                        │
+                                                                        ▼
+                                                                      done
 ```
 
-Resting stages, where the Stop hook lets the session end: `awaiting_approval`, `awaiting_human`, `budget_exceeded`, `halted`, `done`.
+`spec_review` exists only when the spec stage is on (`openspec.author` in the profile or `--openspec` on the goal). Resting stages, where the Stop hook lets the session end: `awaiting_approval`, `awaiting_human`, `budget_exceeded`, `halted`, `done`.
+
+## Spec stage
+
+With the spec stage on, the goal builds from an OpenSpec change under `openspec/changes/<change>/`, named after the goal or adopted with `--change`. The inventory stays the authority for ids: intake writes it from the sources as always, then writes or amends the change so that it cites those ids. `scripts/lib/openspec.mjs` holds the deterministic side: a parser for delta specs (`## ADDED Requirements`, `### Requirement:`, `#### Scenario:` with WHEN and THEN) and for `tasks.md`, the pinned validator run as `openspec validate <change> --strict --json`, and the coverage check: every in-scope criterion id appears in the change, every task cites an id, every task is owned by exactly one slice of the plan. `harness spec check` prints the result; the intake handler runs the same check, so the stage cannot end on an unchecked change.
+
+The `spec-reviewer` judges what the script cannot: whether each item's behavior is really specified, whether requirements are testable, whether anything is invented, whether open questions became defaults or holds. Its verdict uses the same schema as the other judges, with `slice` null, `attempt` equal to `state.spec.attempt`, and empty `criteria`; the file is `verdicts/spec-a<n>-spec-reviewer.json`. A block sends the run back to intake with the findings; after `caps.maxAttempts` blocks the spec is a human's problem.
+
+Approval (`goal approve` or `--auto-approve`) commits the change folder as `spec: <change> (<goal>)`, so the first slice starts from a clean tree and preflight's slice-paths check never sees spec files as stray edits. `record` ticks the slice's tasks in `tasks.md` after the judges and before the commit, so the tick lands in the slice commit and never in a reviewed diff. The goal predicate requires every task ticked, except tasks owned by a slice a human skipped or held. Archiving (`openspec archive <change> --yes`) merges the delta into `openspec/specs`, which is protected during a run; it is a human step, printed in the report.
 
 ## One machine, two entry points
 
@@ -64,7 +72,7 @@ The critic runs on the cheap model first. After two rejections of the same slice
   plan.json            slices and open questions
   goal-card.md         what the human approved
   preflight.json       last preflight result
-  verdicts/            one JSON per judge cycle, reconcile.json
+  verdicts/            one JSON per judge cycle, spec-a<n>-spec-reviewer.json, reconcile.json
   evidence/<slice>/    screenshots, gifs
   reconcile-input.json deterministic evidence per item, Jev buckets
   usage.json           cost per stage

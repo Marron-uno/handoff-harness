@@ -36,13 +36,14 @@ The run is a state machine. Each stage has a brief the Stop hook injects when th
 
 | Stage | Who | Output verified by script |
 |---|---|---|
-| intake | main session | `inventory.json`, `plan.json`, `goal-card.md` valid against schemas |
-| awaiting_approval | human | `harness goal approve` |
+| intake | main session | `inventory.json`, `plan.json`, `goal-card.md` valid against schemas; with the spec stage on, an OpenSpec change that passes `harness spec check` |
+| spec_review | `spec-reviewer` subagent (sonnet), only with the spec stage on | valid verdict on the change; a block sends intake back to the change with the findings |
+| awaiting_approval | human | `harness goal approve`; with the spec stage on, approval commits the change to the goal branch |
 | building | main session | `harness slice done` after tests pass locally |
 | preflight | script | branch, diff budget, slice paths, protected paths, language, secrets, prose, test weakening, dependencies, OpenSpec validate, project checks |
 | critic | `critic` subagent (haiku), `critic-strong` after two rejections | valid verdict file with the current work hash |
 | review | `reviewer` subagent (sonnet, fresh context, Chrome for UI criteria), `reviewer-strong` after two rejections | valid verdict file |
-| record | script | commit with the slice id, pushed to the goal branch |
+| record | script | commit with the slice id, pushed to the goal branch; with the spec stage on, the slice's tasks ticked in `tasks.md` inside that commit |
 | reconcile | script + `reconciler` subagent (opus) | every inventory item done, partial or missing, with new slices for the gaps |
 | report | script | `report.md` from events, verdicts, reconciliation and usage; then the goal predicate |
 
@@ -64,7 +65,7 @@ Hooks are the enforcement surface. Each is a Node script with no dependencies; a
 
 Preflight runs before any model judges a slice: `harness preflight` writes `preflight.json` with one line per check and the work hash it judged. `docs/rules.md` lists every rule with where it is enforced and the failure that motivated it.
 
-OpenSpec is the spec layer. `openspec/specs` is read-only to the run; the pipeline owns its change folder; `openspec validate --all` is a preflight check when the folder exists. The CLI is pinned as a dev dependency.
+OpenSpec is the spec layer, in two tiers. Always on: `openspec/specs` is read-only to the run and `openspec validate --all` is a preflight check when the folder exists. Opt-in (`openspec.author` in the profile, or `--openspec` on the goal): the run builds from an OpenSpec change. Intake writes `openspec/changes/<goal>/` (proposal, delta specs with SHALL requirements and WHEN/THEN scenarios, tasks) or adopts an existing change with `--change <name>`, and cites the inventory ids in it. `harness spec check` is deterministic: delta format, `openspec validate --strict`, every in-scope criterion cited somewhere in the change, every task citing an id, every task owned by exactly one slice in the plan. Then the `spec-reviewer` judges meaning in the `spec_review` stage and blocks on an invented requirement, an uncovered item or a silently decided question, before the human sees the goal card. Approval commits the change; `record` ticks the slice's tasks inside the slice commit; the goal predicate needs every task ticked. Archiving the change into `openspec/specs` stays a human step, printed in the report. The CLI is pinned as a dev dependency.
 
 ## Review loop
 

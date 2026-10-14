@@ -29,6 +29,14 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Dependency manifests change only when declared | preflight | Undeclared dependencies |
 | Tests never weakened: no deleted test files, no skips, no net removal | preflight | Agents delete failing tests |
 | OpenSpec validate when `openspec/` exists | preflight | Spec and change folders stay consistent |
+| Spec stage: the change passes `openspec validate --strict` and the delta format check | intake handler, `spec check` | A model that fumbles the format gets a retry, not a pass |
+| Spec stage: every in-scope criterion id is cited in the change; every task cites an id | intake handler, `spec check` | Run 1's reviewer found an item the change never specified; the spec reviewer must see it first |
+| Spec stage: every task belongs to exactly one slice | intake handler, `spec check` | A task nobody owns can never be ticked, so the goal could never be done |
+| Spec stage: a spec verdict has slice null, the active attempt, empty criteria, the current work hash | verdict validator | Criteria are judged after the code exists, not before |
+| Spec stage: no source edits while the spec reviewer judges | PreToolUse path guard | Same lane rule as the other judge stages |
+| Spec stage: approval commits the change; record ticks tasks; nobody else ticks | `goal approve`, `record` | A ticked box is evidence only when a script ticked it after the judges |
+| Spec stage: the goal is done only when every task is ticked (skipped and held slices excepted) | `goal check` | The spec's own task list is part of the contract |
+| Archiving a change into `openspec/specs` is a human step | protected paths, report | The pipeline never edits the contract it builds against |
 | Project checks (`npm test`, lint, typecheck) from the profile | preflight | Mechanical feedback before any model judges |
 | Verdict schema; pass cannot carry a block finding or an unmet criterion | verdict validator | Prose verdicts said "LGTM" with defects listed below |
 | Verdict work hash must match the current change set | verdict validator | Judging a different diff |
