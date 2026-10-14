@@ -15,6 +15,7 @@ import { goalCheck } from "./lib/goal-check.mjs";
 import { briefFor, loadPlanIntoState } from "./lib/machine.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
+import { attributeByStage } from "./lib/usage.mjs";
 import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
 import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
 import { jevClassifyTrace } from "./lib/jev/trace-classify.mjs";
@@ -241,6 +242,11 @@ const commands = {
 
   report() {
     const state = requireState();
+    // Refresh the cost table first so the report is not one stop behind.
+    try {
+      const agentRows = readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent").map((e) => ({ stage: e.stage, agent: e.agent, model: e.model, input: e.input, cacheWrite: e.cacheWrite, cacheRead: e.cacheRead, output: e.output }));
+      attributeByStage(cwd, state, loadProfile(cwd), { agentRows });
+    } catch (err) { appendEvent(cwd, { type: "note", text: `usage attribution skipped: ${err.message}` }); }
     const text = renderReport(cwd, state);
     // The report and lessons are the only run artifacts that belong in the branch.
     const own = [`.harness/reports/${state.goal.id}.md`, ".harness/lessons.md"].filter((f) => existsSync(join(cwd, f)) && git(cwd, ["status", "--porcelain", "--", f]).out !== "");
