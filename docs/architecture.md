@@ -55,7 +55,11 @@ The critic runs on the cheap model first. After two rejections of the same slice
 
 ## Cost
 
-`scripts/lib/usage.mjs` reads transcript JSONL, takes `message.usage` from assistant rows, and buckets them by the stage active at each timestamp using `stage` events. Prices come from `profile.pricing`. Subagent transcripts are summarized at SubagentStop into `usage` events and folded in. The Stop hook refreshes `.harness/usage.json` before deciding, so the cost budget is live.
+`scripts/lib/usage.mjs` reads transcript JSONL, takes `message.usage` from assistant rows, counts each `message.id` once (Claude Code writes one row per content block with the same usage), and buckets the rows by the stage active at each timestamp using `stage` events. Prices come from `profile.pricing`: per model family, five-minute and one-hour cache writes priced apart when the transcript reports the TTL, and an optional long-context tier. Subagent transcripts are summarized at SubagentStop into `usage` events carrying the agent id; each event is the delta since that agent's previous stop, so the events add up even when a blocked judge stops twice. `usage.json` carries the total and the main-session and subagent shares. The headless driver records Claude Code's own `total_cost_usd` per session as a `session` event; the report and `harness analyze` print it next to the table as the number of record. The Stop hook refreshes `.harness/usage.json` before deciding, so the cost budget is live.
+
+## Judge aids
+
+`harness preflight` writes `.harness/packets/<slice>-a<attempt>.md` (`scripts/lib/packet.mjs`): the slice, the text of its criteria from the inventory, declared paths, changed files with line counts, the diff against HEAD capped at the slice diff budget, and the content of new files, which the diff omits. The critic and review briefs name it. `harness verdict template` (`verdictTemplate` in `machine.mjs`) prints a skeleton for the current stage: agent from the escalation rule, goal, slice, attempt, round, work hash and one `unverified` entry per criterion, with an empty summary and a block verdict with no block finding so it fails validation until filled. Both are run artifacts under `.harness/` and never count as work.
 
 ## Jev
 

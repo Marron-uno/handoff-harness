@@ -7,7 +7,7 @@ Goal: `build all of the handoff` on the Lantern Notes fixture. Driven headless b
 | Outcome | done, 3 of 3 slices, every verdict a pass on the first attempt |
 | Wall clock | 11.5 min, of which 3.3 min halted by a harness bug |
 | Cost reported by Claude Code | $1.24 over two headless sessions |
-| Cost from the harness price table | $2.27 (the default table overestimates by about 1.8x) |
+| Cost from the harness price table | $2.27 (1.8x; corrected in run 2's write-up: the harness counted transcript rows and subagent stops more than once; recomputed, the two sessions come out at 0.99x and 0.95x) |
 | Stop-hook blocks | 24, of which 6 were the bug |
 | Guard denials | 1, a false positive |
 | Browser | the reviewer started the dev server, opened its own tab on `localhost:4173`, saved one screenshot as evidence, closed the tab and stopped the server |

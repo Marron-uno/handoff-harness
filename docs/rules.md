@@ -48,3 +48,8 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Time and cost budgets per goal | Stop hook | Spend is attributed, so it can be capped |
 | Goal completion is a script predicate | `goal check` | The model never declares itself done |
 | Harness artifacts never count as work | work hash | Writing a report must not make a verdict stale |
+| Transcript usage counted once per message id | usage attribution | Run 2's table read 3.2x Claude Code's figure: one row per content block, each summed |
+| Subagent usage recorded as the delta since the agent's last stop | SubagentStop | A judge sent back by the hook stopped twice and its whole transcript was billed twice |
+| Claude Code's own session cost recorded as the number of record | headless driver, report | A price table is an estimate; the figure Claude Code reports is what the user sees |
+| Judges start from a script-written verdict skeleton that cannot pass unedited | `verdict template` | 5 of 14 verdict writes in run 2 fumbled keys, ids or the hash |
+| The critic reads a packet written by preflight | preflight, critic brief | Haiku spent 17 to 27 tool calls exploring the tree per slice |

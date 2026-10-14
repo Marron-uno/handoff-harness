@@ -1,12 +1,14 @@
 {
   "name": "handoff-harness",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Multi-stage coding harness for Claude Code: handoff in, reviewed and committed code out, under deterministic guards.",
   "type": "module",
   "private": true,
   "license": "MIT",
   "repository": "github:Marron-uno/handoff-harness",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test \"tests/**/*.test.mjs\"",
     "check": "node scripts/dev/check-syntax.mjs",

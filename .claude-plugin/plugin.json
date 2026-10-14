@@ -1,10 +1,20 @@
 {
   "name": "handoff-harness",
   "displayName": "Handoff Harness",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Multi-stage coding harness for Claude Code: turns a handoff into shipped code under deterministic guards, JSON verdicts, and per-stage cost accounting.",
-  "author": { "name": "Joe Marron", "url": "https://github.com/joeatmarron" },
+  "author": {
+    "name": "Joe Marron",
+    "url": "https://github.com/joeatmarron"
+  },
   "repository": "https://github.com/Marron-uno/handoff-harness",
   "license": "MIT",
-  "keywords": ["harness", "agents", "hooks", "openspec", "review-loop", "verdicts"]
+  "keywords": [
+    "harness",
+    "agents",
+    "hooks",
+    "openspec",
+    "review-loop",
+    "verdicts"
+  ]
 }
