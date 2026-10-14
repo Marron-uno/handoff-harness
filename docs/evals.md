@@ -40,6 +40,8 @@ What it cannot tell you: anything about workloads other than the fixture. The fi
 claude plugin eval . --case goal-intake --scaffold --allow-tools Bash Write Edit Read Glob Grep Skill --trust-plugin --no-publish
 ```
 
+One caveat from the first attempt: the runner's sandbox on macOS blocks the Xcode `git` shim (it cannot write its cache or read the Command Line Tools), so every `git` call inside the case fails and the init skill stops at "not a git repository". The scaffold and the session wiring worked, 7 turns for $0.07; the case needs a `git` the sandbox can read, which means Linux CI or a standalone git such as Homebrew's on a Mac.
+
 This tier answers a question the other two cannot: does the skill text steer the model the way it is meant to, independent of the machine. A change to `skills/goal/SKILL.md` or to an intake brief is tested here, and the runner's ablation arm (the same prompt without the plugin) shows what the plugin adds. It says nothing about guards or judges; those are deterministic and belong in `npm test`.
 
 ## The loop
