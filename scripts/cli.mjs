@@ -20,6 +20,7 @@ import { guardChecks } from "./lib/guards/index.mjs";
 import { attributeByStage } from "./lib/usage.mjs";
 import { analyzeRun, renderAnalysis } from "./lib/analyze.mjs";
 import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
+import { askJev, resolveJevConfig } from "./lib/jev/client.mjs";
 import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
 import { jevClassifyTrace } from "./lib/jev/trace-classify.mjs";
 import { calibrate, renderCalibration } from "./lib/jev/calibrate.mjs";
@@ -371,6 +372,16 @@ const commands = {
   async jev(sub, { flags, rest }) {
     const profile = loadProfile(cwd);
     const state = hasHarness(cwd) ? loadState(cwd) : null;
+    if (sub === "ping") {
+      // One documented question to prove the key, the endpoint and the model before a run.
+      // --provider overrides the profile for this call only, so the check comes before the edit.
+      if (flags.provider) profile.jev.provider = String(flags.provider);
+      profile.jev.enabled = true;
+      const cfg = resolveJevConfig(profile);
+      const r = await askJev(cwd, "I was charged twice for my subscription.", { refund: { type: "noul", instructions: "Is the customer asking for money back?" } }, { profile, purpose: "ping" });
+      const answer = r.answers?.refund?.noul ?? null;
+      out({ ok: r.ok, provider: profile.jev.provider, endpoint: cfg.endpoint, model: cfg.model, keyEnv: cfg.keyEnv, keyPresent: Boolean(process.env[cfg.keyEnv]), skipped: r.skipped ?? false, reason: r.reason ?? null, answer, plausible: answer === null ? null : answer > 0.5, modelReported: r.model ?? null, usage: r.usage ?? null, cost: r.cost ?? null, latencyMs: r.latencyMs ?? null, requestId: r.requestId ?? null }, r.ok ? 0 : 1);
+    }
     if (sub === "gate") {
       const path = rest[0];
       if (!path || !existsSync(path)) fail("usage: jev gate <verdict.json>");

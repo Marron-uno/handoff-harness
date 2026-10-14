@@ -160,3 +160,18 @@ test("calibration bins predicted probabilities against recorded outcomes", async
   const rows = c.report.implemented;
   assert.deepEqual(rows.map((r) => [r.bin, r.n, r.observedRate]), [["0.1-0.2", 1, 0], ["0.5-0.6", 1, 1], ["0.9-1.0", 2, 0.5]]);
 });
+
+test("client: a gateway's billed cost and generation id are kept with the answer", async () => {
+  const dir = initRepo(tmpDir());
+  const profile = profileOn(dir);
+  profile.jev.provider = "vercel";
+  const fetchImpl = async (url, init) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => ({ model: "typesafe-ai/jev", answers: { ok: { type: "noul", noul: 0.98 } }, usage: { input_tokens: 275, output_tokens: 20 }, provider_metadata: { gateway: { cost: "0.00001155", generationId: "gen_1" } } }) });
+  const r = await askJev(dir, "state", { ok: { type: "noul", instructions: "ok?" } }, { profile, fetchImpl, env: { AI_GATEWAY_API_KEY: "k" }, purpose: "ping" });
+  assert.equal(r.ok, true);
+  assert.equal(r.cost, 0.00001155);
+  assert.equal(r.requestId, "gen_1");
+  assert.equal(typeof r.latencyMs, "number");
+  const ev = readEvents(dir, (e) => e.type === "jev")[0];
+  assert.equal(ev.cost, 0.00001155);
+  assert.equal(ev.purpose, "ping");
+});

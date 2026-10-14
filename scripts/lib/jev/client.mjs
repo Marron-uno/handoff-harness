@@ -41,9 +41,9 @@ export async function askJev(cwd, state, questions, { profile, purpose = "unknow
   const id = randomUUID();
   const finish = (record) => {
     const row = { id, ts: new Date().toISOString(), purpose, latencyMs: Date.now() - started, ...record };
-    appendEvent(cwd, { type: "jev", id, purpose, ok: Boolean(record.ok), skipped: Boolean(record.skipped), reason: record.reason, latencyMs: row.latencyMs, usage: record.usage });
+    appendEvent(cwd, { type: "jev", id, purpose, ok: Boolean(record.ok), skipped: Boolean(record.skipped), reason: record.reason, latencyMs: row.latencyMs, usage: record.usage, cost: record.cost ?? null });
     appendLine(harnessPaths(cwd).jev, JSON.stringify(row));
-    return { id, ...record };
+    return { id, latencyMs: row.latencyMs, ...record };
   };
   if (!cfg.enabled) return finish({ ok: false, skipped: true, reason: "jev disabled in profile" });
   const key = env[cfg.keyEnv];
@@ -82,7 +82,9 @@ export async function askJev(cwd, state, questions, { profile, purpose = "unknow
     if (res.status === 401 || res.status === 403) return finish({ ok: false, skipped: true, reason: `auth ${res.status}`, stateSha });
     if (!res.ok) return finish({ ok: false, skipped: true, reason: `http ${res.status}`, stateSha });
     const data = await res.json();
-    return finish({ ok: true, skipped: false, model: data.model, answers: data.answers, usage: data.usage, stateSha, truncated, questions: Object.keys(questions), requestId: res.headers?.get?.("x-typesafe-request-id") ?? null });
+    // A gateway reports what it billed for the request; the direct API does not.
+    const gateway = data.provider_metadata?.gateway ?? null;
+    return finish({ ok: true, skipped: false, model: data.model, answers: data.answers, usage: data.usage, cost: gateway?.cost != null ? Number(gateway.cost) : null, stateSha, truncated, questions: Object.keys(questions), requestId: res.headers?.get?.("x-typesafe-request-id") ?? gateway?.generationId ?? null });
   } catch (err) {
     if (err?.message?.includes("422")) throw err;
     return finish({ ok: false, skipped: true, reason: err.name === "AbortError" ? `timeout after ${cfg.timeoutMs}ms` : `error: ${err.message}`, stateSha });
