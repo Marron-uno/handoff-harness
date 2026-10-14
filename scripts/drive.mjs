@@ -5,6 +5,10 @@
 //
 // usage: node scripts/drive.mjs [--cwd <project>] [--max-iterations 40] [--model <id>]
 //        [--permission-mode acceptEdits] [--allowed-tools "Bash,Read,Write,Edit,Agent"] [--chrome] [--log <file>]
+//        [--plugin-root <dir>]
+// --plugin-root names the copy of the harness that enforces the run (hooks, CLI, briefs). It
+// defaults to this script's own checkout. A run whose project is the harness itself must be
+// enforced by a different, frozen copy, or the session would edit the hooks that judge it.
 // Headless sessions cannot answer permission prompts, so pass --allowed-tools with what the run
 // needs; the harness hooks still deny what the rules forbid.
 import { spawnSync } from "node:child_process";
@@ -12,6 +16,7 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync, existsSync, appendFileSync } from "node:fs";
 import { appendEvent } from "./lib/events.mjs";
+import { samePath } from "./lib/paths.mjs";
 
 const args = process.argv.slice(2);
 const flag = (name, def) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : def; };
@@ -22,8 +27,11 @@ const permissionMode = flag("permission-mode", "acceptEdits");
 const allowedTools = flag("allowed-tools", null);
 const chrome = args.includes("--chrome");
 const logFile = flag("log", null);
-const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const ownRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const pluginRoot = resolve(flag("plugin-root", ownRoot));
 const statePath = join(cwd, ".harness", "state.json");
+if (!existsSync(join(pluginRoot, "scripts", "cli.mjs"))) { console.error(`[drive] no harness at ${pluginRoot} (no scripts/cli.mjs); pass --plugin-root <copy of the plugin>`); process.exit(1); }
+if (samePath(pluginRoot, cwd)) { console.error(`[drive] the project is the harness itself (${cwd}). A run cannot be enforced by the files it edits; pass --plugin-root <frozen copy>, for example the installed one under ~/.claude/plugins/cache/`); process.exit(1); }
 const RESTING = new Set(["awaiting_approval", "awaiting_human", "budget_exceeded", "halted", "done"]);
 
 if (!existsSync(statePath)) { console.error("no .harness/state.json; start a goal first"); process.exit(1); }
@@ -34,7 +42,7 @@ for (let i = 1; i <= maxIterations; i++) {
     console.log(`[drive] resting in ${state.stage}${state.halt ? `: ${state.halt.reason}` : ""}`);
     process.exit(state.stage === "done" ? 0 : 2);
   }
-  console.log(`[drive] iteration ${i}: stage ${state.stage}${state.slice ? `, slice ${state.slice.id} attempt ${state.slice.attempt}` : ""}`);
+  console.log(`[drive] iteration ${i}: stage ${state.stage}${state.slice ? `, slice ${state.slice.id} attempt ${state.slice.attempt}` : ""}${pluginRoot !== ownRoot ? ` (enforced by ${pluginRoot})` : ""}`);
   const prompt = `handoff-harness: continue goal ${state.goal.id}. Run \`node "${pluginRoot}/scripts/cli.mjs" resume\`, follow the brief literally, and stop when it says to stop.`;
   const cliArgs = ["-p", prompt, "--plugin-dir", pluginRoot, "--permission-mode", permissionMode, "--settings", JSON.stringify({ advisorModel: "none" }), "--output-format", "json"];
   if (model) cliArgs.push("--model", model);

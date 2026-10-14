@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic, nowIso } from "./lib/io.mjs";
-import { harnessPaths, hasHarness, pluginRoot } from "./lib/paths.mjs";
+import { harnessPaths, hasHarness, pluginRoot, samePath } from "./lib/paths.mjs";
 import { newState, loadState, saveState, transition, currentSlice, RESTING } from "./lib/state.mjs";
 import { loadProfile } from "./lib/profile.mjs";
 import { git, isRepo, currentBranch, defaultBranch, changedFiles, workHash, headSha, hasCommits } from "./lib/git.mjs";
@@ -83,7 +83,9 @@ const commands = {
         committed = c.code === 0 ? headSha(cwd) : null;
       }
     }
-    out({ ok: true, harnessDir: p.dir, profile: p.profile, pluginRoot: pluginRoot(), committed });
+    const manifest = readJson(join(cwd, ".claude-plugin", "plugin.json"), null);
+    const selfRun = manifest?.name === "handoff-harness" ? (samePath(pluginRoot(), cwd) ? "this project is the harness itself; enforce a run with a frozen copy: node scripts/drive.mjs --cwd . --plugin-root <copy>" : `this project is the harness itself, enforced by ${pluginRoot()}`) : null;
+    out({ ok: true, harnessDir: p.dir, profile: p.profile, pluginRoot: pluginRoot(), committed, ...(selfRun ? { selfRun } : {}) });
   },
 
   hash() { out({ ok: true, diffHash: workHash(cwd), head: headSha(cwd), changedFiles: changedFiles(cwd) }); },

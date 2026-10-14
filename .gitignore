@@ -2,7 +2,12 @@ node_modules/
 .DS_Store
 *.log
 !docs/runs/**/drive.log
-.harness/
+# handoff-harness run artifacts (profile, lessons, proposals and reports are kept)
+.harness/*
+!.harness/profile.json
+!.harness/lessons.md
+!.harness/proposals/
+!.harness/reports/
 !fixture/.harness/
 !fixture/.harness/profile.json
 evals/bench/

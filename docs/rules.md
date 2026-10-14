@@ -13,6 +13,7 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | State files written only through the CLI | PreToolUse git and path guards | state.json is the single source of truth |
 | Protected paths: `openspec/specs/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md`, harness state | PreToolUse path guard | The spec is the contract; the pipeline owns only its change folder |
 | Harness files read-only from inside a run; changes go to `.harness/proposals/` | PreToolUse path guard | The harness must not rewrite its own rules mid-run |
+| A checkout of the harness is a project like any other when a different, frozen copy enforces the run (`drive.mjs --plugin-root`); the same copy never edits itself | PreToolUse path guard, headless driver | The harness could not build its own changes; loosening the rule would let a run edit the hooks judging it |
 | Sensitive paths never read: `.env*`, keys, credentials | PreToolUse git and path guards | Nothing real may leak into a transcript |
 | Judges (critic, reviewer, reconciler) write only verdicts and evidence | PreToolUse path guard | A judge that fixes is no longer a judge |
 | Stage lanes: no source edits in preflight, critic, review, record, report, resting stages | PreToolUse path guard | Edits between judge and record make verdicts stale |

@@ -1,6 +1,6 @@
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 
 export const HARNESS_DIR = ".harness";
 
@@ -34,6 +34,12 @@ export function harnessPaths(cwd) {
     jev: join(dir, "jev.jsonl"),
     pluginRoot: join(dir, "plugin-root"),
   };
+}
+
+// Same directory, through symlinks (macOS keeps /var and /private/var apart until resolved).
+export function samePath(a, b) {
+  const real = (p) => { try { return realpathSync(resolve(p)); } catch { return resolve(p); } };
+  return Boolean(a && b) && real(a) === real(b);
 }
 
 export function hasHarness(cwd) {

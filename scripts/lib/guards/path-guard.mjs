@@ -1,6 +1,7 @@
 // File tool guard: lanes per stage and per agent, protected paths, sensitive reads,
 // no edits on the default branch, harness files only through proposals.
 import { relative, isAbsolute } from "node:path";
+import { samePath } from "../paths.mjs";
 import { globToRegExp } from "../glob.mjs";
 import { currentBranch } from "../git.mjs";
 
@@ -28,7 +29,12 @@ export function checkFileAccess({ tool, filePath, cwd, profile, state, agentType
   }
 
   if (pluginRoot && isAbsolute(filePath) && filePath.startsWith(pluginRoot)) {
-    return { deny: true, guard: "harness-files", reason: `Blocked: the harness's own files are read-only from inside a run. Write a proposal to ${profile.lanes.proposalsDir}/ instead.` };
+    // The project may be a checkout of the harness; that is fine as long as a different, frozen
+    // copy is the one enforcing the run. The same copy editing itself is what this rule forbids.
+    const self = samePath(pluginRoot, cwd);
+    return { deny: true, guard: "harness-files", reason: self
+      ? `Blocked: this project is the harness itself and the same copy is enforcing the run, so its files are read-only. Drive it with a frozen copy: node scripts/drive.mjs --cwd . --plugin-root <copy of the plugin>.`
+      : `Blocked: the harness's own files are read-only from inside a run. Write a proposal to ${profile.lanes.proposalsDir}/ instead.` };
   }
   if (match(profile.lanes.protectedPaths)) {
     return { deny: true, guard: "protected", reason: `Blocked: ${path} is protected (specs, harness state, Claude config). Propose changes in ${profile.lanes.proposalsDir}/.` };
