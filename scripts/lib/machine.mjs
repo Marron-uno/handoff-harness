@@ -382,6 +382,8 @@ function decideVerdict(cwd, state, profile, wh, role) {
 }
 
 function decideRecord(cwd, state, profile) {
+  // `harness slice skip` clears the active slice and lands here: nothing to record, move on.
+  if (!state.slice) return advance(cwd, state, profile);
   const slice = currentSlice(state);
   const subject = lastCommitSubject(cwd);
   const recorded = isClean(cwd) && subject.includes(`[${slice.id}]`) && headSha(cwd) !== state.slice.startHead;

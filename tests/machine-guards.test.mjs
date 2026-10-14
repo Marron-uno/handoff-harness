@@ -76,6 +76,10 @@ test("attempt cap after repeated preflight failures hands over to a human", () =
   }
   saveState(dir, s);
   assert.equal(runCli(dir, ["slice", "skip", "--reason", "cannot fix"]).json.skipped, "S-1");
+  // Stopping after a skip advances past record instead of crashing on the missing slice.
+  const after = stop(dir);
+  assert.equal(after.code, 0, after.stderr);
+  assert.notEqual(loadState(dir).stage, "record");
 });
 
 test("review rounds cap and authorize-rounds", () => {
