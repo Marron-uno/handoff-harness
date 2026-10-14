@@ -179,6 +179,14 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   assert.ok(ev.some((e) => e.type === "verdict" && e.valid === false));
   assert.ok(ev.some((e) => e.type === "record" && e.slice === "S-2"));
 
+  // The analyzer renders the run from the events log.
+  const analysis = runCli(dir, ["analyze"]).stdout;
+  assert.match(analysis, /# Run analysis: G-1 "Build all of the handoff"/);
+  assert.match(analysis, /Final stage: done/);
+  assert.match(analysis, /\| S-2 \| Export to markdown \| done \| 1 \|/);
+  assert.match(analysis, /S-1-a1-r1-reviewer\.json \| reviewer \| block \| 1 \| 1 \|/);
+  assert.match(analysis, /Invalid verdict attempts: 1/);
+
   // A second goal gets the next id and a fresh branch.
   const g2 = runCli(dir, ["goal", "new", "--sentence", "Add tag filtering", "--mode", "feature"]);
   assert.equal(g2.json.goal.id, "G-2");

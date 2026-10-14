@@ -16,6 +16,7 @@ import { briefFor, loadPlanIntoState } from "./lib/machine.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
 import { attributeByStage } from "./lib/usage.mjs";
+import { analyzeRun, renderAnalysis } from "./lib/analyze.mjs";
 import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
 import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
 import { jevClassifyTrace } from "./lib/jev/trace-classify.mjs";
@@ -336,6 +337,13 @@ const commands = {
       out({ ok: true });
     }
     fail(`unknown jev subcommand ${sub}`);
+  },
+
+  analyze(_, { flags }) {
+    const a = analyzeRun(cwd, { driveLog: flags.log ?? null });
+    if (flags.json) out({ ok: true, ...a });
+    process.stdout.write(renderAnalysis(a));
+    process.exit(0);
   },
 
   events(_, { flags }) {
