@@ -8,7 +8,7 @@
   "repository": "github:Marron-uno/handoff-harness",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "check": "node scripts/dev/check-syntax.mjs",
     "harness": "node scripts/cli.mjs"
   },

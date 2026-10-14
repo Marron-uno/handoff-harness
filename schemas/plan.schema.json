@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plan",
+  "description": "Slices the goal is split into, plus open questions split into pre-approved defaults and holds.",
+  "type": "object",
+  "required": ["goal", "slices", "questions"],
+  "additionalProperties": false,
+  "properties": {
+    "goal": { "type": "string", "pattern": "^G-[0-9]+$" },
+    "slices": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "criteria", "paths", "ui"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^S-[0-9]+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "dependsOn": { "type": "array", "items": { "type": "string" } },
+          "criteria": { "type": "array", "items": { "type": "string" } },
+          "paths": { "type": "array", "items": { "type": "string" } },
+          "ui": { "type": "boolean" },
+          "estimate": { "type": "object", "properties": { "usd": { "type": "number" }, "minutes": { "type": "number" } } }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^(D|H)-[0-9]+$" },
+          "question": { "type": "string" },
+          "kind": { "enum": ["default", "hold"] },
+          "chosen": { "type": "string" },
+          "blocks": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

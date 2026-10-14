@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Verdict",
+  "description": "What a critic, reviewer, spec reviewer or reconciler writes. The validator rejects a pass that carries a block finding, a stale diffHash, an unresolvable authority, or evidence that does not exist on disk.",
+  "type": "object",
+  "required": ["version", "agent", "goal", "slice", "attempt", "diffHash", "verdict", "summary", "findings", "criteria"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "agent": { "enum": ["critic", "critic-strong", "reviewer", "reviewer-strong", "spec-reviewer", "reconciler"] },
+    "goal": { "type": "string", "pattern": "^G-[0-9]+$" },
+    "slice": { "type": ["string", "null"] },
+    "attempt": { "type": "integer", "minimum": 1 },
+    "round": { "type": "integer", "minimum": 1 },
+    "diffHash": { "type": "string", "minLength": 8 },
+    "verdict": { "enum": ["pass", "block"] },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "criteria": { "type": "array", "items": { "$ref": "#/$defs/criterion" } },
+    "browser": { "anyOf": [ { "type": "null" }, { "type": "object", "required": ["used"], "properties": { "used": { "type": "boolean" }, "host": { "type": ["string", "null"] }, "note": { "type": "string" } } } ] },
+    "model": { "type": "string" },
+    "writtenAt": { "type": "string" }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["id", "severity", "issue", "authority", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^F-[0-9]+$" },
+        "severity": { "enum": ["block", "major", "minor", "note"] },
+        "file": { "type": ["string", "null"] },
+        "line": { "type": ["integer", "null"] },
+        "issue": { "type": "string", "minLength": 1 },
+        "suggestion": { "type": "string" },
+        "authority": { "type": "string", "pattern": "^(criterion|spec|rule|handoff|test):[^\\s]+$" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "preExisting": { "type": "boolean" },
+        "disputed": { "type": "boolean" }
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "required": ["id", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "enum": ["met", "unmet", "unverified"] },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "note": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["diff", "file", "test", "screenshot", "gif", "console", "network", "command"] },
+        "path": { "type": "string" },
+        "line": { "type": "integer" },
+        "host": { "type": "string" },
+        "capturedAt": { "type": "string" },
+        "quote": { "type": "string", "maxLength": 1000 }
+      }
+    }
+  }
+}

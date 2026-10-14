@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inventory",
+  "description": "Every screen, block, endpoint, string and criterion the goal covers, each with a stable id. Reconciliation walks this list.",
+  "type": "object",
+  "required": ["goal", "sources", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "goal": { "type": "string", "pattern": "^G-[0-9]+$" },
+    "sources": { "type": "array", "items": { "type": "string" } },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "title", "criteria", "ui"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^I-[0-9]+$" },
+          "kind": { "enum": ["screen", "block", "endpoint", "string", "criterion", "other"] },
+          "title": { "type": "string" },
+          "source": { "type": "string" },
+          "criteria": { "type": "array", "items": { "type": "object", "required": ["id", "text"], "properties": { "id": { "type": "string", "pattern": "^C-[0-9]+$" }, "text": { "type": "string" } } } },
+          "ui": { "type": "boolean" },
+          "inScope": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

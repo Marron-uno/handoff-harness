@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Event",
+  "description": "One line of .harness/events.jsonl. Append only.",
+  "type": "object",
+  "required": ["ts", "type"],
+  "properties": {
+    "ts": { "type": "string" },
+    "type": { "enum": ["goal", "stage", "block", "guard", "tool", "verdict", "preflight", "usage", "jev", "hold", "default", "lesson", "browser", "record", "halt", "note"] },
+    "slice": { "type": ["string", "null"] },
+    "agent": { "type": "string" }
+  }
+}

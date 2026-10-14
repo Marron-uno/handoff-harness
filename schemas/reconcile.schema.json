@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reconcile result",
+  "type": "object",
+  "required": ["goal", "diffHash", "items", "newSlices"],
+  "additionalProperties": false,
+  "properties": {
+    "goal": { "type": "string" },
+    "diffHash": { "type": "string" },
+    "at": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "enum": ["done", "missing", "partial", "held", "out_of_scope"] },
+          "bucket": { "enum": ["deterministic", "jev_done", "jev_missing", "jev_uncertain", "model"] },
+          "evidence": { "type": "array", "items": { "type": "object", "required": ["type"], "properties": { "type": { "type": "string" }, "path": { "type": "string" }, "quote": { "type": "string" } } } },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "newSlices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "criteria", "paths", "ui"],
+        "properties": {
+          "title": { "type": "string" }, "criteria": { "type": "array", "items": { "type": "string" } },
+          "paths": { "type": "array", "items": { "type": "string" } }, "ui": { "type": "boolean" },
+          "dependsOn": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
