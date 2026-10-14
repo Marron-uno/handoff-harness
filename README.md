@@ -83,7 +83,7 @@ The harness is tested on a synthetic fixture (`fixture/`, a deliberately incompl
 
 ## Optional: the Jev layer
 
-[Jev](https://typesafe.ai) is a decision model that answers typed questions with calibrated probabilities and generates no text. Enabled per goal with `--jev` and `jev.enabled` in the profile, it gates verdict plausibility, prefilters reconciliation and classifies trace events into lessons. It routes, blocks, or adds a question; it never grants a pass. Every answer is logged and `harness jev calibrate` prints observed rates against predicted probabilities. See `docs/jev.md`.
+[Jev](https://typesafe.ai) is a decision model that answers typed questions with calibrated probabilities and generates no text. Enabled per goal with `--jev` and `jev.enabled` in the profile, it gates verdict plausibility, prefilters reconciliation and classifies trace events into lessons. It routes, blocks, or adds a question; it never grants a pass. `harness jev ping --provider vercel` proves a key and an endpoint with one documented question before a run. Every answer is logged with what the gateway billed, and `harness jev calibrate` prints observed rates against predicted probabilities. See `docs/jev.md` for the Vercel AI Gateway setup.
 
 ## Headless runs
 
@@ -107,7 +107,7 @@ docs/             rules.md, jev.md, architecture.md
 
 ## Status
 
-Version 0.3.1. The state machine, guards, judges, spec stage, Jev layer and fixture are built and tested. The plugin installs through the marketplace path above.
+Version 0.3.2. The state machine, guards, judges, spec stage, Jev layer and fixture are built and tested. The plugin installs through the marketplace path above.
 
 **Recorded runs** live in `docs/runs/`. [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) drove the fixture end to end, headless, with real judges and the reviewer on Chrome: three slices, six passing verdicts, one screenshot as evidence, $1.24 by Claude Code's accounting, 11.5 minutes including a 3-minute halt caused by a harness bug. It produced nine ranked findings, six of them fixed before run 2. [Run 2](docs/runs/2026-10-14-fixture-run-2/README.md) ran the same goal with the spec stage on, adopting the fixture's OpenSpec change: intake amended the change, the spec reviewer passed it with four minor findings before any code existed, approval committed it, four slices were built (one added by reconciliation to close the gap run 1 had only flagged), every task was ticked by `record`, and the run finished in one headless session with zero Stop-hook blocks and no halt, $1.74 by Claude Code's accounting. Its findings fixed a state-guard false positive and put reconciliation slices into `plan.json`. Three more were fixed after the run: the cost table that read 3.2x Claude Code's figure was the harness counting every transcript row and every repeated subagent stop, now counted once and priced from the published list (0.87x on the same transcripts); judges now start from a script-written verdict skeleton; the critic reads a packet written by preflight instead of exploring. Still open: measuring the critic's tool calls with the packet on a new run, a stage-managed dev server, git-side hooks for commit messages, the bundle-size budget check, a run with Jev enabled, and an `openspec/` for the harness itself. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 

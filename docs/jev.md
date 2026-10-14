@@ -22,7 +22,18 @@ Answers come back as `{ "answers": { "evidence_supports": { "type": "noul", "nou
 
 ## Providers and access
 
-Direct signup was paused in late September 2026; existing accounts work, and gateways serve the model without a waitlist. `profile.jev.provider` selects a preset: `typesafe` (direct, `TYPESAFE_API_KEY`), `openrouter` (`typesafe/jev-1.13`, `OPENROUTER_API_KEY`), `vercel` (`typesafe-ai/jev`, `AI_GATEWAY_API_KEY`), or `custom` with an explicit `endpoint` and `model`. Gateway paths vary; set `endpoint` explicitly if a preset is wrong.
+Direct signup was paused in late September 2026; existing accounts work, and gateways serve the model without a waitlist. `profile.jev.provider` selects a preset: `typesafe` (direct, `TYPESAFE_API_KEY`), `openrouter` (`typesafe/jev-1.13`, `OPENROUTER_API_KEY`), `vercel` (`typesafe-ai/jev`, `AI_GATEWAY_API_KEY`), or `custom` with an explicit `endpoint` and `model`. `harness jev ping [--provider name]` sends the one documented question through the resolved endpoint and prints the answer, the model, the latency and what the gateway billed; run it before enabling the layer.
+
+### Vercel AI Gateway, step by step
+
+Checked against the Vercel docs on 2026-10-14. The gateway exposes TypeSafe's own request and response shapes at `https://ai-gateway.vercel.sh/typesafe/v1/systemone`, model `typesafe-ai/jev`, bearer auth with an AI Gateway key; the `vercel` preset is exactly that. Question types are `noul`, `choice` and `score` as in the direct API. Jev is listed at $0.042 per million input tokens, no output charge, 32k context; the response carries `provider_metadata.gateway.cost`, which the harness keeps in `.harness/jev.jsonl` and the `jev` events.
+
+1. A Vercel account; the key belongs to a team, and a Hobby account's personal team works. Add a payment method to the team to unlock the free AI Gateway credit, or buy credits; a goal run is about one cent.
+2. Dashboard, AI Gateway, API Keys, Create API Key. Copy it at once; Vercel does not show it again. Set a budget on the key if the dialog offers one.
+3. `export AI_GATEWAY_API_KEY=...` in the shell that will start Claude Code or `drive.mjs`. Hooks inherit the environment of the session, so the key must be set before the session starts; never write it into a file the run can read.
+4. In the project: `harness jev ping --provider vercel`. Expect `ok: true`, an `answer` near 1 for the refund question, `modelReported` `typesafe-ai/jev` and a `cost` of about a hundred-thousandth of a dollar. `skipped` with `no key` means step 3; `auth 401` means the key; `http 402` means credits.
+5. `.harness/profile.json`: `"jev": { "enabled": true, "provider": "vercel" }`. Create the goal with `--jev`.
+6. After the run, `harness jev calibrate --markdown` is the measure of what the layer was worth.
 
 ## Failure policy
 
