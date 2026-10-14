@@ -107,11 +107,14 @@ test("SubagentStop blocks a judge that wrote no verdict and accepts a valid one 
   writeVerdict(dir, path, { agent: "critic", slice: "S-1", attempt: 1, round: 1, verdict: "pass", findings: [{ id: "F-1", severity: "block", issue: "x", authority: "criterion:C-3", evidence: [] }] });
   r = runHook("subagent-stop", input);
   assert.match(r.json.reason, /verdict is pass but carries 1 block finding/);
+  writeVerdict(dir, path, { agent: "critic", slice: "S-1", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-3", status: "met", evidence: [{ type: "test" }] }] });
+  r = runHook("subagent-stop", input);
+  assert.match(r.json.reason, /evidence of type test needs a path/);
   writeVerdict(dir, path, { agent: "critic", slice: "S-1", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-3", status: "met" }] });
   r = runHook("subagent-stop", input);
   assert.equal(r.json, null, r.stdout + r.stderr);
   const usage = runCli(dir, ["events", "--type", "usage"]).json.events;
-  assert.equal(usage.length, 3);
+  assert.equal(usage.length, 4, "one usage event per SubagentStop call");
   assert.equal(usage[0].input, 1500);
   assert.equal(usage[0].cacheRead, 5000);
   assert.equal(usage[0].agent, "critic");

@@ -15,7 +15,7 @@ Then, in any git repository:
 /handoff-harness:goal "build all of the handoff" --source docs/HANDOFF.md
 ```
 
-The run prints a goal card and waits. `harness goal approve` starts it. Throughout this README, `harness` stands for `node <plugin-root>/scripts/cli.mjs`; the skills and stage briefs always spell out the full path. From there the Stop hook drives every stage until the goal predicate is satisfied or a cap hands control back to you.
+The run prints a goal card and waits. `harness goal approve` starts it. Throughout this README, `harness` stands for `node <plugin-root>/scripts/cli.mjs`; the skills and stage briefs always spell out the full path. Commands that produce evidence (`slice done`, `preflight`, `record`, `reconcile load`, `report`, and `next` after a verdict) advance the run and print the next brief; the Stop hook enforces the same machine when the model stops instead. From there the Stop hook drives every stage until the goal predicate is satisfied or a cap hands control back to you.
 
 ## Why this exists
 
@@ -106,6 +106,8 @@ docs/             rules.md, jev.md, architecture.md
 
 ## Status
 
-Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. A headless smoke run (`claude -p --plugin-dir .` on the fixture at the report stage, haiku) completed the goal end to end in four turns for under a cent: SessionStart injected the brief, the CLI committed the report, the Stop hook ran the goal predicate and moved the run to `done`. An earlier run with a deliberately missing inventory item showed the hook refusing to finish, which led to the rule that reconciliation gaps must become slices or explicit decisions. The plugin also installs through the marketplace path above. Not yet done: a recorded run of the fixture with real judges and its published cost table, a stage step that starts the project's dev server before the reviewer opens the fixture host (today the reviewer brief points at a host nobody launches), git-side hooks for commit messages, and the bundle-size budget check. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Version 0.1.0. The state machine, guards, judges, Jev layer and fixture are built and tested. The plugin installs through the marketplace path above.
+
+**Recorded runs** live in `docs/runs/`. [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) drove the fixture end to end, headless, with real judges and the reviewer on Chrome: three slices, six passing verdicts, one screenshot as evidence, $1.24 by Claude Code's accounting, 11.5 minutes including a 3-minute halt caused by a harness bug. The run produced nine ranked findings; six are fixed (the Stop hook now yields to background subagents, CLI commands advance the machine and print the next brief so stages no longer cost a stop-and-block cycle, the sensitive-path guard only tests path-like tokens, evidence needs a real location, subagent usage lands in its spawning stage, the critic brief lists the changed files). Three are open: a stage-managed dev server, calibrating the default price table, and re-measuring the critic's tool-call count. Not yet done: a stage step that starts the project's dev server before the reviewer opens it (today the reviewer starts it from the brief's command), git-side hooks for commit messages, the bundle-size budget check, and a run with Jev enabled. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

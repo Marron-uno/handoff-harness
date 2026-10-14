@@ -1,0 +1,12 @@
+{
+  "goal": "G-1",
+  "slices": [
+    {"id": "S-1", "title": "Listing: newest first, copy, case-insensitive tag filter (verify create-note criteria)", "criteria": ["C-1", "C-2", "C-3", "C-4", "C-5"], "paths": ["src/notes.mjs", "tests/notes.test.mjs"], "dependsOn": [], "ui": false, "estimate": {"usd": 1, "minutes": 10}},
+    {"id": "S-2", "title": "exportMarkdown", "criteria": ["C-6"], "paths": ["src/export.mjs", "tests/export.test.mjs"], "dependsOn": ["S-1"], "ui": false, "estimate": {"usd": 1, "minutes": 8}},
+    {"id": "S-3", "title": "Note count on the page", "criteria": ["C-7"], "paths": ["public/**", "src/server.mjs", "tests/server.test.mjs"], "dependsOn": ["S-1"], "ui": true, "estimate": {"usd": 2, "minutes": 15}}
+  ],
+  "questions": [
+    {"id": "D-1", "question": "Should tags be case-insensitive?", "kind": "default", "chosen": "Yes, compare lowercased."},
+    {"id": "H-1", "question": "What is the public URL of the deployed page?", "kind": "hold", "blocks": []}
+  ]
+}

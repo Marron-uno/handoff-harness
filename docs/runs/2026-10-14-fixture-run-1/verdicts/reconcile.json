@@ -1,0 +1,196 @@
+{
+  "goal": "G-1",
+  "diffHash": "fcf3088a97783beb",
+  "at": "2026-10-14T05:24:56.858Z",
+  "items": [
+    {
+      "id": "I-1",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "commit",
+          "quote": "C-1"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-1"
+        },
+        {
+          "type": "commit",
+          "quote": "C-2"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-2"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-1,C-2"
+        }
+      ],
+      "note": "Decided deterministically; npm test passes 9/9 at HEAD 83e3817."
+    },
+    {
+      "id": "I-2",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "commit",
+          "quote": "C-3"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-4"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-4"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-3,C-4"
+        }
+      ],
+      "note": "Decided deterministically; npm test passes 9/9 at HEAD 83e3817."
+    },
+    {
+      "id": "I-3",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-5"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-5"
+        }
+      ],
+      "note": "Decided deterministically; npm test passes 9/9 at HEAD 83e3817."
+    },
+    {
+      "id": "I-4",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "commit",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-6"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-6"
+        }
+      ],
+      "note": "Decided deterministically; npm test passes 9/9 at HEAD 83e3817."
+    },
+    {
+      "id": "I-5",
+      "status": "done",
+      "bucket": "deterministic",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "I-5"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-5"
+        },
+        {
+          "type": "commit",
+          "quote": "C-7"
+        },
+        {
+          "type": "file",
+          "path": "handoff/HANDOFF.md",
+          "quote": "C-7"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "C-7"
+        },
+        {
+          "type": "verdict",
+          "quote": "C-7"
+        }
+      ],
+      "note": "Decided deterministically; npm test passes 9/9 at HEAD 83e3817."
+    }
+  ],
+  "newSlices": []
+}

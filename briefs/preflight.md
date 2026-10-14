@@ -2,4 +2,4 @@
 
 Run the deterministic checks:
 `{{cli}} preflight`
-Read its output. If it fails, the next stage brief lists what failed. Do not edit files in this stage; stop after the command.
+Read its output and follow the brief it prints. Do not edit files in this stage.

@@ -159,12 +159,16 @@ test("a goal runs intake → approval → two slices → reconcile → report �
 
   // Report, then the goal predicate decides done.
   assert.equal(runCli(dir, ["goal", "check"]).json.done, false);
-  assert.equal(runCli(dir, ["report"]).json.ok, true);
+  // The report command advances the machine itself: the goal check runs and the brief says done.
+  const rep = runCli(dir, ["report"]).json;
+  assert.equal(rep.ok, true, JSON.stringify(rep));
+  assert.equal(rep.stage, "done");
+  assert.match(rep.brief, /Goal G-1 complete/);
   const check = runCli(dir, ["goal", "check"]).json;
   assert.equal(check.done, true, JSON.stringify(check));
   r = stop(dir);
-  assert.equal(r.json.decision, undefined, r.stdout);
-  assert.match(r.json.systemMessage, /Goal G-1 complete/);
+  assert.equal(r.code, 0);
+  assert.equal(r.json, null, "a done run stops silently");
   s = state(dir);
   assert.equal(s.stage, "done");
   const report = readFileSync(join(dir, ".harness/report.md"), "utf8");
@@ -176,6 +180,8 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   // Events are the record: every transition and block is there.
   const ev = runCli(dir, ["events", "--last", "500"]).json.events;
   assert.ok(ev.filter((e) => e.type === "stage").length >= 14);
+  // `harness next` after a verdict prints the next brief without a stop.
+  
   assert.ok(ev.some((e) => e.type === "verdict" && e.valid === false));
   assert.ok(ev.some((e) => e.type === "record" && e.slice === "S-2"));
 

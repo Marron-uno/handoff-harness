@@ -12,7 +12,7 @@ import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
 import { renderReport } from "./lib/report.mjs";
 import { goalCheck } from "./lib/goal-check.mjs";
-import { briefFor, loadPlanIntoState } from "./lib/machine.mjs";
+import { briefFor, loadPlanIntoState, advanceFromCli } from "./lib/machine.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
 import { attributeByStage } from "./lib/usage.mjs";
@@ -162,9 +162,10 @@ const commands = {
     if (sub === "done") {
       if (state.stage !== "building" || !state.slice) fail(`stage is ${state.stage}; slice done only applies while building`);
       state.slice.buildDone = true;
-      saveState(cwd, state);
       appendEvent(cwd, { type: "note", slice: state.slice.id, text: "build declared done", diffHash: workHash(cwd), files: changedFiles(cwd).length });
-      out({ ok: true, slice: state.slice.id, attempt: state.slice.attempt, next: "Stop now; the Stop hook moves to preflight." });
+      const adv = advanceFromCli(cwd, state, loadProfile(cwd));
+      saveState(cwd, state);
+      out({ ok: true, slice: state.slice.id, attempt: state.slice.attempt, stage: adv.stage, brief: adv.brief });
     }
     if (sub === "skip") {
       const slice = currentSlice(state) ?? state.slices.find((s) => s.id === flags.id);
@@ -184,8 +185,9 @@ const commands = {
     if (!["preflight", "building"].includes(state.stage)) fail(`stage is ${state.stage}; preflight runs in the preflight stage`);
     const profile = loadProfile(cwd);
     const result = runPreflight(cwd, state, profile, { extraChecks: guardChecks(profile) });
+    const adv = advanceFromCli(cwd, state, profile);
     saveState(cwd, state);
-    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), next: result.passed ? "Stop now; the Stop hook starts the critic." : "Stop now; the Stop hook sends the failures back to build." });
+    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), stage: adv.stage, brief: adv.brief });
   },
 
   record() {
@@ -208,7 +210,9 @@ const commands = {
       push = { attempted: true, ok: r.code === 0, detail: r.code === 0 ? "" : r.err.slice(-300) };
     }
     appendEvent(cwd, { type: "record", slice: slice.id, commit: sha, files, push });
-    out({ ok: true, commit: sha, files, push, next: "Stop now; the Stop hook advances to the next slice." });
+    const adv = advanceFromCli(cwd, state, loadProfile(cwd));
+    saveState(cwd, state);
+    out({ ok: true, commit: sha, files, push, stage: adv.stage, brief: adv.brief });
   },
 
   async reconcile(sub) {
@@ -235,8 +239,9 @@ const commands = {
           appendEvent(cwd, { type: "jev", purpose: "outcome", answerId: item.jev.answerId, question: "implemented", actual: r.statuses[item.id] === "done", item: item.id });
         }
       }
+      const adv = advanceFromCli(cwd, state, profile);
       saveState(cwd, state);
-      out({ ok: true, missing: r.missing, added: r.added, next: "Stop now; the Stop hook continues with new slices or the report." });
+      out({ ok: true, missing: r.missing, added: r.added, stage: adv.stage, brief: adv.brief });
     }
     fail(`unknown reconcile subcommand ${sub}`);
   },
@@ -257,7 +262,17 @@ const commands = {
       const c = git(cwd, ["commit", "-q", "-m", `docs: harness report [${state.goal.id}]`, "--", ...own]);
       if (c.code === 0) { commit = headSha(cwd); if (git(cwd, ["remote", "get-url", "origin"]).code === 0) git(cwd, ["push", "-q", "-u", "origin", state.branch]); }
     }
-    out({ ok: true, path: harnessPaths(cwd).report, bytes: text.length, commit, next: "Stop now; the Stop hook runs the goal check." });
+    const adv = advanceFromCli(cwd, state, loadProfile(cwd));
+    saveState(cwd, state);
+    out({ ok: true, path: harnessPaths(cwd).report, bytes: text.length, commit, stage: adv.stage, brief: adv.brief });
+  },
+
+  // Advances on the evidence present (verdict written, plan written) and prints the next brief.
+  next() {
+    const state = requireState();
+    const adv = advanceFromCli(cwd, state, loadProfile(cwd));
+    saveState(cwd, state);
+    out({ ok: true, stage: adv.stage, code: adv.code, brief: adv.brief });
   },
 
   resume() {

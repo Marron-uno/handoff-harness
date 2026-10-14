@@ -37,9 +37,22 @@ export function validateVerdict(cwd, verdict, { state, profile, workHash, role }
   for (const f of verdict.findings) {
     if (ids.has(f.id)) errors.push(`duplicate finding id ${f.id}`);
     ids.add(f.id);
-    for (const e of f.evidence ?? []) {
-      if (e.path && !existsSync(join(cwd, e.path)) && !existsSync(e.path)) errors.push(`${f.id}: evidence path does not exist: ${e.path}`);
-    }
+    for (const e of f.evidence ?? []) errors.push(...checkEvidence(cwd, e, f.id));
+  }
+  for (const c of verdict.criteria) {
+    for (const e of c.evidence ?? []) errors.push(...checkEvidence(cwd, e, c.id));
+    if (c.status === "met" && !(c.evidence ?? []).length) errors.push(`${c.id}: a met criterion needs at least one evidence entry`);
   }
   return { ok: errors.length === 0, errors, stale, verdict };
+}
+
+const PATH_TYPES = new Set(["file", "test", "diff", "screenshot", "gif"]);
+const QUOTE_TYPES = new Set(["command", "console", "network"]);
+function checkEvidence(cwd, e, owner) {
+  const errors = [];
+  if (PATH_TYPES.has(e.type) && !e.path) errors.push(`${owner}: evidence of type ${e.type} needs a path`);
+  if (QUOTE_TYPES.has(e.type) && !e.quote && !e.path) errors.push(`${owner}: evidence of type ${e.type} needs a quote or a path`);
+  if (e.path && !existsSync(join(cwd, e.path)) && !existsSync(e.path)) errors.push(`${owner}: evidence path does not exist: ${e.path}`);
+  if ((e.type === "screenshot" || e.type === "gif") && e.path && !e.host) errors.push(`${owner}: screenshot evidence needs the host it was captured on`);
+  return errors;
 }

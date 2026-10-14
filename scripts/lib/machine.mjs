@@ -4,7 +4,7 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, nowIso } from "./io.mjs";
 import { harnessPaths, pluginRoot } from "./paths.mjs";
-import { workHash, isClean, lastCommitSubject, headSha } from "./git.mjs";
+import { workHash, isClean, lastCommitSubject, headSha, changedFiles } from "./git.mjs";
 import { transition, nextReadySlice, currentSlice, RESTING } from "./state.mjs";
 import { appendEvent } from "./events.mjs";
 import { renderBrief } from "./brief.mjs";
@@ -17,10 +17,25 @@ const inventorySchema = () => readJson(join(pluginRoot(), "schemas", "inventory.
 
 function cliPath() { return `node "${pluginRoot()}/scripts/cli.mjs"`; }
 
+// A block from the Stop hook counts toward the runaway cap. The same decision reached through
+// `harness next` (the CLI advancing on evidence it just produced) is progress, not a stall.
+let blockSource = "hook";
 function block(cwd, state, code, reason) {
-  state.guards.blocks += 1;
-  appendEvent(cwd, { type: "block", stage: state.stage, slice: state.slice?.id ?? null, code });
+  if (blockSource === "hook") {
+    state.guards.blocks += 1;
+    appendEvent(cwd, { type: "block", stage: state.stage, slice: state.slice?.id ?? null, code });
+  }
   return { action: "block", code, reason };
+}
+
+// Advances the machine from the CLI and returns the next brief, so the model does not need a
+// stop-and-block cycle after every command. The Stop hook stays the enforcement of record.
+export function advanceFromCli(cwd, state, profile) {
+  blockSource = "cli";
+  try {
+    const r = decide({ cwd, state, profile, input: { source: "cli" } });
+    return { stage: state.stage, action: r.action, code: r.code, brief: r.action === "block" ? r.reason : (r.systemMessage ?? `Run is resting in ${state.stage}.`) };
+  } finally { blockSource = "hook"; }
 }
 
 function rest(cwd, state, stage, code, message, extra = {}) {
@@ -32,7 +47,7 @@ function rest(cwd, state, stage, code, message, extra = {}) {
   return { action: "allow", code, systemMessage: message, ...extra };
 }
 
-function sliceVars(state, profile) {
+function sliceVars(cwd, state, profile) {
   const slice = currentSlice(state);
   return {
     cli: cliPath(),
@@ -42,6 +57,8 @@ function sliceVars(state, profile) {
     attempt: state.slice?.attempt, maxAttempts: profile.caps.maxAttempts,
     round: state.review.rounds + 1, roundsAuthorized: state.review.roundsAuthorized,
     "devServer.url": profile.devServer?.url ?? "(none configured)", "devServer.start": profile.devServer?.start ?? "(none configured)",
+    changedFiles: changedFiles(cwd).filter((f) => !f.startsWith(".harness/")).slice(0, 40),
+    checks: (profile.checks ?? []).map((c) => `${c.id}: \`${c.command}\``),
     verdictsDir: harnessPaths("").verdicts.replace(/^\//, ""),
   };
 }
@@ -83,7 +100,7 @@ function failAttempt(cwd, state, profile, code, detail) {
   state.slice.buildDone = false;
   state.preflight = null;
   transition(cwd, state, "building", code, { detail: String(detail).slice(0, 500) });
-  return block(cwd, state, code, renderBrief("build", { ...sliceVars(state, profile), feedback: detail }));
+  return block(cwd, state, code, renderBrief("build", { ...sliceVars(cwd, state, profile), feedback: detail }));
 }
 
 export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
@@ -163,7 +180,7 @@ export function intakeMissing(cwd) {
 function decideIntake(cwd, state, profile) {
   const missing = intakeMissing(cwd);
   if (missing.length) {
-    return block(cwd, state, "intake_incomplete", renderBrief("intake", { ...sliceVars(state, profile), missing: missing.join("\n- ") }));
+    return block(cwd, state, "intake_incomplete", renderBrief("intake", { ...sliceVars(cwd, state, profile), missing: missing.join("\n- ") }));
   }
   if (state.goal.autoApprove) {
     state.goal.approvedAt = nowIso();
@@ -199,9 +216,9 @@ export function loadPlanIntoState(cwd, state, profile) {
 }
 
 function decidePlanning(cwd, state, profile) {
-  if (!existsSync(harnessPaths(cwd).plan)) return block(cwd, state, "plan_missing", renderBrief("planning", sliceVars(state, profile)));
+  if (!existsSync(harnessPaths(cwd).plan)) return block(cwd, state, "plan_missing", renderBrief("planning", sliceVars(cwd, state, profile)));
   const errs = loadPlanIntoState(cwd, state, profile);
-  if (errs.length) return block(cwd, state, "plan_invalid", renderBrief("planning", { ...sliceVars(state, profile), errors: errs.join("\n- ") }));
+  if (errs.length) return block(cwd, state, "plan_invalid", renderBrief("planning", { ...sliceVars(cwd, state, profile), errors: errs.join("\n- ") }));
   return advance(cwd, state, profile);
 }
 
@@ -211,32 +228,32 @@ function advance(cwd, state, profile) {
   if (next) {
     startSlice(cwd, state, next);
     transition(cwd, state, "building", "slice_start", { slice: next.id });
-    return block(cwd, state, "build", renderBrief("build", sliceVars(state, profile)));
+    return block(cwd, state, "build", renderBrief("build", sliceVars(cwd, state, profile)));
   }
   const passes = state.reconcilePasses ?? 0;
   const fresh = state.reconcile && state.reconcile.diffHash === workHash(cwd);
   if (!fresh && passes < 3) {
     transition(cwd, state, "reconcile", "all_slices_done");
-    return block(cwd, state, "reconcile", renderBrief("reconcile", sliceVars(state, profile)));
+    return block(cwd, state, "reconcile", renderBrief("reconcile", sliceVars(cwd, state, profile)));
   }
   transition(cwd, state, "report", "reconciled");
-  return block(cwd, state, "report", renderBrief("report", sliceVars(state, profile)));
+  return block(cwd, state, "report", renderBrief("report", sliceVars(cwd, state, profile)));
 }
 
 function decideBuilding(cwd, state, profile) {
   if (!state.slice) return advance(cwd, state, profile);
-  if (!state.slice.buildDone) return block(cwd, state, "build_incomplete", renderBrief("build", sliceVars(state, profile)));
+  if (!state.slice.buildDone) return block(cwd, state, "build_incomplete", renderBrief("build", sliceVars(cwd, state, profile)));
   transition(cwd, state, "preflight", "build_done");
-  return block(cwd, state, "preflight", renderBrief("preflight", sliceVars(state, profile)));
+  return block(cwd, state, "preflight", renderBrief("preflight", sliceVars(cwd, state, profile)));
 }
 
 function decidePreflight(cwd, state, profile, wh) {
   const p = state.preflight;
-  if (!p || p.diffHash !== wh) return block(cwd, state, "preflight_stale", renderBrief("preflight", sliceVars(state, profile)));
+  if (!p || p.diffHash !== wh) return block(cwd, state, "preflight_stale", renderBrief("preflight", sliceVars(cwd, state, profile)));
   if (p.passed) {
     transition(cwd, state, "critic", "preflight_passed");
     const agent = pickAgent(state, profile, "critic");
-    return block(cwd, state, "critic", renderBrief("critic", { ...sliceVars(state, profile), agent, verdictPath: verdictPath(cwd, state, "critic") }));
+    return block(cwd, state, "critic", renderBrief("critic", { ...sliceVars(cwd, state, profile), agent, verdictPath: verdictPath(cwd, state, "critic") }));
   }
   const failed = p.checks.filter((c) => c.status === "fail").map((c) => `${c.id}: ${c.details ?? ""}`).join("\n- ");
   return failAttempt(cwd, state, profile, "preflight_failed", `Preflight failed:\n- ${failed}`);
@@ -247,7 +264,7 @@ function decideVerdict(cwd, state, profile, wh, role) {
   const path = verdictPath(cwd, state, role, round);
   const agent = pickAgent(state, profile, role);
   const briefName = role === "critic" ? "critic" : "review";
-  const vars = { ...sliceVars(state, profile), agent, verdictPath: path };
+  const vars = { ...sliceVars(cwd, state, profile), agent, verdictPath: path };
   if (!existsSync(path)) return block(cwd, state, `${role}_verdict_missing`, renderBrief(briefName, vars));
   const result = validateVerdict(cwd, readJson(path, null), { state, profile, workHash: wh, role });
   if (!result.ok) {
@@ -265,10 +282,10 @@ function decideVerdict(cwd, state, profile, wh, role) {
   if (v.verdict === "pass") {
     if (role === "critic") {
       transition(cwd, state, "review", "critic_pass");
-      return block(cwd, state, "review", renderBrief("review", { ...sliceVars(state, profile), agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review") }));
+      return block(cwd, state, "review", renderBrief("review", { ...sliceVars(cwd, state, profile), agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review") }));
     }
     transition(cwd, state, "record", "review_pass");
-    return block(cwd, state, "record", renderBrief("record", sliceVars(state, profile)));
+    return block(cwd, state, "record", renderBrief("record", sliceVars(cwd, state, profile)));
   }
   const findings = v.findings.filter((f) => f.severity === "block" || f.severity === "major")
     .map((f) => `${f.id} [${f.severity}] ${f.file ?? ""}${f.line ? ":" + f.line : ""} ${f.issue} (${f.authority})${f.suggestion ? " → " + f.suggestion : ""}`).join("\n- ");
@@ -281,7 +298,7 @@ function decideVerdict(cwd, state, profile, wh, role) {
     state.slice.buildDone = false;
     state.preflight = null;
     transition(cwd, state, "building", "review_block", { round: state.review.rounds });
-    return block(cwd, state, "review_block", renderBrief("build", { ...sliceVars(state, profile), feedback: `Reviewer blocked (round ${state.review.rounds}):\n- ${findings}` }));
+    return block(cwd, state, "review_block", renderBrief("build", { ...sliceVars(cwd, state, profile), feedback: `Reviewer blocked (round ${state.review.rounds}):\n- ${findings}` }));
   }
   return failAttempt(cwd, state, profile, "critic_block", `Critic blocked:\n- ${findings}`);
 }
@@ -290,7 +307,7 @@ function decideRecord(cwd, state, profile) {
   const slice = currentSlice(state);
   const subject = lastCommitSubject(cwd);
   const recorded = isClean(cwd) && subject.includes(`[${slice.id}]`) && headSha(cwd) !== state.slice.startHead;
-  if (!recorded) return block(cwd, state, "record_missing", renderBrief("record", sliceVars(state, profile)));
+  if (!recorded) return block(cwd, state, "record_missing", renderBrief("record", sliceVars(cwd, state, profile)));
   slice.status = "done";
   slice.commit = headSha(cwd);
   slice.diffHash = workHash(cwd);
@@ -301,14 +318,14 @@ function decideRecord(cwd, state, profile) {
 
 function decideReconcile(cwd, state, profile, wh) {
   const r = state.reconcile;
-  if (!r || r.diffHash !== wh) return block(cwd, state, "reconcile_missing", renderBrief("reconcile", sliceVars(state, profile)));
+  if (!r || r.diffHash !== wh) return block(cwd, state, "reconcile_missing", renderBrief("reconcile", sliceVars(cwd, state, profile)));
   return advance(cwd, state, profile);
 }
 
 function decideReport(cwd, state, profile) {
   const p = harnessPaths(cwd).report;
   const fresh = existsSync(p) && statSync(p).mtimeMs >= Date.parse(state.stageEnteredAt) - 1000;
-  if (!fresh) return block(cwd, state, "report_missing", renderBrief("report", sliceVars(state, profile)));
+  if (!fresh) return block(cwd, state, "report_missing", renderBrief("report", sliceVars(cwd, state, profile)));
   const check = goalCheck(cwd, state, profile);
   // The report stage cannot edit source, so an unsatisfied predicate here is a human decision.
   if (!check.done) return rest(cwd, state, "awaiting_human", "goal_incomplete", `Report written but the goal predicate is not satisfied:\n- ${check.reasons.join("\n- ")}\nA human decides: skip or hold the gaps, raise the slice budget, or fix by hand, then \`harness retry\`.`);
@@ -319,7 +336,7 @@ function decideReport(cwd, state, profile) {
 
 // Renders the brief for the current stage without mutating state. Used by `harness resume`.
 export function briefFor(cwd, state, profile) {
-  const vars = sliceVars(state, profile);
+  const vars = sliceVars(cwd, state, profile);
   switch (state.stage) {
     case "intake": return renderBrief("intake", { ...vars, missing: intakeMissing(cwd).join("\n- ") || "nothing; stop to let the hook verify" });
     case "planning": return renderBrief("planning", vars);

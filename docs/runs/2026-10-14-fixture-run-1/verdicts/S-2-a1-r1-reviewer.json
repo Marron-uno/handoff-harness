@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "agent": "reviewer",
+  "goal": "G-1",
+  "slice": "S-2",
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "08419144b57e627c",
+  "verdict": "pass",
+  "summary": "S-2 is non-UI and meets C-6. The diff is two new untracked files, src/export.mjs and tests/export.test.mjs, both inside the declared slice paths. Nothing outside the slice changed and no existing test was weakened. exportMarkdown(store) emits '## title', a blank line, the body, and a newline for each note, in store order. An empty store returns an empty string. npm test ran 7 tests: 7 pass, 0 fail. I found no secrets, placeholder data that looks real, or non-English text. Bodies are written verbatim with no escaping, which the criterion does not require.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "note",
+      "file": "src/export.mjs",
+      "line": 2,
+      "issue": "Bodies are emitted verbatim, so a body line starting with '## ' would look like an extra section. C-6 does not ask for escaping.",
+      "suggestion": "No change needed for v0.2.",
+      "authority": "criterion:C-6",
+      "evidence": [
+        { "type": "file", "path": "src/export.mjs", "line": 2, "quote": "store.map((n) => `## ${n.title}\\n\\n${n.body}\\n`).join(\"\\n\")" }
+      ],
+      "preExisting": false,
+      "disputed": false
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-6",
+      "status": "met",
+      "evidence": [
+        { "type": "file", "path": "src/export.mjs", "line": 2, "quote": "store.map((n) => `## ${n.title}\\n\\n${n.body}\\n`).join(\"\\n\")" },
+        { "type": "test", "path": "tests/export.test.mjs", "line": 5, "quote": "exportMarkdown writes one ## section per note in store order" },
+        { "type": "command", "quote": "npm test: tests 7, pass 7, fail 0" }
+      ]
+    }
+  ],
+  "browser": { "used": false, "host": null, "note": "Slice is not UI-bearing, so no browser check was needed." },
+  "model": "claude-sonnet-5-5",
+  "writtenAt": "2026-10-13T00:00:00Z"
+}

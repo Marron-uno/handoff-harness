@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "goal": {
+    "id": "G-1",
+    "sentence": "build all of the handoff",
+    "mode": "handoff",
+    "sources": [
+      "handoff/HANDOFF.md"
+    ],
+    "createdAt": "2026-10-14T05:13:47.165Z",
+    "approvedAt": "2026-10-14T05:15:08.971Z",
+    "autoApprove": true,
+    "budget": {
+      "usd": 15,
+      "minutes": 60,
+      "maxSlices": 8
+    },
+    "environments": {
+      "prod": false,
+      "preview": null
+    },
+    "jev": false
+  },
+  "stage": "done",
+  "stageEnteredAt": "2026-10-14T05:25:15.709Z",
+  "branch": "goal/G-1",
+  "defaultBranch": "main",
+  "slice": null,
+  "slices": [
+    {
+      "id": "S-1",
+      "title": "Listing: newest first, copy, case-insensitive tag filter (verify create-note criteria)",
+      "status": "done",
+      "dependsOn": [],
+      "criteria": [
+        "C-1",
+        "C-2",
+        "C-3",
+        "C-4",
+        "C-5"
+      ],
+      "paths": [
+        "src/notes.mjs",
+        "tests/notes.test.mjs"
+      ],
+      "attempts": 1,
+      "ui": false,
+      "diffHash": "2f217c38590c2fca",
+      "commit": "052d19fee89ec8fed75fc49327b31d6d4d674437",
+      "origin": "plan"
+    },
+    {
+      "id": "S-2",
+      "title": "exportMarkdown",
+      "status": "done",
+      "dependsOn": [
+        "S-1"
+      ],
+      "criteria": [
+        "C-6"
+      ],
+      "paths": [
+        "src/export.mjs",
+        "tests/export.test.mjs"
+      ],
+      "attempts": 1,
+      "ui": false,
+      "diffHash": "36092a771af2a374",
+      "commit": "256d2c1fb7f0f8159efd0cb198a0e295c6df7df0",
+      "origin": "plan"
+    },
+    {
+      "id": "S-3",
+      "title": "Note count on the page",
+      "status": "done",
+      "dependsOn": [
+        "S-1"
+      ],
+      "criteria": [
+        "C-7"
+      ],
+      "paths": [
+        "public/**",
+        "src/server.mjs",
+        "tests/server.test.mjs"
+      ],
+      "attempts": 1,
+      "ui": true,
+      "diffHash": "fcf3088a97783beb",
+      "commit": "83e3817ef349dfbc2e3564aaf6267c09687d043a",
+      "origin": "plan"
+    }
+  ],
+  "review": {
+    "rounds": 0,
+    "roundsAuthorized": 3
+  },
+  "preflight": {
+    "diffHash": "93603899f2dbdc77",
+    "passed": true,
+    "at": "2026-10-14T05:22:18.843Z",
+    "durationMs": 860,
+    "checks": [
+      {
+        "id": "branch",
+        "durationMs": 7,
+        "status": "pass",
+        "details": "goal/G-1"
+      },
+      {
+        "id": "diff_budget",
+        "durationMs": 27,
+        "status": "pass",
+        "details": "51 lines in 2 files"
+      },
+      {
+        "id": "protected_paths",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "none touched"
+      },
+      {
+        "id": "slice_paths",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "2 files within declared paths"
+      },
+      {
+        "id": "openspec_validate",
+        "durationMs": 498,
+        "status": "pass",
+        "details": "Totals: 2 passed, 0 failed (2 items)"
+      },
+      {
+        "id": "project:test",
+        "durationMs": 237,
+        "status": "pass",
+        "details": "ℹ duration_ms 89.040833"
+      },
+      {
+        "id": "language",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "2 files English"
+      },
+      {
+        "id": "secrets",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "no secrets in changed files"
+      },
+      {
+        "id": "prose",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "prose clean"
+      },
+      {
+        "id": "test_weakening",
+        "durationMs": 27,
+        "status": "pass",
+        "details": "+0 -0 test blocks"
+      },
+      {
+        "id": "dependencies",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "no dependency manifest changed"
+      }
+    ]
+  },
+  "verdicts": {
+    "critic": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-1/.harness/verdicts/S-3-a1-r1-critic.json",
+    "review": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-1/.harness/verdicts/S-3-a1-r1-reviewer.json"
+  },
+  "guards": {
+    "blocks": 0,
+    "diffHashes": [
+      "d1adc8f132f78c07",
+      "2f217c38590c2fca",
+      "08419144b57e627c",
+      "36092a771af2a374",
+      "93603899f2dbdc77",
+      "fcf3088a97783beb"
+    ],
+    "continuations": 23
+  },
+  "counters": {
+    "toolCalls": {
+      "intake": 4,
+      "building": 10,
+      "preflight": 3,
+      "critic": 7,
+      "record": 3,
+      "reconcile": 2,
+      "report": 1
+    },
+    "browserActions": 4
+  },
+  "browser": {
+    "lastHost": "localhost"
+  },
+  "holds": [
+    {
+      "id": "H-1",
+      "question": "What is the public URL of the deployed page?",
+      "blocks": [],
+      "raisedAt": "2026-10-14T05:15:08.972Z"
+    }
+  ],
+  "defaults": [
+    {
+      "id": "D-1",
+      "question": "Should tags be case-insensitive?",
+      "chosen": "Yes, compare lowercased.",
+      "appliedAt": "2026-10-14T05:15:08.972Z"
+    }
+  ],
+  "reconcile": {
+    "diffHash": "fcf3088a97783beb",
+    "at": "2026-10-14T05:25:04.194Z",
+    "missing": 0,
+    "path": "/private/tmp/claude-501/-Users-jmarron-Developer-personal/6f536223-e803-4e47-b49c-3f5d7ded0fb5/scratchpad/run-1/.harness/verdicts/reconcile.json"
+  },
+  "transcriptPath": "/Users/jmarron/.claude/projects/-private-tmp-claude-501--Users-jmarron-Developer-personal-6f536223-e803-4e47-b49c-3f5d7ded0fb5-scratchpad-run-1/f04a0604-9bcf-43c2-b2e8-f261371cf072.jsonl",
+  "pluginRoot": "/Users/jmarron/Developer/personal/handoff-harness",
+  "halt": null,
+  "updatedAt": "2026-10-14T05:25:15.709Z",
+  "reconcilePasses": 1
+}

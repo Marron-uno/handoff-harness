@@ -9,6 +9,7 @@ import { validateVerdict } from "../lib/verdict.mjs";
 import { workHash } from "../lib/git.mjs";
 import { summarizeAgentTranscript, costOf } from "../lib/usage.mjs";
 import { jevVerdictGate } from "../lib/jev/verdict-gate.mjs";
+import { readEvents } from "../lib/events.mjs";
 
 const ctx = await bootstrap();
 if (!ctx.active) process.exit(0);
@@ -17,7 +18,9 @@ const agent = agentTypeOf(input);
 const JUDGES = { critic: "critic", "critic-strong": "critic", reviewer: "review", "reviewer-strong": "review" };
 
 if (input.agent_transcript_path && existsSync(input.agent_transcript_path)) {
-  const row = summarizeAgentTranscript(input.agent_transcript_path, { stage: state.stage, agent: agent ?? "unknown" });
+  // Attribute to the stage the agent was spawned in, not the stage at the time it finished.
+  const start = readEvents(cwd, (e) => e.type === "note" && e.text === "subagent start" && e.agentId && e.agentId === input.agent_id).pop();
+  const row = summarizeAgentTranscript(input.agent_transcript_path, { stage: start?.stage ?? state.stage, agent: agent ?? "unknown" });
   ctx.event({ type: "usage", scope: "subagent", agent: row.agent, stage: row.stage, slice: state.slice?.id ?? null, model: row.model, calls: row.calls, input: row.input, cacheWrite: row.cacheWrite, cacheRead: row.cacheRead, output: row.output, usd: Number(costOf(row, profile.pricing).toFixed(4)) });
 }
 

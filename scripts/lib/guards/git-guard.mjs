@@ -1,6 +1,8 @@
 // Bash command guard: history is never rewritten, pushes stay on the goal branch,
 // state files are written only through the CLI, sensitive files are never read.
 import { currentBranch } from "../git.mjs";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { globToRegExp } from "../glob.mjs";
 
 const STATE_FILES = /\.harness\/(state\.json|events\.jsonl|plugin-root)/;
@@ -32,10 +34,13 @@ export function checkBashCommand(command, { profile, state, cwd }) {
   if (STATE_FILES.test(text) && !/cli\.mjs|(?:^|[\s;&|])harness\s/.test(text) && /(>|>>|\btee\b|sed\s+-i|\bmv\b|\brm\b|\bcp\b)/.test(text)) {
     return { deny: true, guard: "state", reason: "Blocked: .harness/state.json, events.jsonl and plugin-root are written only by the harness CLI." };
   }
+  // Only path-like tokens are tested: a word such as "secrets" inside a grep pattern is not a file.
   const sensitive = profile.lanes.sensitivePaths.map(globToRegExp);
   for (const token of text.split(/\s+/).map(stripQuotes)) {
     const rel = token.replace(/^\.\//, "");
     if (!rel || rel.endsWith(".example") || rel.endsWith(".sample")) continue;
+    const pathLike = rel.includes("/") || rel.startsWith(".") || /\.[a-z0-9]{1,5}$/i.test(rel) || existsSync(join(cwd, rel));
+    if (!pathLike) continue;
     if (sensitive.some((re) => re.test(rel) || re.test(rel.split("/").pop()))) return { deny: true, guard: "sensitive", reason: `Blocked: ${rel} matches a sensitive path. Agents never read secrets; use fixture values from .harness/profile.json.` };
   }
   return { deny: false };

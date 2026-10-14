@@ -46,7 +46,9 @@ export function hash(dir) { return runCli(dir, ["hash"]).json.diffHash; }
 export function stop(dir, extra = {}) { return runHook("stop", { cwd: dir, hook_event_name: "Stop", stop_hook_active: false, ...extra }); }
 
 export function writeVerdict(dir, path, { agent, slice, attempt, round, verdict, findings = [], criteria = [] }) {
-  const v = { version: 1, agent, goal: "G-1", slice, attempt, round, diffHash: hash(dir), verdict, summary: `${agent} ${verdict}`, findings, criteria, writtenAt: new Date().toISOString() };
+  // Met criteria need evidence; the fixture's README always exists.
+  const withEvidence = criteria.map((c) => (c.status === "met" && !c.evidence ? { ...c, evidence: [{ type: "file", path: "README.md" }] } : c));
+  const v = { version: 1, agent, goal: "G-1", slice, attempt, round, diffHash: hash(dir), verdict, summary: `${agent} ${verdict}`, findings, criteria: withEvidence, writtenAt: new Date().toISOString() };
   mkdirSync(join(dir, ".harness", "verdicts"), { recursive: true });
   writeFileSync(path, JSON.stringify(v, null, 2));
   return v;
