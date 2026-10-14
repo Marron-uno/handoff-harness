@@ -90,6 +90,14 @@ export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
   if (RESTING.has(state.stage)) return { action: "allow", code: "resting" };
   if (input.stop_hook_active) state.guards.continuations += 1;
 
+  // A judge running as a background subagent is progress in flight, not a stall: let the turn end,
+  // the session wakes when the task completes, and the next stop sees the verdict.
+  const running = (input.background_tasks ?? []).filter((t) => t.status === "running");
+  if (running.length && ["critic", "review", "reconcile"].includes(state.stage)) {
+    appendEvent(cwd, { type: "note", stage: state.stage, slice: state.slice?.id ?? null, text: `waiting for ${running.length} background task(s): ${running.map((t) => t.type ?? "task").join(", ")}` });
+    return { action: "allow", code: "background_task_running" };
+  }
+
   // Budgets. Minutes from approval; dollars from the usage summary when it exists.
   const started = Date.parse(state.goal.approvedAt ?? state.goal.createdAt);
   const minutes = (now - started) / 60000;

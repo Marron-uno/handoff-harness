@@ -276,13 +276,20 @@ const commands = {
     out({ ok: true, roundsAuthorized: rounds, stage: state.stage });
   },
 
-  retry() {
+  retry(_, { flags }) {
     const state = requireState();
     if (!["awaiting_human", "halted"].includes(state.stage)) fail(`stage is ${state.stage}`);
-    const to = state.slice ? "building" : "planning";
+    const allowed = ["building", "preflight", "critic", "review", "record"];
+    let to = state.slice ? "building" : "planning";
+    if (flags.stage) {
+      if (!allowed.includes(flags.stage)) fail(`--stage must be one of ${allowed.join(", ")}`);
+      if (!state.slice) fail("no active slice to resume at that stage");
+      to = flags.stage;
+    }
     state.halt = null; state.guards.blocks = 0; state.guards.diffHashes = [];
-    if (state.slice) { state.slice.buildDone = false; state.slice.attempt = 1; state.slice.rejections = 0; state.slice.staleVerdicts = 0; }
-    transition(cwd, state, to, "human_retry");
+    if (state.slice && to === "building") { state.slice.buildDone = false; state.slice.attempt = 1; state.slice.rejections = 0; state.slice.staleVerdicts = 0; }
+    if (state.slice && to !== "building") state.slice.buildDone = true;
+    transition(cwd, state, to, flags.stage ? `human_retry_at_${to}` : "human_retry");
     saveState(cwd, state);
     out({ ok: true, stage: to });
   },

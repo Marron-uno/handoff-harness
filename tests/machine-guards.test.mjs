@@ -152,3 +152,33 @@ test("stop hook is silent outside a harness project", () => {
   assert.equal(r.code, 0);
   assert.equal(r.stdout, "");
 });
+
+test("a running background task in a judge stage lets the turn end without counting a block", () => {
+  const dir = buildingRepo();
+  let s = loadState(dir);
+  s.stage = "critic"; s.slice.buildDone = true;
+  saveState(dir, s);
+  const before = s.guards.blocks;
+  const r = stop(dir, { background_tasks: [{ id: "t1", type: "agent", status: "running", description: "critic" }] });
+  assert.equal(r.json, null, r.stdout);
+  s = state(dir);
+  assert.equal(s.stage, "critic");
+  assert.equal(s.guards.blocks, before, "a running task is not a stall");
+  const again = stop(dir, { background_tasks: [{ id: "t1", type: "agent", status: "completed" }] });
+  assert.equal(again.json.decision, "block");
+  assert.equal(state(dir).guards.blocks, before + 1);
+});
+
+test("retry --stage resumes a halted run at a judge stage without rebuilding", () => {
+  const dir = buildingRepo();
+  let s = loadState(dir);
+  s.stage = "halted"; s.slice.buildDone = true; s.halt = { reason: "x", at: new Date().toISOString(), code: "runaway" };
+  saveState(dir, s);
+  assert.match(runCli(dir, ["retry", "--stage", "nowhere"]).json.error, /--stage must be one of/);
+  const r = runCli(dir, ["retry", "--stage", "critic"]);
+  assert.equal(r.json.stage, "critic");
+  s = state(dir);
+  assert.equal(s.slice.buildDone, true);
+  assert.equal(s.slice.attempt, 1);
+  assert.equal(s.halt, null);
+});
