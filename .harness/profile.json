@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "checks": [
+    { "id": "test", "command": "npm test", "timeoutSec": 300 },
+    { "id": "check", "command": "npm run check", "timeoutSec": 120 }
+  ],
+  "hosts": { "preview": [], "prod": [] }
+}
