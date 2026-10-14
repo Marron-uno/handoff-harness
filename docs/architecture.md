@@ -17,13 +17,15 @@ goal new ─▶ intake ─▶ awaiting_approval ─▶ planning ─▶ building 
 
 Resting stages, where the Stop hook lets the session end: `awaiting_approval`, `awaiting_human`, `budget_exceeded`, `halted`, `done`.
 
-## The Stop hook is the orchestrator
+## One machine, two entry points
 
 `scripts/lib/machine.mjs` reads the state, the profile and git, and returns allow or block. A block carries the next stage brief from `briefs/`, rendered with the slice variables. Each stage handler checks the evidence the previous step must have produced (a file, a commit, a verdict with the right work hash) and either advances or repeats the brief.
 
+The machine runs from two places. CLI commands that produce evidence (`slice done`, `preflight`, `record`, `reconcile load`, `report`) and `harness next` after a verdict call it directly and print the next brief, so the model keeps working without a stop. The Stop hook calls the same function when the model stops instead, and is the enforcement of record: only its blocks count toward the runaway cap, and only it can let a session end. Recorded run 1 showed why both are needed: a stop-and-block cycle per stage cost 24 blocks for 17 transitions.
+
 Guards run before dispatch: time and cost budgets, the runaway cap (blocks without a stage transition), and oscillation (the work hash alternates between two values).
 
-Claude Code caps consecutive Stop-hook continuations at eight. The runaway cap sits at seven so the harness halts with a reason instead of being cut off. The goal skill tells the model to run each stage proactively, so the hook is enforcement plus a nudge, not the only driver. `scripts/drive.mjs` restarts headless sessions for unattended runs.
+Claude Code caps consecutive Stop-hook continuations at eight. The runaway cap sits at seven so the harness halts with a reason instead of being cut off. A judge running as a background subagent is not a stall: the hook lets the turn end while `background_tasks` are running in a judge stage and picks up the verdict on the next stop. `scripts/drive.mjs` restarts headless sessions for unattended runs, with `--chrome` for the reviewer's browser.
 
 ## Work hash
 

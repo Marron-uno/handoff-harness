@@ -30,9 +30,9 @@ Then stop. The Stop hook verifies the three files and moves the run to `awaiting
 
 ## 3. After approval
 
-The human runs `harness goal approve` (or says "approve", in which case you run it). From then on the Stop hook drives: each time you stop, it checks the stage and injects the next brief. Follow each brief literally, run the `harness` command it names, and stop again. Judges (critic, reviewer, reconciler) are subagents you spawn by the name in the brief; never judge a slice yourself.
+The human runs `harness goal approve` (or says "approve", in which case you run it). From then on, follow each brief literally. Commands that produce evidence (`harness slice done`, `harness preflight`, `harness record`, `harness reconcile load`, `harness report`) advance the run and print the next brief; after a judge returns, `harness next` does the same. Judges (critic, reviewer, reconciler) are subagents you spawn by the name in the brief, in the foreground when possible; never judge a slice yourself. If you stop instead, the Stop hook runs the same machine and injects the brief you would have been given.
 
-Claude Code allows at most eight consecutive Stop-hook continuations, so after a long run the session will pause. The human says "continue" or runs `harness resume`, or uses `node "${CLAUDE_PLUGIN_ROOT}/scripts/drive.mjs"` for an unattended run.
+Claude Code allows at most eight consecutive Stop-hook continuations, so a run that relies on stopping will pause; following the printed briefs avoids that. For an unattended run use `node "${CLAUDE_PLUGIN_ROOT}/scripts/drive.mjs"`, with `--chrome` when the reviewer needs a browser.
 
 ## What the harness guarantees
 

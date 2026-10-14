@@ -130,9 +130,18 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   assert.equal(runCli(dir, ["preflight"]).json.passed, true);
   r = stop(dir);
   writeVerdict(dir, r.json.reason.match(/to `([^`]+critic\.json)`/)[1], { agent: "critic", slice: "S-2", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-6", status: "met" }] });
-  r = stop(dir);
-  writeVerdict(dir, r.json.reason.match(/to `([^`]+reviewer\.json)`/)[1], { agent: "reviewer", slice: "S-2", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-6", status: "met" }] });
-  stop(dir);
+  // `harness next` advances on the verdict and prints the next brief without a stop, and without
+  // counting a block.
+  const blocksBefore = state(dir).guards.blocks;
+  let nx = runCli(dir, ["next"]).json;
+  assert.equal(nx.stage, "review", JSON.stringify(nx));
+  assert.match(nx.brief, /Stage: review, slice S-2/);
+  const reviewPath2 = nx.brief.match(/to `([^`]+reviewer\.json)`/)[1];
+  writeVerdict(dir, reviewPath2, { agent: "reviewer", slice: "S-2", attempt: 1, round: 1, verdict: "pass", criteria: [{ id: "C-6", status: "met" }] });
+  nx = runCli(dir, ["next"]).json;
+  assert.equal(nx.stage, "record");
+  assert.match(nx.brief, /Stage: record, slice S-2/);
+  assert.equal(state(dir).guards.blocks, blocksBefore, "cli advances are not stop-hook blocks");
   assert.equal(runCli(dir, ["record"]).json.ok, true);
   r = stop(dir);
   assert.match(r.json.reason, /Stage: reconcile/);
@@ -180,8 +189,7 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   // Events are the record: every transition and block is there.
   const ev = runCli(dir, ["events", "--last", "500"]).json.events;
   assert.ok(ev.filter((e) => e.type === "stage").length >= 14);
-  // `harness next` after a verdict prints the next brief without a stop.
-  
+
   assert.ok(ev.some((e) => e.type === "verdict" && e.valid === false));
   assert.ok(ev.some((e) => e.type === "record" && e.slice === "S-2"));
 
