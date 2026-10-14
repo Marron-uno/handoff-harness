@@ -12,7 +12,8 @@ import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
 import { renderReport } from "./lib/report.mjs";
 import { goalCheck } from "./lib/goal-check.mjs";
-import { briefFor, loadPlanIntoState, advanceFromCli } from "./lib/machine.mjs";
+import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal } from "./lib/machine.mjs";
+import { changeSlug, specCheck, planTaskProblems, taskStatus, tickSliceTasks } from "./lib/openspec.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
 import { attributeByStage } from "./lib/usage.mjs";
@@ -102,10 +103,17 @@ const commands = {
         if (r.code !== 0) fail(`could not create branch ${branch}: ${r.err}`);
       }
       const sources = [].concat(flags.source ?? []);
+      // The spec stage: on by profile (openspec.author) or per goal with --openspec / --no-openspec.
+      // --change adopts an existing change folder instead of authoring one named after the goal.
+      const profile = loadProfile(cwd);
+      const specOn = flags.openspec ? true : flags["no-openspec"] ? false : Boolean(profile.openspec?.author);
+      if (flags.change && !specOn) fail("--change needs the spec stage: pass --openspec or set openspec.author in the profile");
+      const spec = specOn ? { change: flags.change ? String(flags.change) : changeSlug(id, String(flags.sentence)) } : null;
+      if (spec && !/^[a-z0-9][a-z0-9._-]*$/.test(spec.change)) fail(`change name ${spec.change} must be kebab-case`);
       const state = newState({
         id, sentence: String(flags.sentence), mode: flags.mode === "feature" ? "feature" : "handoff", sources,
         budget: { usd: Number(flags["budget-usd"] ?? 20), minutes: Number(flags["budget-minutes"] ?? 120), maxSlices: Number(flags["max-slices"] ?? 20) },
-        autoApprove: Boolean(flags["auto-approve"]), environments: { prod: Boolean(flags.prod), preview: flags.preview ?? null }, jev: Boolean(flags.jev),
+        autoApprove: Boolean(flags["auto-approve"]), environments: { prod: Boolean(flags.prod), preview: flags.preview ?? null }, jev: Boolean(flags.jev), spec,
         branch, defaultBranch: def,
       });
       // Pre-populate verdicts/evidence folders and clear prior per-goal artifacts.
@@ -114,23 +122,25 @@ const commands = {
         if (existsSync(f)) { writeFileSync(f + ".prev", readFileSync(f)); rmSync(f, { force: true }); }
       }
       saveState(cwd, state);
-      appendEvent(cwd, { type: "goal", action: "new", id, sentence: state.goal.sentence, mode: state.goal.mode, sources, budget: state.goal.budget, branch });
-      out({ ok: true, goal: state.goal, branch, next: "Intake: write .harness/inventory.json, .harness/plan.json and .harness/goal-card.md, then stop." });
+      appendEvent(cwd, { type: "goal", action: "new", id, sentence: state.goal.sentence, mode: state.goal.mode, sources, budget: state.goal.budget, branch, spec: spec?.change ?? null });
+      const next = spec
+        ? `Intake with the spec stage: write .harness/inventory.json, then the OpenSpec change at openspec/changes/${spec.change}/ (or amend the adopted one), run \`harness spec check\`, write .harness/plan.json with a "tasks" list per slice and .harness/goal-card.md, then run \`harness next\`.`
+        : "Intake: write .harness/inventory.json, .harness/plan.json and .harness/goal-card.md, then stop.";
+      out({ ok: true, goal: state.goal, spec: state.spec, branch, next });
     }
     if (sub === "approve") {
       const state = requireState();
       if (state.stage !== "awaiting_approval") fail(`stage is ${state.stage}, not awaiting_approval`);
       const errs = loadPlanIntoState(cwd, state, loadProfile(cwd));
       if (errs.length) fail("plan.json invalid", { errors: errs });
-      state.goal.approvedAt = nowIso();
-      transition(cwd, state, "planning", "approved");
+      const specCommit = approveGoal(cwd, state, "approved");
       saveState(cwd, state);
-      appendEvent(cwd, { type: "goal", action: "approved", id: state.goal.id });
-      out({ ok: true, stage: state.stage, slices: state.slices.length, holds: state.holds.length, next: "Stop now; the Stop hook starts the first slice." });
+      out({ ok: true, stage: state.stage, slices: state.slices.length, holds: state.holds.length, specCommit: specCommit?.committed ?? null, next: "Stop now; the Stop hook starts the first slice." });
     }
     if (sub === "status") {
       const state = requireState();
-      out({ ok: true, goal: state.goal.id, sentence: state.goal.sentence, stage: state.stage, slice: state.slice, slices: state.slices.map((s) => ({ id: s.id, status: s.status, attempts: s.attempts })), review: state.review, holds: state.holds, halt: state.halt, guards: state.guards });
+      const tasks = state.spec ? taskStatus(cwd, state) : null;
+      out({ ok: true, goal: state.goal.id, sentence: state.goal.sentence, stage: state.stage, slice: state.slice, slices: state.slices.map((s) => ({ id: s.id, status: s.status, attempts: s.attempts, tasks: s.tasks ?? [] })), review: state.review, spec: state.spec, tasks: tasks && { total: tasks.total, done: tasks.done, open: tasks.open }, holds: state.holds, halt: state.halt, guards: state.guards });
     }
     if (sub === "check") {
       const state = requireState();
@@ -194,12 +204,15 @@ const commands = {
     const state = requireState();
     if (state.stage !== "record" || !state.slice) fail(`stage is ${state.stage}; record runs in the record stage`);
     const slice = currentSlice(state);
+    // With the spec stage on, the slice's OpenSpec tasks are ticked here, after the judges and
+    // before the commit, so the tick lands in the slice commit and never in a reviewed diff.
+    const ticked = tickSliceTasks(cwd, state, slice);
     const files = changedFiles(cwd).filter((f) => !f.startsWith(".harness/") || f.startsWith(".harness/proposals/") || f === ".harness/profile.json" || f === ".harness/lessons.md");
     if (!files.length && headSha(cwd) === state.slice.startHead) fail("nothing to record: no changed files and no new commit");
     if (files.length) {
       const add = git(cwd, ["add", "--", ...files]);
       if (add.code !== 0) fail(`git add failed: ${add.err}`);
-      const body = [`Goal ${state.goal.id}: ${state.goal.sentence}`, `Criteria: ${slice.criteria.join(", ") || "none declared"}`, `Attempt ${state.slice.attempt}, review rounds ${state.review.rounds + 1}`].join("\n");
+      const body = [`Goal ${state.goal.id}: ${state.goal.sentence}`, `Criteria: ${slice.criteria.join(", ") || "none declared"}`, ticked.ticked.length ? `Tasks: ${ticked.ticked.join(", ")}` : null, `Attempt ${state.slice.attempt}, review rounds ${state.review.rounds + 1}`].filter(Boolean).join("\n");
       const commit = git(cwd, ["commit", "-q", "-m", `feat: ${slice.title} [${slice.id}] (${state.goal.id})`, "-m", body]);
       if (commit.code !== 0) fail(`git commit failed: ${commit.err}`);
     }
@@ -209,10 +222,28 @@ const commands = {
       const r = git(cwd, ["push", "-q", "-u", "origin", state.branch]);
       push = { attempted: true, ok: r.code === 0, detail: r.code === 0 ? "" : r.err.slice(-300) };
     }
-    appendEvent(cwd, { type: "record", slice: slice.id, commit: sha, files, push });
+    appendEvent(cwd, { type: "record", slice: slice.id, commit: sha, files, push, tasks: ticked.ticked });
     const adv = advanceFromCli(cwd, state, loadProfile(cwd));
     saveState(cwd, state);
-    out({ ok: true, commit: sha, files, push, stage: adv.stage, brief: adv.brief });
+    out({ ok: true, commit: sha, files, tasks: ticked.ticked, push, stage: adv.stage, brief: adv.brief });
+  },
+
+  // The deterministic spec check: change folder present, delta format, `openspec validate --strict`,
+  // every in-scope criterion cited, every task cites an id, every task owned by one slice.
+  spec(sub) {
+    const state = requireState();
+    if (!state.spec) fail("this goal runs without the spec stage; start one with `goal new --openspec` or set openspec.author in the profile");
+    if (sub === "check") {
+      const check = specCheck(cwd, state);
+      const p = harnessPaths(cwd);
+      const planProblems = existsSync(p.plan) ? planTaskProblems(readJson(p.plan, { slices: [] }), check.tasks) : ["plan.json not written yet"];
+      const next = check.ok && !planProblems.length
+        ? "Write .harness/goal-card.md if missing, then run `harness next`: the spec reviewer judges the change."
+        : "Fix the problems listed, then run `harness spec check` again.";
+      out({ ok: check.ok && !planProblems.length, change: check.change, dir: check.dir, validate: check.validate, requirements: check.requirements, scenarios: check.scenarios, coverage: check.coverage, tasks: check.tasks.map((t) => ({ id: t.id, text: t.text, done: t.done })), problems: check.problems, planProblems, next });
+    }
+    if (sub === "tasks") out({ ok: true, ...taskStatus(cwd, state) });
+    fail(`unknown spec subcommand ${sub}; use check or tasks`);
   },
 
   async reconcile(sub) {
@@ -294,11 +325,13 @@ const commands = {
   retry(_, { flags }) {
     const state = requireState();
     if (!["awaiting_human", "halted"].includes(state.stage)) fail(`stage is ${state.stage}`);
-    const allowed = ["building", "preflight", "critic", "review", "record"];
-    let to = state.slice ? "building" : "planning";
+    const allowed = ["building", "preflight", "critic", "review", "record", "spec_review"];
+    let to = state.slice ? "building" : state.goal.approvedAt ? "planning" : "intake";
     if (flags.stage) {
       if (!allowed.includes(flags.stage)) fail(`--stage must be one of ${allowed.join(", ")}`);
-      if (!state.slice) fail("no active slice to resume at that stage");
+      if (flags.stage === "spec_review") {
+        if (!state.spec || state.goal.approvedAt) fail("spec_review applies before approval on a goal with the spec stage");
+      } else if (!state.slice) fail("no active slice to resume at that stage");
       to = flags.stage;
     }
     state.halt = null; state.guards.blocks = 0; state.guards.diffHashes = [];

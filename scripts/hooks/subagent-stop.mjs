@@ -15,7 +15,7 @@ const ctx = await bootstrap();
 if (!ctx.active) process.exit(0);
 const { input, cwd, state, profile } = ctx;
 const agent = agentTypeOf(input);
-const JUDGES = { critic: "critic", "critic-strong": "critic", reviewer: "review", "reviewer-strong": "review" };
+const JUDGES = { critic: "critic", "critic-strong": "critic", reviewer: "review", "reviewer-strong": "review", "spec-reviewer": "spec" };
 
 if (input.agent_transcript_path && existsSync(input.agent_transcript_path)) {
   // Attribute to the stage the agent was spawned in, not the stage at the time it finished.
@@ -25,12 +25,14 @@ if (input.agent_transcript_path && existsSync(input.agent_transcript_path)) {
 }
 
 const role = agent ? JUDGES[agent] : null;
-if (role && state.slice && (state.stage === "critic" || state.stage === "review")) {
+const judging = role === "spec" ? state.spec && state.stage === "spec_review" : state.slice && (state.stage === "critic" || state.stage === "review");
+if (role && judging) {
   const path = verdictPath(cwd, state, role);
+  const where = role === "spec" ? `slice null, attempt ${state.spec.attempt}` : `slice ${state.slice.id}, attempt ${state.slice.attempt}`;
   if (!existsSync(path)) {
     if (input.stop_hook_active) { ctx.event({ type: "verdict", role, agent, path, valid: false, errors: ["no verdict written after a reminder"] }); ctx.save(); process.exit(0); }
     ctx.save();
-    hookBlock(`You finished without writing the verdict. Write it to ${path} following schemas/verdict.schema.json (agent "${agent}", slice ${state.slice.id}, attempt ${state.slice.attempt}, diffHash ${workHash(cwd)}), then stop.`);
+    hookBlock(`You finished without writing the verdict. Write it to ${path} following schemas/verdict.schema.json (agent "${agent}", ${where}, diffHash ${workHash(cwd)}), then stop.`);
   }
   const result = validateVerdict(cwd, readJson(path, null), { state, profile, workHash: workHash(cwd), role });
   if (!result.ok && !input.stop_hook_active) {

@@ -26,6 +26,12 @@ export function validateVerdict(cwd, verdict, { state, profile, workHash, role }
   }
   if (role === "critic" && !["critic", "critic-strong"].includes(verdict.agent)) errors.push(`expected a critic verdict, got ${verdict.agent}`);
   if (role === "review" && !["reviewer", "reviewer-strong"].includes(verdict.agent)) errors.push(`expected a reviewer verdict, got ${verdict.agent}`);
+  if (role === "spec") {
+    if (verdict.agent !== "spec-reviewer") errors.push(`expected a spec-reviewer verdict, got ${verdict.agent}`);
+    if (verdict.slice !== null) errors.push(`a spec verdict has slice null, got ${verdict.slice}`);
+    if (state?.spec && verdict.attempt !== state.spec.attempt) errors.push(`attempt ${verdict.attempt} is not the active spec attempt ${state.spec.attempt}`);
+    if (verdict.criteria.length) errors.push("a spec verdict leaves criteria empty; coverage goes in findings, criteria are judged after the code exists");
+  }
 
   const blocks = verdict.findings.filter((f) => f.severity === "block");
   if (verdict.verdict === "pass" && blocks.length) errors.push(`verdict is pass but carries ${blocks.length} block finding(s): ${blocks.map((f) => f.id).join(", ")}`);

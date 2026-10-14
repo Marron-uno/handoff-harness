@@ -126,6 +126,7 @@
     "stage": {
       "enum": [
         "intake",
+        "spec_review",
         "awaiting_approval",
         "planning",
         "building",
@@ -392,6 +393,51 @@
         }
       ]
     },
+    "spec": {
+      "description": "The OpenSpec change the goal builds from, or null when the spec stage is off.",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "change",
+            "attempt",
+            "verdict"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "change": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]*$"
+            },
+            "attempt": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "verdict": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "summary": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "committed": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
     "transcriptPath": {
       "type": [
         "string",
@@ -494,6 +540,12 @@
         },
         "ui": {
           "type": "boolean"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "diffHash": {
           "type": [

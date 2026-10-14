@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { readJson } from "./io.mjs";
 import { harnessPaths } from "./paths.mjs";
 import { readEvents } from "./events.mjs";
+import { taskStatus } from "./openspec.mjs";
 
 export function renderReport(cwd, state) {
   const p = harnessPaths(cwd);
@@ -13,6 +14,15 @@ export function renderReport(cwd, state) {
   lines.push("## Slices", "", "| Slice | Title | Status | Attempts | Commit |", "|---|---|---|---|---|");
   for (const s of state.slices) lines.push(`| ${s.id} | ${s.title} | ${s.status} | ${s.attempts} | ${s.commit ? s.commit.slice(0, 7) : ""} |`);
   lines.push("");
+
+  if (state.spec) {
+    const tasks = taskStatus(cwd, state);
+    const specVerdicts = events.filter((e) => e.type === "verdict" && e.role === "spec" && e.valid);
+    lines.push("## Spec", "", `OpenSpec change: \`openspec/changes/${state.spec.change}\`. ${state.spec.summary ?? ""}`, "");
+    lines.push(`Spec review: ${specVerdicts.map((e) => e.verdict).join(", ") || "none"} over ${state.spec.attempt} attempt(s). Committed at approval: ${state.spec.committed ? state.spec.committed.slice(0, 7) : "nothing to commit"}.`, "");
+    lines.push(`Tasks ticked: ${tasks.done} of ${tasks.total}.${tasks.open.length ? ` Open: ${tasks.open.map((t) => t.id).join(", ")}.` : ""}`, "");
+    lines.push(`Archive by hand when the branch merges: \`openspec archive ${state.spec.change} --yes\`.`, "");
+  }
 
   const verdicts = existsSync(p.verdicts) ? readdirSync(p.verdicts).filter((n) => n.endsWith(".json")).map((n) => ({ name: n, v: readJson(join(p.verdicts, n), null) })).filter((x) => x.v) : [];
   const criteria = new Map();

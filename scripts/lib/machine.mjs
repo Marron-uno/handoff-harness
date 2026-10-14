@@ -11,6 +11,7 @@ import { renderBrief } from "./brief.mjs";
 import { validate } from "./schema.mjs";
 import { validateVerdict } from "./verdict.mjs";
 import { goalCheck } from "./goal-check.mjs";
+import { specCheck, planTaskProblems, summarize, commitChange } from "./openspec.mjs";
 
 const planSchema = () => readJson(join(pluginRoot(), "schemas", "plan.schema.json"));
 const inventorySchema = () => readJson(join(pluginRoot(), "schemas", "inventory.schema.json"));
@@ -51,7 +52,8 @@ function sliceVars(cwd, state, profile) {
   const slice = currentSlice(state);
   return {
     cli: cliPath(),
-    "goal.id": state.goal.id, "goal.sentence": state.goal.sentence,
+    "goal.id": state.goal.id, "goal.sentence": state.goal.sentence, "goal.sources": state.goal.sources.length ? state.goal.sources : "none; the goal sentence is the source",
+    "spec.change": state.spec?.change, "spec.attempt": state.spec?.attempt, "spec.summary": state.spec?.summary,
     "slice.id": slice?.id, "slice.title": slice?.title, "slice.criteria": slice?.criteria, "slice.paths": slice?.paths,
     "slice.ui": slice?.ui ? "yes" : "no",
     attempt: state.slice?.attempt, maxAttempts: profile.caps.maxAttempts,
@@ -66,6 +68,8 @@ function sliceVars(cwd, state, profile) {
 // One verdict file per (slice, attempt, review round, role). A new cycle gets a new path, so an
 // old verdict never counts as stale by design; stale means someone edited after the judge looked.
 export function verdictPath(cwd, state, role, round = state.review.rounds + 1) {
+  // The spec reviewer judges the change before any slice exists: one file per attempt.
+  if (role === "spec") return join(harnessPaths(cwd).verdicts, `spec-a${state.spec.attempt}-spec-reviewer.json`);
   const slice = state.slice.id;
   const attempt = state.slice.attempt;
   const name = `${slice}-a${attempt}-r${round}-${role === "review" ? "reviewer" : "critic"}.json`;
@@ -110,7 +114,7 @@ export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
   // A judge running as a background subagent is progress in flight, not a stall: let the turn end,
   // the session wakes when the task completes, and the next stop sees the verdict.
   const running = (input.background_tasks ?? []).filter((t) => t.status === "running");
-  if (running.length && ["critic", "review", "reconcile"].includes(state.stage)) {
+  if (running.length && ["spec_review", "critic", "review", "reconcile"].includes(state.stage)) {
     appendEvent(cwd, { type: "note", stage: state.stage, slice: state.slice?.id ?? null, text: `waiting for ${running.length} background task(s): ${running.map((t) => t.type ?? "task").join(", ")}` });
     return { action: "allow", code: "background_task_running" };
   }
@@ -148,6 +152,7 @@ export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
 
   switch (state.stage) {
     case "intake": return decideIntake(cwd, state, profile);
+    case "spec_review": return decideSpecReview(cwd, state, profile, wh);
     case "planning": return decidePlanning(cwd, state, profile);
     case "building": return decideBuilding(cwd, state, profile);
     case "preflight": return decidePreflight(cwd, state, profile, wh);
@@ -160,36 +165,109 @@ export function decide({ cwd, state, profile, input = {}, now = Date.now() }) {
   }
 }
 
-export function intakeMissing(cwd) {
+// What intake still owes. With the spec stage on, the OpenSpec change must pass the deterministic
+// check and every task must belong to one slice. Returns { missing, check } so the caller can
+// keep the check's summary without running the validator twice.
+export function intakeStatus(cwd, state) {
   const p = harnessPaths(cwd);
   const missing = [];
+  let inventory = null, plan = null, check = null;
   if (!existsSync(p.inventory)) missing.push("inventory.json");
   else {
-    const errs = validate(inventorySchema(), readJson(p.inventory));
-    if (errs.length) missing.push(`inventory.json invalid: ${errs.slice(0, 3).join("; ")}`);
+    inventory = readJson(p.inventory);
+    const errs = validate(inventorySchema(), inventory);
+    if (errs.length) { missing.push(`inventory.json invalid: ${errs.slice(0, 3).join("; ")}`); inventory = null; }
+  }
+  if (state?.spec) {
+    check = specCheck(cwd, state);
+    for (const problem of check.problems) missing.push(`change: ${problem}`);
   }
   if (!existsSync(p.plan)) missing.push("plan.json");
   else {
-    const errs = validate(planSchema(), readJson(p.plan));
-    if (errs.length) missing.push(`plan.json invalid: ${errs.slice(0, 3).join("; ")}`);
+    plan = readJson(p.plan);
+    const errs = validate(planSchema(), plan);
+    if (errs.length) { missing.push(`plan.json invalid: ${errs.slice(0, 3).join("; ")}`); plan = null; }
   }
+  if (plan && inventory) {
+    const known = new Set(inventory.items.flatMap((i) => i.criteria.map((c) => c.id)));
+    const unknown = plan.slices.flatMap((s) => s.criteria.filter((c) => !known.has(c)).map((c) => `${s.id}:${c}`));
+    if (unknown.length) missing.push(`plan.json cites criteria the inventory does not have: ${unknown.join(", ")}`);
+  }
+  if (plan && check) for (const problem of planTaskProblems(plan, check.tasks)) missing.push(`plan.json: ${problem}`);
   if (!existsSync(p.goalCard)) missing.push("goal-card.md");
-  return missing;
+  return { missing, check };
 }
 
-function decideIntake(cwd, state, profile) {
-  const missing = intakeMissing(cwd);
-  if (missing.length) {
-    return block(cwd, state, "intake_incomplete", renderBrief("intake", { ...sliceVars(cwd, state, profile), missing: missing.join("\n- ") }));
+export function intakeMissing(cwd, state = null) { return intakeStatus(cwd, state).missing; }
+
+function intakeBrief(cwd, state, profile, extra = {}) {
+  return renderBrief(state.spec ? "intake-openspec" : "intake", { ...sliceVars(cwd, state, profile), ...extra });
+}
+
+// Approval: the human's (or --auto-approve's) one gate. With the spec stage on, the reviewed
+// change is committed here so the first slice starts from a clean tree.
+export function approveGoal(cwd, state, reason = "approved") {
+  state.goal.approvedAt = nowIso();
+  let commit = null;
+  if (state.spec) {
+    commit = commitChange(cwd, state);
+    state.spec.committed = commit.committed;
+    appendEvent(cwd, { type: "spec", action: "committed", change: state.spec.change, commit: commit.committed, note: commit.reason || undefined });
   }
+  appendEvent(cwd, { type: "goal", action: reason === "approved" ? "approved" : "auto-approved", id: state.goal.id });
+  transition(cwd, state, "planning", reason);
+  return commit;
+}
+
+function cardReady(cwd, state, profile) {
   if (state.goal.autoApprove) {
-    state.goal.approvedAt = nowIso();
-    appendEvent(cwd, { type: "goal", action: "auto-approved" });
-    transition(cwd, state, "planning", "auto_approve");
+    approveGoal(cwd, state, "auto_approve");
     return decidePlanning(cwd, state, profile);
   }
   transition(cwd, state, "awaiting_approval", "card_ready");
   return { action: "allow", code: "card_ready", systemMessage: `Goal card ready at .harness/goal-card.md. Approve with: ${cliPath()} goal approve` };
+}
+
+function decideIntake(cwd, state, profile) {
+  const { missing, check } = intakeStatus(cwd, state);
+  if (missing.length) {
+    return block(cwd, state, "intake_incomplete", intakeBrief(cwd, state, profile, { missing: missing.join("\n- ") }));
+  }
+  if (state.spec) {
+    state.spec.summary = summarize(check);
+    appendEvent(cwd, { type: "spec", action: "checked", change: state.spec.change, attempt: state.spec.attempt, summary: state.spec.summary });
+    transition(cwd, state, "spec_review", "spec_check_passed", { attempt: state.spec.attempt });
+    return block(cwd, state, "spec_review", renderBrief("spec-review", specReviewVars(cwd, state, profile)));
+  }
+  return cardReady(cwd, state, profile);
+}
+
+function specReviewVars(cwd, state, profile, extra = {}) {
+  return { ...sliceVars(cwd, state, profile), agent: "spec-reviewer", attempt: state.spec.attempt, maxAttempts: profile.caps.maxAttempts, verdictPath: verdictPath(cwd, state, "spec"), ...extra };
+}
+
+// The spec reviewer judges the change before the human sees the card. A block sends intake back
+// to the change with the findings; the attempt cap hands the spec to a human.
+function decideSpecReview(cwd, state, profile, wh) {
+  const path = verdictPath(cwd, state, "spec");
+  if (!existsSync(path)) return block(cwd, state, "spec_verdict_missing", renderBrief("spec-review", specReviewVars(cwd, state, profile)));
+  const result = validateVerdict(cwd, readJson(path, null), { state, profile, workHash: wh, role: "spec" });
+  if (!result.ok) {
+    appendEvent(cwd, { type: "verdict", role: "spec", path, valid: false, errors: result.errors.slice(0, 10) });
+    return block(cwd, state, "spec_verdict_invalid", renderBrief("spec-review", specReviewVars(cwd, state, profile, { errors: `The verdict at \`${path}\` is invalid:\n- ${result.errors.join("\n- ")}` })));
+  }
+  const v = result.verdict;
+  state.spec.verdict = path;
+  appendEvent(cwd, { type: "verdict", role: "spec", agent: v.agent, path, valid: true, verdict: v.verdict, findings: v.findings.length, blockFindings: v.findings.filter((f) => f.severity === "block").length });
+  if (v.verdict === "pass") return cardReady(cwd, state, profile);
+  const findings = v.findings.filter((f) => f.severity === "block" || f.severity === "major")
+    .map((f) => `${f.id} [${f.severity}] ${f.file ?? ""}${f.line ? ":" + f.line : ""} ${f.issue} (${f.authority})${f.suggestion ? " → " + f.suggestion : ""}`).join("\n- ");
+  if (state.spec.attempt >= profile.caps.maxAttempts) {
+    return rest(cwd, state, "awaiting_human", "spec_attempt_cap", `The spec reviewer blocked the change ${state.spec.attempt} times. A human decides: fix \`openspec/changes/${state.spec.change}/\` by hand then \`harness retry --stage spec_review\`, or \`harness retry\` to redo intake.`);
+  }
+  state.spec.attempt += 1;
+  transition(cwd, state, "intake", "spec_block", { attempt: state.spec.attempt });
+  return block(cwd, state, "spec_block", intakeBrief(cwd, state, profile, { missing: "nothing; the reviewer blocked the change", feedback: `Spec reviewer blocked (attempt ${state.spec.attempt - 1}):\n- ${findings}` }));
 }
 
 export function loadPlanIntoState(cwd, state, profile) {
@@ -199,7 +277,7 @@ export function loadPlanIntoState(cwd, state, profile) {
   const known = new Set(state.slices.map((s) => s.id));
   for (const s of plan.slices) {
     if (known.has(s.id)) continue;
-    state.slices.push({ id: s.id, title: s.title, status: "pending", dependsOn: s.dependsOn ?? [], criteria: s.criteria, paths: s.paths, attempts: 0, ui: s.ui, diffHash: null, commit: null, origin: "plan" });
+    state.slices.push({ id: s.id, title: s.title, status: "pending", dependsOn: s.dependsOn ?? [], criteria: s.criteria, paths: s.paths, attempts: 0, ui: s.ui, tasks: s.tasks ?? [], diffHash: null, commit: null, origin: "plan" });
   }
   for (const q of plan.questions ?? []) {
     if (q.kind === "hold" && !state.holds.some((h) => h.id === q.id)) {
@@ -331,14 +409,16 @@ function decideReport(cwd, state, profile) {
   if (!check.done) return rest(cwd, state, "awaiting_human", "goal_incomplete", `Report written but the goal predicate is not satisfied:\n- ${check.reasons.join("\n- ")}\nA human decides: skip or hold the gaps, raise the slice budget, or fix by hand, then \`harness retry\`.`);
   transition(cwd, state, "done", "goal_check_passed");
   appendEvent(cwd, { type: "goal", action: "done" });
-  return { action: "allow", code: "done", systemMessage: `Goal ${state.goal.id} complete. Report: .harness/report.md` };
+  const archive = state.spec ? ` When the branch merges, archive the change by hand: \`openspec archive ${state.spec.change} --yes\`.` : "";
+  return { action: "allow", code: "done", systemMessage: `Goal ${state.goal.id} complete. Report: .harness/report.md.${archive}` };
 }
 
 // Renders the brief for the current stage without mutating state. Used by `harness resume`.
 export function briefFor(cwd, state, profile) {
   const vars = sliceVars(cwd, state, profile);
   switch (state.stage) {
-    case "intake": return renderBrief("intake", { ...vars, missing: intakeMissing(cwd).join("\n- ") || "nothing; stop to let the hook verify" });
+    case "intake": return intakeBrief(cwd, state, profile, { missing: intakeMissing(cwd, state).join("\n- ") || "nothing; run the next command to let the machine verify" });
+    case "spec_review": return renderBrief("spec-review", specReviewVars(cwd, state, profile));
     case "planning": return renderBrief("planning", vars);
     case "building": return renderBrief("build", vars);
     case "preflight": return renderBrief("preflight", vars);

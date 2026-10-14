@@ -5,7 +5,7 @@ import { globToRegExp } from "../glob.mjs";
 import { currentBranch } from "../git.mjs";
 
 const WRITE_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
-const NO_EDIT_STAGES = new Set(["awaiting_approval", "awaiting_human", "budget_exceeded", "halted", "done", "preflight", "critic", "review", "record", "report"]);
+const NO_EDIT_STAGES = new Set(["spec_review", "awaiting_approval", "awaiting_human", "budget_exceeded", "halted", "done", "preflight", "critic", "review", "record", "report"]);
 const SUBAGENT_JUDGES = new Set(["critic", "critic-strong", "reviewer", "reviewer-strong", "spec-reviewer", "reconciler"]);
 
 function rel(cwd, filePath) {

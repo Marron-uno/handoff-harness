@@ -10,6 +10,7 @@
   "budgets": {
     "toolCallsPerStage": {
       "intake": 150,
+      "spec_review": 40,
       "planning": 80,
       "building": 250,
       "preflight": 40,
@@ -173,7 +174,9 @@
   "checks": [],
   "openspec": {
     "validate": true,
-    "specsReadOnly": true
+    "specsReadOnly": true,
+    "author": false,
+    "note": "author: true adds the spec stage: intake writes or adopts an OpenSpec change that cites the inventory, `harness spec check` verifies it, the spec-reviewer judges it before the goal card, approval commits it, record ticks its tasks, and the goal needs every task ticked. `--openspec` or `--no-openspec` on `goal new` overrides it per goal."
   },
   "pricing": {
     "perMillion": {

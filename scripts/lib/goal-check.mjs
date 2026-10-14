@@ -2,6 +2,7 @@
 import { existsSync } from "node:fs";
 import { harnessPaths } from "./paths.mjs";
 import { workHash } from "./git.mjs";
+import { taskStatus } from "./openspec.mjs";
 
 export function goalCheck(cwd, state, profile) {
   const reasons = [];
@@ -10,6 +11,14 @@ export function goalCheck(cwd, state, profile) {
     if (s.status === "done" || s.status === "skipped") continue;
     if (held.has(s.id)) continue;
     reasons.push(`slice ${s.id} is ${s.status}`);
+  }
+  // With the spec stage on, the change's tasks.md is part of the contract: every task is ticked
+  // by record, except tasks owned by a slice a human skipped or held.
+  if (state.spec) {
+    const tasks = taskStatus(cwd, state);
+    if (!tasks.exists) reasons.push(`no tasks.md in openspec/changes/${state.spec.change}`);
+    const open = tasks.open.filter((t) => !(t.sliceStatus === "skipped" || held.has(t.slice)));
+    if (open.length) reasons.push(`OpenSpec tasks still open: ${open.map((t) => `${t.id}${t.slice ? ` (${t.slice})` : ""}`).join(", ")}`);
   }
   if (!state.reconcile) reasons.push("no reconciliation result");
   else {

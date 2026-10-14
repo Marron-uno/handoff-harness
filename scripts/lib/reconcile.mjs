@@ -31,7 +31,7 @@ export function prepareReconcile(cwd, state) {
   const met = new Set();
   if (existsSync(p.verdicts)) {
     for (const name of readdirSync(p.verdicts)) {
-      if (!name.endsWith(".json") || name.startsWith("reconcile")) continue;
+      if (!name.endsWith(".json") || name.startsWith("reconcile") || name.startsWith("spec-")) continue;
       const v = readJson(join(p.verdicts, name), null);
       if (v?.verdict === "pass") for (const c of v.criteria ?? []) if (c.status === "met") met.add(c.id);
     }

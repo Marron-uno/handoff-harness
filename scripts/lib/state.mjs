@@ -5,7 +5,7 @@ import { assertValid } from "./schema.mjs";
 import { appendEvent } from "./events.mjs";
 
 export const STAGES = [
-  "intake", "awaiting_approval", "planning", "building", "preflight", "critic", "review",
+  "intake", "spec_review", "awaiting_approval", "planning", "building", "preflight", "critic", "review",
   "record", "reconcile", "report", "done", "awaiting_human", "budget_exceeded", "halted",
 ];
 // Stages where the Stop hook lets the session end.
@@ -17,7 +17,9 @@ export function stateSchema() {
   return schemaCache;
 }
 
-export function newState({ id, sentence, mode, sources = [], budget = {}, autoApprove = false, environments = {}, jev = false, branch, defaultBranch, transcriptPath = null }) {
+// `spec` is the OpenSpec change the goal builds from, or null when the stage is off:
+// { change, attempt, verdict, summary, committed }.
+export function newState({ id, sentence, mode, sources = [], budget = {}, autoApprove = false, environments = {}, jev = false, spec = null, branch, defaultBranch, transcriptPath = null }) {
   return {
     version: 1,
     goal: {
@@ -41,6 +43,7 @@ export function newState({ id, sentence, mode, sources = [], budget = {}, autoAp
     holds: [],
     defaults: [],
     reconcile: null,
+    spec: spec ? { change: spec.change, attempt: 1, verdict: null, summary: null, committed: null } : null,
     transcriptPath,
     pluginRoot: pluginRoot(),
     halt: null,
