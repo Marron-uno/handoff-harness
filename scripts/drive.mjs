@@ -51,6 +51,16 @@ for (let i = 1; i <= maxIterations; i++) {
   // Claude Code's own figure for the session is the number of record; the report prints it next
   // to the harness price table.
   try { appendEvent(cwd, { type: "session", scope: "driver", iteration: i, stage: state.stage, seconds: Math.round((Date.now() - started) / 1000), turns: summary.turns, usd: summary.usd, isError: summary.isError }); } catch (err) { console.error(`[drive] cannot record the session: ${err.message}`); }
+  // The report was written inside the session, before this figure existed: re-render it now that
+  // the run rests, so the committed report carries the number of record.
+  try {
+    const after = JSON.parse(readFileSync(statePath, "utf8"));
+    if (RESTING.has(after.stage)) {
+      const rr = spawnSync(process.execPath, [join(pluginRoot, "scripts", "cli.mjs"), "report", "--refresh"], { cwd, encoding: "utf8" });
+      let refreshed = null; try { refreshed = JSON.parse(rr.stdout); } catch { /* reported below */ }
+      console.log(`[drive] report refreshed: ${refreshed?.ok ? `commit ${refreshed.commit ? refreshed.commit.slice(0, 7) : "none"}` : (rr.stderr || rr.stdout).trim().slice(0, 200)}`);
+    }
+  } catch (err) { console.error(`[drive] cannot refresh the report: ${err.message}`); }
 }
 console.log(`[drive] stopped after ${maxIterations} iterations`);
 process.exit(3);

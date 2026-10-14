@@ -110,6 +110,27 @@ export function verdictTemplate(cwd, state, profile, { agent = null } = {}) {
   return { role, agent: chosen, path: verdictPath(cwd, state, role), skeleton: verdict };
 }
 
+// A human answers a hold: the answer is recorded as an applied default, the hold is removed, and
+// when the run was resting on it the machine picks the next slice, which is usually the one the
+// hold blocked.
+export function answerHold(cwd, state, profile, id, answer) {
+  const hold = state.holds.find((h) => h.id === id);
+  if (!hold) throw new Error(`no open hold ${id}; open holds: ${state.holds.map((h) => h.id).join(", ") || "none"}`);
+  state.holds = state.holds.filter((h) => h.id !== id);
+  const n = Math.max(0, ...state.defaults.map((d) => Number(String(d.id).slice(2)) || 0)) + 1;
+  const def = { id: `D-${n}`, question: hold.question, chosen: String(answer), appliedAt: nowIso() };
+  state.defaults.push(def);
+  appendEvent(cwd, { type: "hold", id, action: "answered", answer: def.chosen, blocks: hold.blocks });
+  appendEvent(cwd, { type: "default", id: def.id, question: def.question, chosen: def.chosen, from: id });
+  if (!RESTING.has(state.stage)) return { stage: state.stage, action: "allow", code: "hold_answered", brief: `Hold ${id} answered. ${hold.blocks.length ? `${hold.blocks.join(", ")} will be scheduled when the current slice completes.` : "No slice was waiting on it."}` };
+  state.halt = null; state.guards.blocks = 0; state.guards.diffHashes = [];
+  blockSource = "cli";
+  try {
+    const r = advance(cwd, state, profile);
+    return { stage: state.stage, action: r.action, code: r.code, brief: r.action === "block" ? r.reason : (r.systemMessage ?? `Run is resting in ${state.stage}.`) };
+  } finally { blockSource = "hook"; }
+}
+
 function startSlice(cwd, state, slice) {
   slice.status = "building";
   slice.attempts += 1;
@@ -436,6 +457,12 @@ function decideReport(cwd, state, profile) {
   const check = goalCheck(cwd, state, profile);
   // The report stage cannot edit source, so an unsatisfied predicate here is a human decision.
   if (!check.done) return rest(cwd, state, "awaiting_human", "goal_incomplete", `Report written but the goal predicate is not satisfied:\n- ${check.reasons.join("\n- ")}\nA human decides: skip or hold the gaps, raise the slice budget, or fix by hand, then \`harness retry\`.`);
+  // A slice a hold blocks is not done, it is waiting for an answer only a human has. The run
+  // rests there instead of calling itself done; the report is already written for them.
+  if (check.heldPending.length) {
+    const lines = check.heldPending.map((h) => `${h.slice}: ${h.hold} "${h.question}"`);
+    return rest(cwd, state, "awaiting_human", "holds_open", `Every slice not on hold is done and the report is written. Waiting on a human for:\n- ${lines.join("\n- ")}\nAnswer with \`harness hold answer --id H-n --answer "..."\` to build the held slice, or skip it with \`harness slice skip --id S-n --reason "..."\`.`);
+  }
   transition(cwd, state, "done", "goal_check_passed");
   appendEvent(cwd, { type: "goal", action: "done" });
   const archive = state.spec ? ` When the branch merges, archive the change by hand: \`openspec archive ${state.spec.change} --yes\`.` : "";

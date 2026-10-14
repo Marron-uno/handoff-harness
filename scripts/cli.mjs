@@ -12,12 +12,12 @@ import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
 import { renderReport } from "./lib/report.mjs";
 import { goalCheck } from "./lib/goal-check.mjs";
-import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal, verdictTemplate } from "./lib/machine.mjs";
+import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal, verdictTemplate, answerHold } from "./lib/machine.mjs";
 import { writePacket } from "./lib/packet.mjs";
 import { changeSlug, specCheck, planTaskProblems, taskStatus, tickSliceTasks } from "./lib/openspec.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
-import { attributeByStage } from "./lib/usage.mjs";
+import { attributeByStage, subagentUsageRows } from "./lib/usage.mjs";
 import { analyzeRun, renderAnalysis } from "./lib/analyze.mjs";
 import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
 import { askJev, resolveJevConfig } from "./lib/jev/client.mjs";
@@ -280,12 +280,13 @@ const commands = {
     fail(`unknown reconcile subcommand ${sub}`);
   },
 
-  report() {
+  // `report --refresh` re-renders and re-commits without advancing: the headless driver runs it
+  // after a session ends so the report carries the session cost Claude Code reported.
+  report(_, { flags }) {
     const state = requireState();
     // Refresh the cost table first so the report is not one stop behind.
     try {
-      const agentRows = readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent").map((e) => ({ stage: e.stage, agent: e.agent, model: e.model, input: e.input, cacheWrite: e.cacheWrite, cacheRead: e.cacheRead, output: e.output }));
-      attributeByStage(cwd, state, loadProfile(cwd), { agentRows });
+      attributeByStage(cwd, state, loadProfile(cwd), { agentRows: subagentUsageRows(cwd) });
     } catch (err) { appendEvent(cwd, { type: "note", text: `usage attribution skipped: ${err.message}` }); }
     const text = renderReport(cwd, state);
     // The report and lessons are the only run artifacts that belong in the branch.
@@ -296,6 +297,7 @@ const commands = {
       const c = git(cwd, ["commit", "-q", "-m", `docs: harness report [${state.goal.id}]`, "--", ...own]);
       if (c.code === 0) { commit = headSha(cwd); if (git(cwd, ["remote", "get-url", "origin"]).code === 0) git(cwd, ["push", "-q", "-u", "origin", state.branch]); }
     }
+    if (flags.refresh) out({ ok: true, refreshed: true, path: harnessPaths(cwd).report, bytes: text.length, commit, stage: state.stage });
     const adv = advanceFromCli(cwd, state, loadProfile(cwd));
     saveState(cwd, state);
     out({ ok: true, path: harnessPaths(cwd).report, bytes: text.length, commit, stage: adv.stage, brief: adv.brief });
@@ -345,9 +347,18 @@ const commands = {
     out({ ok: true, stage: to });
   },
 
-  hold(_, { flags }) {
+  hold(sub, { flags }) {
     const state = requireState();
-    const id = `H-${state.holds.length + 1}`;
+    if (sub === "answer") {
+      if (!flags.id || flags.answer === undefined) fail('usage: hold answer --id H-n --answer "..."');
+      const r = answerHold(cwd, state, loadProfile(cwd), String(flags.id), String(flags.answer));
+      saveState(cwd, state);
+      out({ ok: true, answered: String(flags.id), holds: state.holds.map((h) => h.id), ...r });
+    }
+    if (sub && sub !== "add") fail('usage: hold [add] --question "..." [--blocks S-n] | hold answer --id H-n --answer "..."');
+    // Ids never repeat, including answered holds, so the events log stays unambiguous.
+    const raised = readEvents(cwd, (e) => e.type === "hold" && typeof e.id === "string").map((e) => Number(e.id.slice(2)) || 0);
+    const id = `H-${Math.max(0, ...state.holds.map((h) => Number(h.id.slice(2)) || 0), ...raised) + 1}`;
     state.holds.push({ id, question: String(flags.question ?? ""), blocks: [].concat(flags.blocks ?? []), raisedAt: nowIso() });
     saveState(cwd, state);
     appendEvent(cwd, { type: "hold", id, question: flags.question, blocks: [].concat(flags.blocks ?? []) });
@@ -359,7 +370,7 @@ const commands = {
       const state = requireState();
       const t = verdictTemplate(cwd, state, loadProfile(cwd), { agent: flags.agent ? String(flags.agent) : null });
       if (flags.write) { mkdirSync(harnessPaths(cwd).verdicts, { recursive: true }); writeJsonAtomic(t.path, t.skeleton); }
-      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; the skeleton does not validate until you do", skeleton: t.skeleton });
+      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; every evidence entry is an object {type, path, quote?, line?} and never a string; the skeleton does not validate until you do", skeleton: t.skeleton });
     }
     if (sub !== "validate") fail("usage: verdict validate <path> | verdict template [--write] [--agent name]");
     const state = hasHarness(cwd) ? loadState(cwd) : null;
