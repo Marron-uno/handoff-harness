@@ -107,7 +107,7 @@ docs/             rules.md, jev.md, architecture.md
 
 ## Status
 
-Version 0.2.0. The state machine, guards, judges, Jev layer and fixture are built and tested. The plugin installs through the marketplace path above.
+Version 0.3.0. The state machine, guards, judges, spec stage, Jev layer and fixture are built and tested. The plugin installs through the marketplace path above.
 
 **Recorded runs** live in `docs/runs/`. [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) drove the fixture end to end, headless, with real judges and the reviewer on Chrome: three slices, six passing verdicts, one screenshot as evidence, $1.24 by Claude Code's accounting, 11.5 minutes including a 3-minute halt caused by a harness bug. The run produced nine ranked findings; six are fixed (the Stop hook now yields to background subagents, CLI commands advance the machine and print the next brief so stages no longer cost a stop-and-block cycle, the sensitive-path guard only tests path-like tokens, evidence needs a real location, subagent usage lands in its spawning stage, the critic brief lists the changed files). Three are open: a stage-managed dev server, calibrating the default price table, and re-measuring the critic's tool-call count. Not yet done: a stage step that starts the project's dev server before the reviewer opens it (today the reviewer starts it from the brief's command), git-side hooks for commit messages, the bundle-size budget check, and a run with Jev enabled. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
