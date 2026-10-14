@@ -12,4 +12,10 @@ What it will do:
 - **Cost per stage.** Token usage is attributed from the transcript so every run ends with a bill per stage.
 - **Optional Jev layer.** A calibrated decision model routes verdicts and prefilters reconciliation. It never grants a pass.
 
+Install (Claude Code 2.1.275 or later):
+
+```
+/plugin install handoff-harness --marketplace Marron-uno/handoff-harness
+```
+
 License: MIT.
