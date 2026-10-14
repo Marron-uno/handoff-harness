@@ -110,3 +110,13 @@ export function aheadBehind(cwd) {
 export function sha256(text) {
   return createHash("sha256").update(text).digest("hex").slice(0, 16);
 }
+
+// Hash of HEAD plus the pending delta. Unlike diffHash, it changes when a commit lands,
+// so it is the freshness key for verdicts, preflight and reconcile results.
+export function workHash(cwd) {
+  const h = createHash("sha256");
+  h.update(headSha(cwd) ?? "no-head");
+  h.update("\n");
+  h.update(diffHash(cwd));
+  return h.digest("hex").slice(0, 16);
+}

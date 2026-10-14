@@ -3,94 +3,568 @@
   "title": "Harness state",
   "description": "Single source of truth for a goal run. Written only by harness scripts, never by the model.",
   "type": "object",
-  "required": ["version", "goal", "stage", "stageEnteredAt", "branch", "defaultBranch", "slice", "slices", "review", "preflight", "verdicts", "guards", "counters", "browser", "holds", "defaults", "reconcile", "updatedAt"],
+  "required": [
+    "version",
+    "goal",
+    "stage",
+    "stageEnteredAt",
+    "branch",
+    "defaultBranch",
+    "slice",
+    "slices",
+    "review",
+    "preflight",
+    "verdicts",
+    "guards",
+    "counters",
+    "browser",
+    "holds",
+    "defaults",
+    "reconcile",
+    "updatedAt"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
     "goal": {
       "type": "object",
-      "required": ["id", "sentence", "mode", "sources", "createdAt", "approvedAt", "autoApprove", "budget", "environments", "jev"],
+      "required": [
+        "id",
+        "sentence",
+        "mode",
+        "sources",
+        "createdAt",
+        "approvedAt",
+        "autoApprove",
+        "budget",
+        "environments",
+        "jev"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^G-[0-9]+$" },
-        "sentence": { "type": "string", "minLength": 3 },
-        "mode": { "enum": ["handoff", "feature"] },
-        "sources": { "type": "array", "items": { "type": "string" } },
-        "createdAt": { "type": "string" },
-        "approvedAt": { "type": ["string", "null"] },
-        "autoApprove": { "type": "boolean" },
+        "id": {
+          "type": "string",
+          "pattern": "^G-[0-9]+$"
+        },
+        "sentence": {
+          "type": "string",
+          "minLength": 3
+        },
+        "mode": {
+          "enum": [
+            "handoff",
+            "feature"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "approvedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "autoApprove": {
+          "type": "boolean"
+        },
         "budget": {
-          "type": "object", "required": ["usd", "minutes", "maxSlices"], "additionalProperties": false,
-          "properties": { "usd": { "type": "number", "minimum": 0 }, "minutes": { "type": "number", "minimum": 0 }, "maxSlices": { "type": "integer", "minimum": 1 } }
+          "type": "object",
+          "required": [
+            "usd",
+            "minutes",
+            "maxSlices"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "usd": {
+              "type": "number",
+              "minimum": 0
+            },
+            "minutes": {
+              "type": "number",
+              "minimum": 0
+            },
+            "maxSlices": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
         },
         "environments": {
-          "type": "object", "required": ["prod", "preview"], "additionalProperties": false,
-          "properties": { "prod": { "type": "boolean" }, "preview": { "type": ["string", "null"] } }
+          "type": "object",
+          "required": [
+            "prod",
+            "preview"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "prod": {
+              "type": "boolean"
+            },
+            "preview": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
         },
-        "jev": { "type": "boolean" }
+        "jev": {
+          "type": "boolean"
+        }
       }
     },
-    "stage": { "enum": ["intake", "awaiting_approval", "planning", "building", "preflight", "critic", "review", "record", "reconcile", "report", "done", "awaiting_human", "budget_exceeded", "halted"] },
-    "stageEnteredAt": { "type": "string" },
-    "branch": { "type": "string" },
-    "defaultBranch": { "type": "string" },
-    "slice": { "anyOf": [ { "type": "null" }, { "type": "object", "required": ["id", "attempt"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "attempt": { "type": "integer", "minimum": 1 }, "buildDone": { "type": "boolean" } } } ] },
-    "slices": { "type": "array", "items": { "$ref": "#/$defs/slice" } },
-    "review": {
-      "type": "object", "required": ["rounds", "roundsAuthorized"], "additionalProperties": false,
-      "properties": { "rounds": { "type": "integer", "minimum": 0 }, "roundsAuthorized": { "type": "integer", "minimum": 1 } }
+    "stage": {
+      "enum": [
+        "intake",
+        "awaiting_approval",
+        "planning",
+        "building",
+        "preflight",
+        "critic",
+        "review",
+        "record",
+        "reconcile",
+        "report",
+        "done",
+        "awaiting_human",
+        "budget_exceeded",
+        "halted"
+      ]
     },
-    "preflight": { "anyOf": [ { "type": "null" }, { "$ref": "#/$defs/preflight" } ] },
+    "stageEnteredAt": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "defaultBranch": {
+      "type": "string"
+    },
+    "slice": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "attempt"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "attempt": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "buildDone": {
+              "type": "boolean"
+            },
+            "startHead": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rejections": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "staleVerdicts": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "slices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/slice"
+      }
+    },
+    "review": {
+      "type": "object",
+      "required": [
+        "rounds",
+        "roundsAuthorized"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "rounds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "roundsAuthorized": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "preflight": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/preflight"
+        }
+      ]
+    },
     "verdicts": {
-      "type": "object", "required": ["critic", "review"], "additionalProperties": false,
-      "properties": { "critic": { "type": ["string", "null"] }, "review": { "type": ["string", "null"] } }
+      "type": "object",
+      "required": [
+        "critic",
+        "review"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "critic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "review": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "guards": {
-      "type": "object", "required": ["blocks", "diffHashes", "continuations"], "additionalProperties": false,
-      "properties": { "blocks": { "type": "integer", "minimum": 0 }, "diffHashes": { "type": "array", "items": { "type": "string" } }, "continuations": { "type": "integer", "minimum": 0 } }
+      "type": "object",
+      "required": [
+        "blocks",
+        "diffHashes",
+        "continuations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "blocks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diffHashes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "continuations": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     },
     "counters": {
-      "type": "object", "required": ["toolCalls", "browserActions"], "additionalProperties": false,
-      "properties": { "toolCalls": { "type": "object" }, "browserActions": { "type": "integer", "minimum": 0 } }
+      "type": "object",
+      "required": [
+        "toolCalls",
+        "browserActions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "toolCalls": {
+          "type": "object"
+        },
+        "browserActions": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
     },
-    "browser": { "type": "object", "required": ["lastHost"], "additionalProperties": false, "properties": { "lastHost": { "type": ["string", "null"] } } },
-    "holds": { "type": "array", "items": { "type": "object", "required": ["id", "question", "blocks"], "additionalProperties": false, "properties": { "id": { "type": "string", "pattern": "^H-[0-9]+$" }, "question": { "type": "string" }, "blocks": { "type": "array", "items": { "type": "string" } }, "raisedAt": { "type": "string" } } } },
-    "defaults": { "type": "array", "items": { "type": "object", "required": ["id", "question", "chosen"], "additionalProperties": false, "properties": { "id": { "type": "string", "pattern": "^D-[0-9]+$" }, "question": { "type": "string" }, "chosen": { "type": "string" }, "appliedAt": { "type": "string" } } } },
-    "reconcile": { "anyOf": [ { "type": "null" }, { "type": "object", "required": ["diffHash", "at", "missing"], "additionalProperties": false, "properties": { "diffHash": { "type": "string" }, "at": { "type": "string" }, "missing": { "type": "integer", "minimum": 0 }, "path": { "type": "string" } } } ] },
-    "transcriptPath": { "type": ["string", "null"] },
-    "pluginRoot": { "type": ["string", "null"] },
-    "halt": { "anyOf": [ { "type": "null" }, { "type": "object", "required": ["reason", "at"], "additionalProperties": false, "properties": { "reason": { "type": "string" }, "at": { "type": "string" }, "code": { "type": "string" } } } ] },
-    "updatedAt": { "type": "string" }
+    "browser": {
+      "type": "object",
+      "required": [
+        "lastHost"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "lastHost": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "holds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "blocks"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^H-[0-9]+$"
+          },
+          "question": {
+            "type": "string"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "raisedAt": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "defaults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "chosen"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^D-[0-9]+$"
+          },
+          "question": {
+            "type": "string"
+          },
+          "chosen": {
+            "type": "string"
+          },
+          "appliedAt": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reconcile": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "diffHash",
+            "at",
+            "missing"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "diffHash": {
+              "type": "string"
+            },
+            "at": {
+              "type": "string"
+            },
+            "missing": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "transcriptPath": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "pluginRoot": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "halt": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "reason",
+            "at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "type": "string"
+            },
+            "at": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "updatedAt": {
+      "type": "string"
+    },
+    "reconcilePasses": {
+      "type": "integer",
+      "minimum": 0
+    }
   },
   "$defs": {
     "slice": {
       "type": "object",
-      "required": ["id", "title", "status", "dependsOn", "criteria", "paths", "attempts", "ui"],
+      "required": [
+        "id",
+        "title",
+        "status",
+        "dependsOn",
+        "criteria",
+        "paths",
+        "attempts",
+        "ui"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^S-[0-9]+$" },
-        "title": { "type": "string", "minLength": 1 },
-        "status": { "enum": ["pending", "building", "done", "skipped", "held"] },
-        "dependsOn": { "type": "array", "items": { "type": "string" } },
-        "criteria": { "type": "array", "items": { "type": "string" } },
-        "paths": { "type": "array", "items": { "type": "string" } },
-        "attempts": { "type": "integer", "minimum": 0 },
-        "ui": { "type": "boolean" },
-        "diffHash": { "type": ["string", "null"] },
-        "commit": { "type": ["string", "null"] },
-        "origin": { "enum": ["plan", "reconcile"] }
+        "id": {
+          "type": "string",
+          "pattern": "^S-[0-9]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "building",
+            "done",
+            "skipped",
+            "held"
+          ]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ui": {
+          "type": "boolean"
+        },
+        "diffHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "plan",
+            "reconcile"
+          ]
+        }
       }
     },
     "preflight": {
       "type": "object",
-      "required": ["diffHash", "passed", "at", "checks"],
+      "required": [
+        "diffHash",
+        "passed",
+        "at",
+        "checks"
+      ],
       "additionalProperties": false,
       "properties": {
-        "diffHash": { "type": "string" },
-        "passed": { "type": "boolean" },
-        "at": { "type": "string" },
-        "durationMs": { "type": "integer" },
-        "checks": { "type": "array", "items": { "type": "object", "required": ["id", "status"], "properties": { "id": { "type": "string" }, "status": { "enum": ["pass", "fail", "skip"] }, "details": { "type": "string" }, "durationMs": { "type": "integer" } } } }
+        "diffHash": {
+          "type": "string"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "at": {
+          "type": "string"
+        },
+        "durationMs": {
+          "type": "integer"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "skip"
+                ]
+              },
+              "details": {
+                "type": "string"
+              },
+              "durationMs": {
+                "type": "integer"
+              }
+            }
+          }
+        }
       }
     }
   }

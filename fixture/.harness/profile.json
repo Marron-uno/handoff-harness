@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "checks": [
+    { "id": "test", "command": "npm test", "timeoutSec": 120 }
+  ],
+  "hosts": { "preview": [], "prod": [] },
+  "secrets": { "allow": ["fixture-token-not-real"] }
+}

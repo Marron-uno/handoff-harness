@@ -1,0 +1,11 @@
+{
+  "name": "lantern-notes",
+  "version": "0.1.0",
+  "description": "Synthetic fixture project for handoff-harness. Nothing here is real.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "start": "node src/server.mjs"
+  }
+}
