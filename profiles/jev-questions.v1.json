@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "verdict": {
+    "per_finding": {
+      "evidence_supports": { "type": "noul", "instructions": "The quoted evidence demonstrates the described issue." },
+      "severity_consistent": { "type": "noul", "instructions": "The severity level matches the impact described in the issue." },
+      "kind": {
+        "type": "choice",
+        "instructions": "What kind of finding is this?",
+        "criteria": { "behavior": "Changes what the code does", "style": "Naming, formatting, structure only", "spec_gap": "The specification is unclear or missing" }
+      }
+    },
+    "per_verdict": {
+      "summary_consistent": { "type": "noul", "instructions": "The summary agrees with the list of findings and their severities." }
+    }
+  },
+  "inventory": {
+    "implemented": { "type": "noul", "instructions": "The item's acceptance criteria are satisfied by the changes and evidence described." }
+  },
+  "trace": {
+    "category": {
+      "type": "choice",
+      "instructions": "What caused this intervention?",
+      "criteria": { "spec_gap": "The spec or handoff was unclear or missing", "tooling": "Build, lint or test tooling", "environment": "Environment, services, secrets, network", "agent_misread": "The agent ignored or misread an instruction", "style": "A preference only", "none": null }
+    },
+    "reusable": { "type": "noul", "instructions": "This would recur in a different slice or project and is worth a written lesson." }
+  }
+}

@@ -15,6 +15,10 @@ import { goalCheck } from "./lib/goal-check.mjs";
 import { briefFor, loadPlanIntoState } from "./lib/machine.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
 import { guardChecks } from "./lib/guards/index.mjs";
+import { jevVerdictGate } from "./lib/jev/verdict-gate.mjs";
+import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
+import { jevClassifyTrace } from "./lib/jev/trace-classify.mjs";
+import { calibrate, renderCalibration } from "./lib/jev/calibrate.mjs";
 
 const cwd = process.env.HARNESS_CWD || process.cwd();
 const argv = process.argv.slice(2);
@@ -205,17 +209,30 @@ const commands = {
     out({ ok: true, commit: sha, files, push, next: "Stop now; the Stop hook advances to the next slice." });
   },
 
-  reconcile(sub) {
+  async reconcile(sub) {
     const state = requireState();
     const profile = loadProfile(cwd);
     if (sub === "prepare") {
       const r = prepareReconcile(cwd, state);
       const decided = r.items.filter((i) => i.decided).length;
-      out({ ok: true, items: r.items.length, decidedDeterministically: decided, forModel: r.items.length - decided, input: join(harnessPaths(cwd).dir, "reconcile-input.json") });
+      let jev = null;
+      if (state.goal.jev && profile.jev.enabled) {
+        jev = await jevPrefilter(cwd, r, { profile });
+        writeJsonAtomic(join(harnessPaths(cwd).dir, "reconcile-input.json"), r);
+      }
+      out({ ok: true, items: r.items.length, decidedDeterministically: decided, forModel: r.items.length - decided, jev, input: join(harnessPaths(cwd).dir, "reconcile-input.json") });
     }
     if (sub === "load") {
       const r = loadReconcile(cwd, state, profile);
       if (!r.ok) fail("reconcile result rejected", { errors: r.errors });
+      // Jev outcomes: the reconciler's decision is the ground truth for the prefilter's guess.
+      const inputPath = join(harnessPaths(cwd).dir, "reconcile-input.json");
+      if (existsSync(inputPath)) {
+        for (const item of readJson(inputPath).items) {
+          if (!item.jev || !r.statuses[item.id]) continue;
+          appendEvent(cwd, { type: "jev", purpose: "outcome", answerId: item.jev.answerId, question: "implemented", actual: r.statuses[item.id] === "done", item: item.id });
+        }
+      }
       saveState(cwd, state);
       out({ ok: true, missing: r.missing, added: r.added, next: "Stop now; the Stop hook continues with new slices or the report." });
     }
@@ -281,6 +298,40 @@ const commands = {
     out({ ok: r.ok, errors: r.errors, stale: r.stale }, r.ok ? 0 : 1);
   },
 
+  async jev(sub, { flags, rest }) {
+    const profile = loadProfile(cwd);
+    const state = hasHarness(cwd) ? loadState(cwd) : null;
+    if (sub === "gate") {
+      const path = rest[0];
+      if (!path || !existsSync(path)) fail("usage: jev gate <verdict.json>");
+      const gate = await jevVerdictGate(cwd, readJson(path), { state, profile });
+      out({ ok: true, ...gate });
+    }
+    if (sub === "prefilter") {
+      const inputPath = join(harnessPaths(cwd).dir, "reconcile-input.json");
+      if (!existsSync(inputPath)) fail("run `harness reconcile prepare` first");
+      const input = readJson(inputPath);
+      const r = await jevPrefilter(cwd, input, { profile });
+      writeJsonAtomic(inputPath, input);
+      out({ ok: true, ...r });
+    }
+    if (sub === "classify") {
+      const r = await jevClassifyTrace(cwd, { profile, state, since: flags.since ?? null });
+      out({ ok: true, ...r });
+    }
+    if (sub === "calibrate") {
+      const c = calibrate(cwd);
+      if (flags.markdown) { process.stdout.write(renderCalibration(c)); process.exit(0); }
+      out({ ok: true, ...c });
+    }
+    if (sub === "outcome") {
+      if (!flags.id || flags.actual === undefined) fail("usage: jev outcome --id <answerId> --actual true|false [--question name]");
+      appendEvent(cwd, { type: "jev", purpose: "outcome", answerId: String(flags.id), question: flags.question ?? null, actual: String(flags.actual) === "true" });
+      out({ ok: true });
+    }
+    fail(`unknown jev subcommand ${sub}`);
+  },
+
   events(_, { flags }) {
     const events = readEvents(cwd, (e) => !flags.type || e.type === flags.type);
     out({ ok: true, count: events.length, events: events.slice(-Number(flags.last ?? 50)) });
@@ -301,7 +352,7 @@ if (!cmd) {
   out({ ok: false, error: `unknown command ${name ?? ""}`, commands: Object.keys(commands) }, 1);
 }
 try {
-  cmd(sub, { flags, rest: more });
+  await cmd(sub, { flags, rest: more });
 } catch (err) {
   fail(err.message, { stack: process.env.HARNESS_DEBUG ? err.stack : undefined });
 }
