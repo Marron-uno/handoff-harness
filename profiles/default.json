@@ -8,7 +8,17 @@
     "maxStaleVerdicts": 2
   },
   "budgets": {
-    "toolCallsPerStage": { "intake": 150, "planning": 80, "building": 250, "preflight": 40, "critic": 40, "review": 60, "record": 30, "reconcile": 120, "report": 30 },
+    "toolCallsPerStage": {
+      "intake": 150,
+      "planning": 80,
+      "building": 250,
+      "preflight": 40,
+      "critic": 40,
+      "review": 60,
+      "record": 30,
+      "reconcile": 120,
+      "report": 30
+    },
     "browserActionsPerReview": 60,
     "diffLinesPerSlice": 1200
   },
@@ -22,9 +32,28 @@
     "escalateAfterRejections": 2
   },
   "lanes": {
-    "subagentWritable": [".harness/verdicts/**", ".harness/evidence/**"],
-    "protectedPaths": ["openspec/specs/**", ".harness/state.json", ".harness/events.jsonl", ".harness/plugin-root", ".claude/**", "CLAUDE.md", "AGENTS.md"],
-    "sensitivePaths": [".env", ".env.*", "**/*.pem", "**/*.key", "**/id_rsa*", "**/credentials*", "**/*secret*"],
+    "subagentWritable": [
+      ".harness/verdicts/**",
+      ".harness/evidence/**"
+    ],
+    "protectedPaths": [
+      "openspec/specs/**",
+      ".harness/state.json",
+      ".harness/events.jsonl",
+      ".harness/plugin-root",
+      ".claude/**",
+      "CLAUDE.md",
+      "AGENTS.md"
+    ],
+    "sensitivePaths": [
+      ".env",
+      ".env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/id_rsa*",
+      "**/credentials*",
+      "**/*secret*"
+    ],
     "proposalsDir": ".harness/proposals"
   },
   "git": {
@@ -54,38 +83,130 @@
     ]
   },
   "hosts": {
-    "fixture": ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"],
+    "fixture": [
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "[::1]"
+    ],
     "preview": [],
     "prod": []
   },
   "browser": {
-    "readOnlyToolsOutsideFixture": ["mcp__claude-in-chrome__form_input", "mcp__claude-in-chrome__javascript_tool", "mcp__claude-in-chrome__file_upload", "mcp__claude-in-chrome__upload_image"],
-    "typingActions": ["type", "key"]
+    "readOnlyToolsOutsideFixture": [
+      "mcp__claude-in-chrome__form_input",
+      "mcp__claude-in-chrome__javascript_tool",
+      "mcp__claude-in-chrome__file_upload",
+      "mcp__claude-in-chrome__upload_image"
+    ],
+    "typingActions": [
+      "type",
+      "key"
+    ]
   },
   "language": {
     "minWords": 15,
     "minForeignHits": 3,
-    "exemptGlobs": ["**/locales/**", "**/i18n/**", "**/messages/**", "**/fixtures/**", "**/*.po", "**/*.csv"],
-    "exemptEnglishLocale": ["en", "en-US", "en-GB"],
-    "textExtensions": [".md", ".mdx", ".txt", ".json", ".yaml", ".yml", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".html", ".css", ".scss", ".vue", ".svelte", ".astro", ".php", ".sql"]
+    "exemptGlobs": [
+      "**/locales/**",
+      "**/i18n/**",
+      "**/messages/**",
+      "**/fixtures/**",
+      "**/*.po",
+      "**/*.csv"
+    ],
+    "exemptEnglishLocale": [
+      "en",
+      "en-US",
+      "en-GB"
+    ],
+    "textExtensions": [
+      ".md",
+      ".mdx",
+      ".txt",
+      ".json",
+      ".yaml",
+      ".yml",
+      ".ts",
+      ".tsx",
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".cjs",
+      ".py",
+      ".rb",
+      ".go",
+      ".rs",
+      ".java",
+      ".kt",
+      ".swift",
+      ".html",
+      ".css",
+      ".scss",
+      ".vue",
+      ".svelte",
+      ".astro",
+      ".php",
+      ".sql"
+    ]
   },
   "prose": {
     "banEmDash": true,
-    "bannedPhrases": ["delve", "leverage", "seamless", "robust solution", "it's worth noting", "in today's fast-paced", "game-changer"]
+    "bannedPhrases": [
+      "delve",
+      "leverage",
+      "seamless",
+      "robust solution",
+      "it's worth noting",
+      "in today's fast-paced",
+      "game-changer"
+    ]
   },
   "secrets": {
-    "allow": ["fixture-token-not-real", "example.com", "555-0100"],
+    "allow": [
+      "fixture-token-not-real",
+      "example.com",
+      "555-0100"
+    ],
     "extraPatterns": []
   },
   "checks": [],
-  "openspec": { "validate": true, "specsReadOnly": true },
+  "openspec": {
+    "validate": true,
+    "specsReadOnly": true
+  },
   "pricing": {
     "perMillion": {
-      "default": { "input": 3, "output": 15, "cacheWrite": 3.75, "cacheRead": 0.3 },
-      "haiku": { "input": 1, "output": 5, "cacheWrite": 1.25, "cacheRead": 0.1 },
-      "sonnet": { "input": 3, "output": 15, "cacheWrite": 3.75, "cacheRead": 0.3 },
-      "opus": { "input": 5, "output": 25, "cacheWrite": 6.25, "cacheRead": 0.5 },
-      "fable": { "input": 15, "output": 75, "cacheWrite": 18.75, "cacheRead": 1.5 }
+      "default": {
+        "input": 3,
+        "output": 15,
+        "cacheWrite": 3.75,
+        "cacheRead": 0.3
+      },
+      "haiku": {
+        "input": 1,
+        "output": 5,
+        "cacheWrite": 1.25,
+        "cacheRead": 0.1
+      },
+      "sonnet": {
+        "input": 3,
+        "output": 15,
+        "cacheWrite": 3.75,
+        "cacheRead": 0.3
+      },
+      "opus": {
+        "input": 5,
+        "output": 25,
+        "cacheWrite": 6.25,
+        "cacheRead": 0.5
+      },
+      "fable": {
+        "input": 15,
+        "output": 75,
+        "cacheWrite": 18.75,
+        "cacheRead": 1.5
+      }
     }
   },
   "jev": {
@@ -96,9 +217,24 @@
     "keyEnv": "TYPESAFE_API_KEY",
     "timeoutMs": 5000,
     "questionsFile": "profiles/jev-questions.v1.json",
-    "redact": ["(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*\\S+"],
-    "thresholds": { "evidence_supports": 0.4, "severity_consistent": 0.4, "summary_consistent": 0.5, "reusable": 0.7 },
-    "buckets": { "missingBelow": 0.2, "doneAbove": 0.8 },
+    "redact": [
+      "(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*\\S+"
+    ],
+    "thresholds": {
+      "evidence_supports": 0.4,
+      "severity_consistent": 0.4,
+      "summary_consistent": 0.5,
+      "reusable": 0.7
+    },
+    "buckets": {
+      "missingBelow": 0.2,
+      "doneAbove": 0.8
+    },
     "maxStateChars": 60000
+  },
+  "devServer": {
+    "url": null,
+    "start": null,
+    "note": "URL the reviewer opens for UI criteria and the command that starts it. The reviewer starts it in the background when the URL does not answer."
   }
 }

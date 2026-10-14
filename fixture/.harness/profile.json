@@ -1,8 +1,23 @@
 {
   "version": 1,
   "checks": [
-    { "id": "test", "command": "npm test", "timeoutSec": 120 }
+    {
+      "id": "test",
+      "command": "npm test",
+      "timeoutSec": 120
+    }
   ],
-  "hosts": { "preview": [], "prod": [] },
-  "secrets": { "allow": ["fixture-token-not-real"] }
+  "hosts": {
+    "preview": [],
+    "prod": []
+  },
+  "secrets": {
+    "allow": [
+      "fixture-token-not-real"
+    ]
+  },
+  "devServer": {
+    "url": "http://localhost:4173",
+    "start": "npm start"
+  }
 }

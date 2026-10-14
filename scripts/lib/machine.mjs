@@ -41,6 +41,7 @@ function sliceVars(state, profile) {
     "slice.ui": slice?.ui ? "yes" : "no",
     attempt: state.slice?.attempt, maxAttempts: profile.caps.maxAttempts,
     round: state.review.rounds + 1, roundsAuthorized: state.review.roundsAuthorized,
+    "devServer.url": profile.devServer?.url ?? "(none configured)", "devServer.start": profile.devServer?.start ?? "(none configured)",
     verdictsDir: harnessPaths("").verdicts.replace(/^\//, ""),
   };
 }
