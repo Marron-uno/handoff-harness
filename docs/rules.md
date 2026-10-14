@@ -26,6 +26,7 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | No secrets written | PostToolUse, preflight | Seed passwords found in committed hooks |
 | No em dashes, no banned phrases in prose | PostToolUse, preflight | Prose quality rule |
 | Diff budget per slice | preflight | Big diffs hide behavior changes |
+| Bundle size budget: each file in `budgets.bundleBytes` stays at or under its byte cap | preflight | A slice can pass every check and still ship a built file past the size a project allows |
 | Slice edits stay inside declared paths | preflight | Undeclared scope creep |
 | Dependency manifests change only when declared | preflight | Undeclared dependencies |
 | Tests never weakened: no deleted test files, no skips, no net removal | preflight | Agents delete failing tests |
