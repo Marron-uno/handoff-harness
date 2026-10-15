@@ -65,12 +65,15 @@ export function saveState(cwd, state) {
 }
 
 // The only way a stage changes. Logs the transition, resets the non-progress block counter.
+// Entering review resets the browser action counter: the budget is per review (slice, attempt
+// and round), so the sixth UI review of a goal gets the same budget as the first.
 export function transition(cwd, state, stage, reason, data = {}) {
   if (!STAGES.includes(stage)) throw new Error(`unknown stage ${stage}`);
   const from = state.stage;
   state.stage = stage;
   state.stageEnteredAt = nowIso();
   state.guards.blocks = 0;
+  if (stage === "review") state.counters.browserActions = 0;
   appendEvent(cwd, { type: "stage", from, to: stage, slice: state.slice?.id ?? null, reason, ...data });
   return state;
 }

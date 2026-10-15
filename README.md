@@ -89,6 +89,8 @@ Goals are sentences. `--mode handoff`, the default, walks the sources you name i
 
 Everything the harness writes lives in `.harness/`. The state and the events log are run artifacts and stay out of git. The profile, lessons, proposals and reports are committed.
 
+Once a goal is done the harness is dormant: edit on a new branch, and the stage lanes no longer apply. The default branch and the reviewed goal branch stay protected from edits until the next goal starts, and the git guard's standing rules (no history rewrites, no bulk staging or pushing, never push the default branch) hold as always.
+
 ## The guards
 
 Hooks are the enforcement surface. Each is a Node script with no dependencies; input arrives on stdin and decisions leave as JSON.
@@ -104,6 +106,10 @@ Two judges per slice, both read-only subagents that write JSON. Preflight writes
 A rejection sends the slice back to build with the findings quoted. After two rejections the strong model takes over for both judges. After the caps, a human decides: fix by hand, raise the cap, or skip the slice with a reason. Rounds past the cap have found real bugs before, so the cap asks a human instead of ending the run.
 
 Verdicts carry a hash of the change set they judged. An edit after the judge looked makes the verdict stale, and the validator says so.
+
+Two commands exist for what intake could not foresee, both human decisions logged as events: `harness slice amend` widens the files a slice may touch when the plan missed one, and `harness decide` records a ruling on a spec conflict that the judges then see in their packet and cite as `decision:D-n`. After the attempt cap, `harness retry` continues the slice with its attempt count kept rather than reset.
+
+A slice that changes enforcement itself, any file matching `review.guardPaths` in the profile, is guard-bearing. Its reviewer is the strong model from round one, its brief asks what now passes rather than whether the criteria hold, and its verdicts are valid only when every met criterion and every block or major finding rests on a command or test the judge ran. Preflight also runs the slice's changed tests against the tree as it was before the slice and fails when they pass there, since a test that cannot fail covers nothing. The packet tells the judges what machine they are on, down to whether the filesystem folds letter case. All of this came from reviewing the harness's own fixes: the author's review and tests passed, and an independent reviewer found three guard escapes by probing.
 
 Default models: the critic on Haiku, the reviewer and the spec reviewer on Sonnet, the reconciler and both strong judges on Opus, set in `agents/*.md`. The main session runs whatever model your session runs.
 
@@ -131,7 +137,7 @@ Claude Code stops a session after eight consecutive Stop-hook continuations. `no
 
 ## Tests
 
-`npm test` runs 64 tests in a few seconds with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path.
+`npm test` runs 107 tests in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 
@@ -153,6 +159,6 @@ evals/            plugin eval cases; bench results land here, ignored by git
 
 ## Status
 
-Version 0.4.0. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. The harness now carries its own `openspec/` with baseline specs derived from the rule catalog, and the retro and evals work is its first change, `openspec/changes/add-retro-and-evals`, left for a human to archive. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, git-side hooks for commit messages, and a self-run on a change that touches a guard. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Version 0.5.0. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. [Pull request 3](https://github.com/Marron-uno/handoff-harness/pull/3) closes the fifteen field issues from the first real-project run (`docs/field-issues.md`) and adds the adversarial review of guard-bearing slices, after an independent review of those fixes found three guard escapes the author's own review had missed. The harness now carries its own `openspec/` with baseline specs derived from the rule catalog, and the retro and evals work is its first change, `openspec/changes/add-retro-and-evals`, left for a human to archive. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, git-side hooks for commit messages, and a self-run on a change that touches a guard. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

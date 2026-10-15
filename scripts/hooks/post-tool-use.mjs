@@ -5,6 +5,7 @@ import { relative, isAbsolute } from "node:path";
 import { bootstrap, agentTypeOf } from "./_common.mjs";
 import { checkFileLanguage } from "../lib/guards/language-guard.mjs";
 import { lintProse } from "../lib/guards/prose-lint.mjs";
+import { projectRelative } from "../lib/guards/path-guard.mjs";
 import { scanText } from "../lib/guards/secret-scan.mjs";
 
 const ctx = await bootstrap();
@@ -16,12 +17,15 @@ const agentType = agentTypeOf(input);
 if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(tool)) {
   const filePath = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
   if (filePath && existsSync(filePath)) {
-    const rel = isAbsolute(filePath) ? relative(cwd, filePath) : filePath;
+    // Notes outside the project (the scratchpad, another repository) are not this project's prose:
+    // only the credential scan applies to them. Inside, language and prose are checked too.
+    const inside = projectRelative(cwd, filePath) !== null;
+    const rel = inside && isAbsolute(filePath) ? relative(cwd, filePath) : filePath;
     const content = readFileSync(filePath, "utf8");
     const problems = [];
-    for (const h of checkFileLanguage(rel, content, profile.language)) problems.push(`line ${h.line} reads as ${h.lang} (${h.hits} function words vs ${h.englishHits} English): "${h.sample}". Everything agents write is English; only non-English locale files and verbatim client copy are exempt.`);
+    if (inside) for (const h of checkFileLanguage(rel, content, profile.language)) problems.push(`line ${h.line} reads as ${h.lang} (${h.hits} function words vs ${h.englishHits} English): "${h.sample}". Everything agents write is English; only non-English locale files and verbatim client copy are exempt.`);
     for (const h of scanText(content, { allow: profile.secrets.allow, extraPatterns: profile.secrets.extraPatterns })) problems.push(`line ${h.line}: ${h.pattern} ${h.match}. Never write credentials; use an obviously fake placeholder or the fixture value.`);
-    for (const h of lintProse(rel, content, profile.prose)) problems.push(`line ${h.line}: ${h.rule} "${h.sample}".`);
+    if (inside) for (const h of lintProse(rel, content, profile.prose)) problems.push(`line ${h.line}: ${h.rule} "${h.sample}".`);
     if (problems.length) {
       ctx.event({ type: "guard", guard: "post-write", tool, file: rel, stage: state.stage, slice: state.slice?.id ?? null, agent: agentType ?? undefined, count: problems.length });
       ctx.save();

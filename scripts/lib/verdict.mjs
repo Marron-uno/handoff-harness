@@ -39,10 +39,21 @@ export function validateVerdict(cwd, verdict, { state, profile, workHash, role }
   const unmet = verdict.criteria.filter((c) => c.status === "unmet");
   if (verdict.verdict === "pass" && unmet.length) errors.push(`verdict is pass but criteria unmet: ${unmet.map((c) => c.id).join(", ")}`);
 
+  // A guard-bearing slice is judged by probes, not by reading: a met criterion and a block or major
+  // finding rest on evidence of type command or test, the probe or the test the judge ran.
+  if (state?.preflight?.guardBearing && state.slice && verdict.slice === state.slice.id) {
+    const probed = (list) => (list ?? []).some((e) => e.type === "command" || e.type === "test");
+    for (const c of verdict.criteria) if (c.status === "met" && !probed(c.evidence)) errors.push(`${c.id}: on a guard-bearing slice a met criterion needs evidence of type command or test (a probe or a test you ran), not a file quote alone`);
+    for (const f of verdict.findings) if ((f.severity === "block" || f.severity === "major") && !probed(f.evidence)) errors.push(`${f.id}: on a guard-bearing slice a ${f.severity} finding needs evidence of type command or test showing the input that gets through`);
+  }
+
   const ids = new Set();
   for (const f of verdict.findings) {
     if (ids.has(f.id)) errors.push(`duplicate finding id ${f.id}`);
     ids.add(f.id);
+    // A decision authority must name a decision that was made (`harness decide`, or an answered hold).
+    const decision = /^decision:(D-\d+)$/.exec(f.authority ?? "");
+    if (decision && state && !state.defaults.some((d) => d.id === decision[1])) errors.push(`${f.id}: authority ${f.authority} names no recorded decision; the packet lists the D-n ids that exist`);
     for (const e of f.evidence ?? []) errors.push(...checkEvidence(cwd, e, f.id));
   }
   for (const c of verdict.criteria) {

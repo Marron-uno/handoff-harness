@@ -187,6 +187,11 @@
             "staleVerdicts": {
               "type": "integer",
               "minimum": 0
+            },
+            "attemptBase": {
+              "description": "The attempt number at the last human retry; the attempt cap counts from here.",
+              "type": "integer",
+              "minimum": 0
             }
           }
         }
@@ -357,6 +362,10 @@
             "type": "string"
           },
           "appliedAt": {
+            "type": "string"
+          },
+          "slice": {
+            "description": "Set on a human decision made for one slice (`harness decide --slice`).",
             "type": "string"
           }
         }
@@ -615,6 +624,16 @@
                 "type": "integer"
               }
             }
+          }
+        },
+        "guardBearing": {
+          "description": "The slice touched a path in review.guardPaths, so it changes what the harness allows or denies.",
+          "type": "boolean"
+        },
+        "guardFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

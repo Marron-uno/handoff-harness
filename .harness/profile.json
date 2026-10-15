@@ -4,5 +4,6 @@
     { "id": "test", "command": "npm test", "timeoutSec": 300 },
     { "id": "check", "command": "npm run check", "timeoutSec": 120 }
   ],
-  "hosts": { "preview": [], "prod": [] }
+  "hosts": { "preview": [], "prod": [] },
+  "review": { "guardPaths": ["scripts/lib/guards/**", "scripts/hooks/**", "profiles/*.json", "schemas/*.json"] }
 }

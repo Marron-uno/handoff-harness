@@ -33,7 +33,8 @@ export function prepareReconcile(cwd, state) {
     for (const name of readdirSync(p.verdicts)) {
       if (!name.endsWith(".json") || name.startsWith("reconcile") || name.startsWith("spec-")) continue;
       const v = readJson(join(p.verdicts, name), null);
-      if (v?.verdict === "pass") for (const c of v.criteria ?? []) if (c.status === "met") met.add(c.id);
+      // Criterion ids repeat across goals, so only this goal's verdicts count.
+      if (v?.goal === state.goal.id && v?.verdict === "pass") for (const c of v.criteria ?? []) if (c.status === "met") met.add(c.id);
     }
   }
   const items = inventory.items.map((item) => {

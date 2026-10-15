@@ -43,6 +43,7 @@ export function runMetrics(dir, opts = {}) {
   const halts = ofType("halt");
   const verdicts = ofType("verdict");
   const invalid = verdicts.filter((e) => e.valid === false);
+  const preflights = ofType("preflight");
   const usageEvents = ofType("usage").filter((e) => e.scope === "subagent");
 
   // Tool calls per judge per slice. New runs record one delta per stop; old runs recorded the
@@ -83,6 +84,8 @@ export function runMetrics(dir, opts = {}) {
     guardDenials: guards.length, guardsByGuard: count(guards, (e) => e.guard),
     halts: halts.length, haltCodes: halts.map((h) => h.code),
     verdictWrites: verdicts.length, invalidVerdicts: invalid.length,
+    guardBearingSlices: new Set(preflights.filter((e) => e.guardBearing).map((e) => e.slice)).size,
+    discriminationFailures: preflights.filter((e) => (e.failed ?? []).includes("tests_discriminate")).length,
     invalidByError: count(invalid.flatMap((e) => (e.errors ?? []).map(normalizeError)), (x) => x),
     judgeStopsExtra: usageEvents.filter((u) => (u.stops ?? 1) > 1).length,
     criticCalls: stat(criticCalls.map((c) => c.calls)), criticCallsPerSlice: criticCalls,
@@ -99,7 +102,7 @@ export function runMetrics(dir, opts = {}) {
 // The columns a bench compares and the direction that counts as better. Null means "report only".
 export const METRIC_DIRECTIONS = {
   slicesDone: "up", slicesHeld: null, minutes: "down", costReported: "down", costRatio: null, blocks: "down", guardDenials: "down", halts: "down",
-  invalidVerdicts: "down", judgeStopsExtra: "down", "criticCalls.max": "down", "criticCalls.mean": "down", "reviewerCalls.mean": "down", screenshots: null,
+  invalidVerdicts: "down", judgeStopsExtra: "down", guardBearingSlices: null, discriminationFailures: null, "criticCalls.max": "down", "criticCalls.mean": "down", "reviewerCalls.mean": "down", screenshots: null,
   reconcilePasses: null, slicesFromReconcile: null, specAttempts: "down", jevAnswers: null, jevCost: "down",
 };
 

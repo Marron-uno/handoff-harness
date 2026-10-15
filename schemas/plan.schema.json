@@ -37,7 +37,8 @@
           "question": { "type": "string" },
           "kind": { "enum": ["default", "hold"] },
           "chosen": { "type": "string" },
-          "blocks": { "type": "array", "items": { "type": "string" } }
+          "blocks": { "type": "array", "items": { "type": "string" } },
+          "slice": { "description": "A human decision scoped to one slice (`harness decide --slice`); its packet lists it.", "type": "string", "pattern": "^S-[0-9]+$" }
         }
       }
     }

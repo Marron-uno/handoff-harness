@@ -20,7 +20,7 @@ function criticRepo() {
   return dir;
 }
 
-test("preflight writes the judge's packet: criteria text, paths, changed files, diff and new files", () => {
+test("preflight writes the judge's packet: criteria text, paths, changed files, and a diff that includes new files", () => {
   const dir = criticRepo();
   assert.equal(runCli(dir, ["verdict", "template"]).json.ok, false, "no template outside a judging stage");
   const pf = runCli(dir, ["preflight"]);
@@ -36,7 +36,7 @@ test("preflight writes the judge's packet: criteria text, paths, changed files, 
   assert.match(packet, /\| src\/notes\.mjs \| 1 \| 1 \|/);
   assert.match(packet, /\| tests\/sort\.test\.mjs \(new\) \| \d+ \| 0 \|/);
   assert.match(packet, /```diff\ndiff --git a\/src\/notes\.mjs/);
-  assert.match(packet, /### tests\/sort\.test\.mjs\n\n```\nimport \{ test \}/, "a new file is shown in full since the diff omits it");
+  assert.match(packet, /\+\+\+ b\/tests\/sort\.test\.mjs\n@@ -0,0 \+1,\d+ @@\n\+import \{ test \}/, "a new file appears in the diff as an addition, since git diff HEAD alone omits it");
   assert.match(pf.json.brief, /Start with `\.harness\/packets\/S-1-a1\.md`/, "the critic brief names the packet");
   assert.match(pf.json.brief, /verdict template/);
 });
