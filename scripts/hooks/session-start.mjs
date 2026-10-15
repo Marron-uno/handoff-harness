@@ -21,7 +21,7 @@ const header = [
   `Rules: never edit .harness/state.json or events.jsonl by hand; every state change goes through \`${cli} <command>\`. The Stop hook decides when a stage is complete and injects the next brief. If unsure, run \`${cli} resume\`.`,
 ];
 const body = RESTING.has(state.stage)
-  ? `The run is resting (${state.stage})${state.halt ? `: ${state.halt.reason}` : ""}. Wait for the human.`
+  ? `The run is resting (${state.stage})${state.halt ? `: ${state.halt.reason}` : ""}. ${state.stage === "done" ? `Goal ${state.goal.id} is done and the harness is dormant: follow-up work goes on a new branch (${state.defaultBranch} and ${state.branch} stay protected), or start a new goal.` : "Wait for the human."}`
   : briefFor(cwd, state, profile);
 process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: `${header.join("\n")}\n\n${body}` } }));
 process.exit(0);

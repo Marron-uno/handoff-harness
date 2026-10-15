@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { runCli, runHook, sh, tmpDir, PLUGIN_ROOT } from "./helpers.mjs";
+import { runCli, runHook, sh, tmpDir, initRepo, PLUGIN_ROOT } from "./helpers.mjs";
 import { fixtureRepo, writeIntake, state, stop, writeVerdict, hash } from "./fixture.mjs";
 import { loadState, saveState } from "../scripts/lib/state.mjs";
 import { loadProfile } from "../scripts/lib/profile.mjs";
@@ -57,6 +57,7 @@ test("issue 14: a done goal is dormant; follow-up work proceeds on a new branch,
   assert.equal(denied(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "checkout main" } })), false, "switching to the default branch is allowed once the goal is done");
   sh(dir, "git", ["checkout", "-q", "main"]);
   assert.match(reason(hook(dir, { tool_name: "Edit", tool_input: { file_path: join(dir, "src/x.mjs") } })), /done and main is the default branch/);
+  assert.match(reason(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "push origin HEAD" } })), /default branch main/, "HEAD on main is main");
   sh(dir, "git", ["checkout", "-q", "-b", "fix/follow-up"]);
   assert.equal(denied(hook(dir, { tool_name: "Edit", tool_input: { file_path: join(dir, "src/x.mjs") } })), false, "a new branch may be edited");
   assert.equal(denied(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "push -u origin fix/follow-up" } })), false, "and pushed");
@@ -191,6 +192,19 @@ test("issue 8: the work hash is the same from any directory of the project, and 
   assert.notEqual(v.workHash, v.verdictHash);
   assert.deepEqual(v.changedFiles.filter((f) => f === "scratch-notes.txt"), ["scratch-notes.txt"], "the stray file is named");
   assert.equal(realpathSync(v.projectRoot), realpathSync(dir));
+});
+
+test("issue 8, boundary: the project root never crosses into a parent repository", () => {
+  const dir = buildingRepo();
+  mkdirSync(join(dir, "nested"));
+  const nested = initRepo(join(dir, "nested"));
+  const before = state(dir).counters.toolCalls.building;
+  const r = runHook("pre-tool-use", { cwd: nested, hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: "ls" } });
+  assert.equal(r.stdout, "", "a repository without a harness keeps the hooks inactive, whatever lies above it");
+  assert.equal(state(dir).counters.toolCalls.building, before, "the parent's counters are untouched");
+  assert.ok(runCli(nested, ["init"]).json.harnessDir.endsWith("/nested/.harness"), "init lands in the nested repository");
+  assert.equal(runCli(nested, ["hash"]).json.ok, true, "the nested repository is a project of its own");
+  assert.equal(runCli(join(dir, "src"), ["hash"]).json.diffHash, runCli(dir, ["hash"]).json.diffHash, "and the parent still resolves from its own subfolders");
 });
 
 test("issue 10: retry keeps the attempt count; the cap counts from the retry and its message names retry", () => {

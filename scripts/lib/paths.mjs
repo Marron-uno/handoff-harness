@@ -11,22 +11,26 @@ export function pluginRoot() {
 }
 
 // The project root from any directory inside it: the nearest ancestor holding .harness/state.json,
-// else the git top level, else the start. The CLI and the hooks resolve through it, so a command
-// run from a subfolder sees the same work hash as one run at the root. Without it, `git diff HEAD`,
-// `ls-files` and `ls-tree` all scope to the current directory and a reviewer that changed directory
-// before `verdict validate` was told its verdict was stale.
+// no further up than the git top level, else the top level itself, else the start. The CLI and the
+// hooks resolve through it, so a command run from a subfolder sees the same work hash as one run at
+// the root. Without it, `git diff HEAD`, `ls-files` and `ls-tree` all scope to the current directory
+// and a reviewer that changed directory before `verdict validate` was told its verdict was stale.
+// The walk never crosses a repository boundary: a fixture copy or a bench run nested under a harness
+// project is its own project, not the parent's.
 export function findProjectRoot(start = process.cwd()) {
-  let cur = resolve(start);
+  const from = resolve(start);
+  const r = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: from, encoding: "utf8" });
+  const top = r.status === 0 ? r.stdout.trim() : "";
+  if (!top) return from;
+  let cur = from;
   for (;;) {
     if (existsSync(join(cur, HARNESS_DIR, "state.json"))) return cur;
+    if (samePath(cur, top)) break;
     const parent = dirname(cur);
     if (parent === cur) break;
     cur = parent;
   }
-  const r = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: resolve(start), encoding: "utf8" });
-  const top = r.status === 0 ? r.stdout.trim() : "";
-  if (!top || samePath(top, start)) return resolve(start);
-  return top;
+  return samePath(top, from) ? from : top;
 }
 
 export function projectDir(input = {}) {

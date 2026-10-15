@@ -37,7 +37,7 @@ Claude Code caps consecutive Stop-hook continuations at eight. The runaway cap s
 
 ## Work hash
 
-`workHash` is a hash of the committed tree minus `.harness/` plus the pending diff minus `.harness/`. Verdicts, preflight results and reconciliation results carry the work hash they judged. A result for a different hash is stale. Harness artifacts are excluded so writing a report cannot invalidate a verdict. Every CLI command and every hook first resolves to the project root (`findProjectRoot` in `scripts/lib/paths.mjs`: the nearest ancestor with `.harness/state.json`, else the git top level), because `git diff HEAD`, `ls-files` and `ls-tree` all scope to the current directory, and a reviewer that ran `verdict validate` from a subfolder was told its verdict was stale. When a verdict is stale, `verdict validate` prints both hashes and the changed files.
+`workHash` is a hash of the committed tree minus `.harness/` plus the pending diff minus `.harness/`. Verdicts, preflight results and reconciliation results carry the work hash they judged. A result for a different hash is stale. Harness artifacts are excluded so writing a report cannot invalidate a verdict. Every CLI command and every hook first resolves to the project root (`findProjectRoot` in `scripts/lib/paths.mjs`: the nearest ancestor with `.harness/state.json`, no further up than the git top level, else the top level itself; a repository nested under a harness project is never mistaken for its parent), because `git diff HEAD`, `ls-files` and `ls-tree` all scope to the current directory, and a reviewer that ran `verdict validate` from a subfolder was told its verdict was stale. When a verdict is stale, `verdict validate` prints both hashes and the changed files.
 
 ## Judges write verdicts
 

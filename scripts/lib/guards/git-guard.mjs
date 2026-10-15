@@ -42,7 +42,8 @@ export function checkBashCommand(command, { profile, state, cwd }) {
     const push = text.match(/git\s+push\b([^|;&]*)/);
     if (push && profile.git.pushOnlyGoalBranch) {
       const args = push[1].trim().split(/\s+/).filter((a) => a && !a.startsWith("-"));
-      const named = args.slice(1);
+      // A push of HEAD is a push of the current branch; judge it as that branch.
+      const named = args.slice(1).map((a) => (a === "HEAD" ? branch : a));
       if (named.some((a) => a === def || a.endsWith(`/${def}`))) return { deny: true, guard: "git", reason: `Blocked: pushing to the default branch ${def} is not allowed from a session.${dormant ? "" : ` Push ${state.branch} only.`}` };
       if (dormant) {
         if (!named.length && branch === def) return { deny: true, guard: "git", reason: `Blocked: pushing the default branch ${def} is not allowed from a session.` };
