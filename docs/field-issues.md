@@ -10,7 +10,7 @@ None.
 
 ## Fixed
 
-All fifteen closed by the `field-issues` OpenSpec change (`openspec/changes/field-issues/`), version 0.5.0. Each has a regression in `tests/field-issues.test.mjs` named by issue number.
+All fifteen closed by the `field-issues` OpenSpec change, archived as `openspec/changes/archive/2026-10-14-field-issues/`, version 0.5.0. Each has a regression in `tests/field-issues.test.mjs` named by issue number.
 
 | # | Issue | Where | Workaround used | Fix | Commit |
 |---|---|---|---|---|---|
