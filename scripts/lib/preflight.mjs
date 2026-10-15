@@ -1,6 +1,6 @@
 // Deterministic checks that run before any model judges the slice. Each check returns
 // { id, status: pass|fail|skip, details, durationMs }. The list is extended by the guards.
-import { existsSync, mkdtempSync, mkdirSync, copyFileSync, symlinkSync, rmSync } from "node:fs";
+import { existsSync, statSync, mkdtempSync, mkdirSync, copyFileSync, symlinkSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -72,6 +72,26 @@ function timed(id, fn) {
   }
 }
 
+// Each file named in budgets.bundleBytes must be at or under its byte cap. Missing files are skipped.
+export function bundleSizeCheck(cwd, profile) {
+  const caps = Object.entries(profile.budgets?.bundleBytes ?? {});
+  if (!caps.length) return { status: "skip", details: "no budgets.bundleBytes set" };
+  const over = [];
+  const missing = [];
+  let checked = 0;
+  for (const [file, cap] of caps) {
+    const path = join(cwd, file);
+    if (!existsSync(path)) { missing.push(file); continue; }
+    checked++;
+    const size = statSync(path).size;
+    if (size > cap) over.push(`${file} is ${size} bytes, cap ${cap}`);
+  }
+  const note = missing.length ? `; missing, skipped: ${missing.join(", ")}` : "";
+  if (over.length) return { status: "fail", details: over.join("; ") + note };
+  if (!checked) return { status: "skip", details: `no named file exists${note}` };
+  return { status: "pass", details: `${checked} file(s) within cap${note}` };
+}
+
 export function runPreflight(cwd, state, profile, { extraChecks = [] } = {}) {
   const t0 = Date.now();
   const files = changedFiles(cwd).filter((f) => !f.startsWith(".harness/"));
@@ -91,6 +111,8 @@ export function runPreflight(cwd, state, profile, { extraChecks = [] } = {}) {
     const cap = profile.budgets.diffLinesPerSlice;
     return total > cap ? { status: "fail", details: `${total} lines changed, cap ${cap}` } : { status: "pass", details: `${total} lines in ${files.length} files` };
   }));
+
+  checks.push(timed("bundle_size", () => bundleSizeCheck(cwd, profile)));
 
   checks.push(timed("protected_paths", () => {
     const protectedRes = profile.lanes.protectedPaths.map(globToRegExp);

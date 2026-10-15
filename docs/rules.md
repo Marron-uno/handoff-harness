@@ -28,6 +28,7 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | No secrets written | PostToolUse, preflight | Seed passwords found in committed hooks |
 | No em dashes, no banned phrases in prose | PostToolUse, preflight | Prose quality rule |
 | Diff budget per slice; binary files count as 0 lines | preflight | Big diffs hide behavior changes; the angar run counted images as text and blew the cap (field issue 1) |
+| Bundle size budget: each file in `budgets.bundleBytes` stays at or under its byte cap | preflight | A slice can pass every check and still ship a built file past the size a project allows |
 | Slice edits stay inside declared paths; only a human widens them, with `harness slice amend`, logged as an event | preflight, `slice amend` | Undeclared scope creep; the angar run aborted a goal over a planning miss (field issue 3) |
 | A human decision after approval is a default scoped to a slice: `harness decide`, listed in the packet, cited as `decision:D-n`, checked against the state | `decide`, packet, verdict validator | The angar run kept a spec conflict's resolution in a scratchpad file the judges could only hear about (field issue 11) |
 | Harness configuration changed during a slice is committed apart from the slice | `record` | Profile changes landed inside the angar run's slice commits (field issue 6) |
