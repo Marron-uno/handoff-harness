@@ -172,6 +172,12 @@
     "extraPatterns": []
   },
   "checks": [],
+  "review": {
+    "guardPaths": [],
+    "discriminatingTests": true,
+    "testCheck": "test",
+    "note": "guardPaths: globs whose change widens or narrows what the harness allows; a slice touching one is guard-bearing, which brings the adversarial review brief, the strong reviewer from round one, and command or test evidence for every met criterion and block or major finding. discriminatingTests: preflight runs the slice's changed tests against the tree before the slice, with the project check named by testCheck, and fails when they pass without the change."
+  },
   "openspec": {
     "validate": true,
     "specsReadOnly": true,

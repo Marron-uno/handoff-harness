@@ -33,6 +33,9 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Harness configuration changed during a slice is committed apart from the slice | `record` | Profile changes landed inside the angar run's slice commits (field issue 6) |
 | Dependency manifests change only when declared | preflight | Undeclared dependencies |
 | Tests never weakened: no deleted test files, no skips, no net removal | preflight | Agents delete failing tests |
+| The slice's changed tests fail without the slice's source changes, run in a worktree at the slice's start commit | preflight `tests_discriminate` | A report-ranking test passed with its fix reverted because directory order happened to agree |
+| A slice that touches `review.guardPaths` is guard-bearing: the adversarial review brief, the strong reviewer from round one, and every met criterion and block or major finding rests on command or test evidence | preflight, review brief, verdict validator | The 0.5.0 guard changes passed the author's review and tests; an independent review then found three escapes by probing |
+| The packet carries the environment: OS, Node, git, and whether the filesystem folds letter case, probed by writing a file | packet writer | A case-flipped path escaped a lane on a case-insensitive filesystem; the fact had to be discovered, not read |
 | OpenSpec validate when `openspec/` exists | preflight | Spec and change folders stay consistent |
 | Spec stage: the change passes `openspec validate --strict` and the delta format check | intake handler, `spec check` | A model that fumbles the format gets a retry, not a pass |
 | Spec stage: every in-scope criterion id is cited in the change; every task cites an id | intake handler, `spec check` | Run 1's reviewer found an item the change never specified; the spec reviewer must see it first |

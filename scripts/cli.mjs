@@ -64,6 +64,10 @@ function requireState() {
   return loadState(cwd);
 }
 
+// The harness's own enforcement surface. `harness init` writes these as review.guardPaths into the
+// profile of a checkout of the harness, so a slice touching them is guard-bearing.
+const SELF_GUARD_PATHS = ["scripts/lib/guards/**", "scripts/hooks/**", "profiles/*.json", "schemas/*.json"];
+
 const GITIGNORE_BLOCK = [
   "# handoff-harness run artifacts (profile, lessons, proposals and reports are kept)",
   ".harness/*",
@@ -85,6 +89,12 @@ const commands = {
     const gi = join(cwd, ".gitignore");
     const current = existsSync(gi) ? readFileSync(gi, "utf8") : "";
     if (!current.includes(".harness/*")) appendFileSync(gi, (current.endsWith("\n") || !current ? "" : "\n") + GITIGNORE_BLOCK.join("\n") + "\n");
+    const manifest = readJson(join(cwd, ".claude-plugin", "plugin.json"), null);
+    const isHarness = manifest?.name === "handoff-harness";
+    if (isHarness) {
+      const local = readJson(p.profile, {});
+      if (!local.review?.guardPaths) { local.review = { ...(local.review ?? {}), guardPaths: SELF_GUARD_PATHS }; writeJsonAtomic(p.profile, local); }
+    }
     // Commit the harness's own files so they never show up inside a slice diff.
     let committed = null;
     if (hasCommits(cwd)) {
@@ -95,8 +105,7 @@ const commands = {
         committed = c.code === 0 ? headSha(cwd) : null;
       }
     }
-    const manifest = readJson(join(cwd, ".claude-plugin", "plugin.json"), null);
-    const selfRun = manifest?.name === "handoff-harness" ? (samePath(pluginRoot(), cwd) ? "this project is the harness itself; enforce a run with a frozen copy: node scripts/drive.mjs --cwd . --plugin-root <copy>" : `this project is the harness itself, enforced by ${pluginRoot()}`) : null;
+    const selfRun = isHarness ? (samePath(pluginRoot(), cwd) ? "this project is the harness itself; enforce a run with a frozen copy: node scripts/drive.mjs --cwd . --plugin-root <copy>" : `this project is the harness itself, enforced by ${pluginRoot()}`) : null;
     out({ ok: true, harnessDir: p.dir, profile: p.profile, pluginRoot: pluginRoot(), committed, ...(selfRun ? { selfRun } : {}) });
   },
 
@@ -236,7 +245,7 @@ const commands = {
     const packet = writePacket(cwd, state, profile);
     const adv = advanceFromCli(cwd, state, profile);
     saveState(cwd, state);
-    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), packet: packet.path, stage: adv.stage, brief: adv.brief });
+    out({ ok: result.passed, passed: result.passed, diffHash: result.diffHash, guardBearing: result.guardBearing, guardFiles: result.guardFiles, checks: result.checks.map((c) => ({ id: c.id, status: c.status, details: c.details })), packet: packet.path, stage: adv.stage, brief: adv.brief });
   },
 
   record() {
@@ -453,7 +462,8 @@ const commands = {
       const state = requireState();
       const t = verdictTemplate(cwd, state, loadProfile(cwd), { agent: flags.agent ? String(flags.agent) : null });
       if (flags.write) { mkdirSync(harnessPaths(cwd).verdicts, { recursive: true }); writeJsonAtomic(t.path, t.skeleton); }
-      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; a finding has the keys of findingExample and no others (severity block, major, minor or note; authority one token such as criterion:C-1, spec:path#heading, rule:name, handoff:path, test:path or decision:D-n); every evidence entry is an object {type, path, quote?, line?} and never a string; the skeleton does not validate until you do", findingExample: FINDING_EXAMPLE, skeleton: t.skeleton });
+      const guardBearing = Boolean(state.preflight?.guardBearing);
+      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), guardBearing, ...(guardBearing ? { guardNote: "guard-bearing slice: a met criterion and a block or major finding need evidence of type command or test, the probe or test you ran" } : {}), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; a finding has the keys of findingExample and no others (severity block, major, minor or note; authority one token such as criterion:C-1, spec:path#heading, rule:name, handoff:path, test:path or decision:D-n); every evidence entry is an object {type, path, quote?, line?} and never a string; the skeleton does not validate until you do", findingExample: FINDING_EXAMPLE, skeleton: t.skeleton });
     }
     if (sub !== "validate") fail("usage: verdict validate [path] | verdict template [--write] [--agent name]");
     const state = hasHarness(cwd) ? loadState(cwd) : null;

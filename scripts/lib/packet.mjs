@@ -1,14 +1,16 @@
 // The judge's packet: one file with everything a critic needs, written by `harness preflight`, so
 // the critic reads one path instead of exploring the tree. Deterministic: the slice, the text of
 // its criteria from the inventory, declared paths, the defaults and human decisions that apply,
-// changed files with counts, and the diff against HEAD with untracked files included as additions,
-// since `git diff HEAD` alone leaves new files out.
+// changed files with counts, the diff against HEAD with untracked files included as additions,
+// since `git diff HEAD` alone leaves new files out, the guard-bearing files when the slice changes
+// enforcement, and the facts about the machine a judge needs to reason about paths.
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { harnessPaths } from "./paths.mjs";
 import { readJson } from "./io.mjs";
 import { currentSlice } from "./state.mjs";
 import { diffText, diffStat, untrackedDiffText, workHash } from "./git.mjs";
+import { environmentFacts, renderEnvironment } from "./environment.mjs";
 
 export function packetPath(cwd, state) {
   if (!state.slice) return null;
@@ -42,6 +44,13 @@ export function writePacket(cwd, state, profile) {
     L.push("", "## Defaults and decisions", "", "Applied at intake or decided by a human after approval. A finding that rests on one cites it as `decision:D-n`.", "");
     for (const d of decisions) L.push(`- ${d.id}${d.slice ? ` (${d.slice})` : ""}: ${d.question} → ${d.chosen}`);
   }
+  const guardFiles = state.preflight?.guardFiles ?? [];
+  if (guardFiles.length) {
+    L.push("", "## Guard-bearing change", "", "This slice changes what the harness allows or denies:", "");
+    for (const f of guardFiles) L.push(`- ${f}`);
+    L.push("", "Judge it by what now passes, not by what the criteria say: for every allow path, exemption or early return the diff adds or widens, list the inputs that could reach it (a path spelled with different letter case, through a symlink, with parent-directory segments, outside the project; a command with global options before the subcommand, with HEAD, with bulk flags; a stage or branch the rule did not consider) and try them. A met criterion and a block or major finding need evidence of type `command` or `test` quoting the probe or test you ran; the validator rejects a file quote alone.");
+  }
+  L.push("", "## Environment", "", ...renderEnvironment(environmentFacts(cwd)));
   L.push("", "## Changed files", "", "| File | Added | Deleted |", "|---|---|---|");
   for (const f of stat.files) L.push(`| ${f.file}${f.untracked ? " (new)" : ""}${f.binary ? " (binary)" : ""} | ${f.added} | ${f.deleted} |`);
   L.push("", `${stat.added} lines added, ${stat.deleted} deleted in ${stat.files.length} files. Binary files count as 0 lines.`);
@@ -49,5 +58,5 @@ export function writePacket(cwd, state, profile) {
   const path = packetPath(cwd, state);
   mkdirSync(harnessPaths(cwd).packets, { recursive: true });
   writeFileSync(path, L.join("\n") + "\n");
-  return { path, criteria: criteria.length, files: stat.files.length, diffLines: diff.lines, truncated: diff.truncated };
+  return { path, criteria: criteria.length, files: stat.files.length, diffLines: diff.lines, truncated: diff.truncated, guardBearing: guardFiles.length > 0 };
 }

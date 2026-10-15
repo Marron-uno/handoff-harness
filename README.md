@@ -109,6 +109,8 @@ Verdicts carry a hash of the change set they judged. An edit after the judge loo
 
 Two commands exist for what intake could not foresee, both human decisions logged as events: `harness slice amend` widens the files a slice may touch when the plan missed one, and `harness decide` records a ruling on a spec conflict that the judges then see in their packet and cite as `decision:D-n`. After the attempt cap, `harness retry` continues the slice with its attempt count kept rather than reset.
 
+A slice that changes enforcement itself, any file matching `review.guardPaths` in the profile, is guard-bearing. Its reviewer is the strong model from round one, its brief asks what now passes rather than whether the criteria hold, and its verdicts are valid only when every met criterion and every block or major finding rests on a command or test the judge ran. Preflight also runs the slice's changed tests against the tree as it was before the slice and fails when they pass there, since a test that cannot fail covers nothing. The packet tells the judges what machine they are on, down to whether the filesystem folds letter case. All of this came from reviewing the harness's own fixes: the author's review and tests passed, and an independent reviewer found three guard escapes by probing.
+
 Default models: the critic on Haiku, the reviewer and the spec reviewer on Sonnet, the reconciler and both strong judges on Opus, set in `agents/*.md`. The main session runs whatever model your session runs.
 
 ## The spec stage
@@ -135,7 +137,7 @@ Claude Code stops a session after eight consecutive Stop-hook continuations. `no
 
 ## Tests
 
-`npm test` runs 98 tests in under half a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
+`npm test` runs 102 tests in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 

@@ -625,6 +625,16 @@
               }
             }
           }
+        },
+        "guardBearing": {
+          "description": "The slice touched a path in review.guardPaths, so it changes what the harness allows or denies.",
+          "type": "boolean"
+        },
+        "guardFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

@@ -10,5 +10,6 @@ rules:
   proposal:
     - Name the recorded run or retro proposal that motivates the change
     - State the hypothesis as a metric name from scripts/lib/metrics.mjs and a direction
+    - A change that touches guard-bearing paths (scripts/lib/guards, scripts/hooks, profiles, schemas) lands through a goal run on this checkout under the installed copy, so the adversarial review applies; name the goal, or say why it could not run
   tasks:
     - One task per file group; a task names the test that covers it

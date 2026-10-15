@@ -66,7 +66,16 @@ function sliceVars(cwd, state, profile) {
     checks: (profile.checks ?? []).map((c) => `${c.id}: \`${c.command}\``),
     verdictsDir: harnessPaths("").verdicts.replace(/^\//, ""),
     packetPath: state.slice ? packetPath("", state).replace(/^\//, "") : "",
+    guardFiles: state.preflight?.guardFiles ?? [],
+    guard: state.preflight?.guardBearing
+      ? `This slice is guard-bearing (${(state.preflight.guardFiles ?? []).join(", ")}): it changes what the harness allows or denies. A met criterion and any block or major finding need evidence of type command or test, a probe or a test you ran and quote; the validator rejects a file quote alone.`
+      : "",
   };
+}
+
+// A guard-bearing slice is reviewed with the adversarial brief: the question is what now passes.
+function reviewBriefName(state) {
+  return state.preflight?.guardBearing ? "review-adversarial" : "review";
 }
 
 // One verdict file per (slice, attempt, review round, role). A new cycle gets a new path, so an
@@ -82,7 +91,8 @@ export function verdictPath(cwd, state, role, round = state.review.rounds + 1) {
 
 export function pickAgent(state, profile, role) {
   const rejections = state.slice?.rejections ?? 0;
-  const strong = rejections >= profile.models.escalateAfterRejections;
+  // A guard-bearing slice gets the strong reviewer from round one: an escape costs more than the model.
+  const strong = rejections >= profile.models.escalateAfterRejections || (role === "review" && Boolean(state.preflight?.guardBearing));
   if (role === "critic") return strong ? "critic-strong" : "critic";
   return strong ? "reviewer-strong" : "reviewer";
 }
@@ -394,7 +404,7 @@ function decideVerdict(cwd, state, profile, wh, role) {
   const round = state.review.rounds + 1;
   const path = verdictPath(cwd, state, role, round);
   const agent = pickAgent(state, profile, role);
-  const briefName = role === "critic" ? "critic" : "review";
+  const briefName = role === "critic" ? "critic" : reviewBriefName(state);
   const vars = { ...sliceVars(cwd, state, profile), agent, verdictPath: path };
   if (!existsSync(path)) return block(cwd, state, `${role}_verdict_missing`, renderBrief(briefName, vars));
   const result = validateVerdict(cwd, readJson(path, null), { state, profile, workHash: wh, role });
@@ -413,7 +423,7 @@ function decideVerdict(cwd, state, profile, wh, role) {
   if (v.verdict === "pass") {
     if (role === "critic") {
       transition(cwd, state, "review", "critic_pass");
-      return block(cwd, state, "review", renderBrief("review", { ...sliceVars(cwd, state, profile), agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review") }));
+      return block(cwd, state, "review", renderBrief(reviewBriefName(state), { ...sliceVars(cwd, state, profile), agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review") }));
     }
     transition(cwd, state, "record", "review_pass");
     return block(cwd, state, "record", renderBrief("record", sliceVars(cwd, state, profile)));
@@ -484,7 +494,7 @@ export function briefFor(cwd, state, profile) {
     case "building": return renderBrief("build", vars);
     case "preflight": return renderBrief("preflight", vars);
     case "critic": return renderBrief("critic", { ...vars, agent: pickAgent(state, profile, "critic"), verdictPath: verdictPath(cwd, state, "critic") });
-    case "review": return renderBrief("review", { ...vars, agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review", state.review.rounds + 1) });
+    case "review": return renderBrief(reviewBriefName(state), { ...vars, agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review", state.review.rounds + 1) });
     case "record": return renderBrief("record", vars);
     case "reconcile": return renderBrief("reconcile", vars);
     case "report": return renderBrief("report", vars);
