@@ -19,6 +19,8 @@ export function pluginRoot() {
 // project is its own project, not the parent's.
 export function findProjectRoot(start = process.cwd()) {
   const from = resolve(start);
+  // The common case, a command run at the project root, costs no git call.
+  if (existsSync(join(from, HARNESS_DIR, "state.json"))) return from;
   const r = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: from, encoding: "utf8" });
   const top = r.status === 0 ? r.stdout.trim() : "";
   if (!top) return from;
@@ -60,9 +62,10 @@ export function harnessPaths(cwd) {
   };
 }
 
-// Same directory, through symlinks (macOS keeps /var and /private/var apart until resolved).
+// Same directory, through symlinks (macOS keeps /var and /private/var apart until resolved) and
+// through letter case (the native call folds it on a case-insensitive filesystem).
 export function samePath(a, b) {
-  const real = (p) => { try { return realpathSync(resolve(p)); } catch { return resolve(p); } };
+  const real = (p) => { try { return realpathSync.native(resolve(p)); } catch { return resolve(p); } };
   return Boolean(a && b) && real(a) === real(b);
 }
 

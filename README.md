@@ -89,7 +89,7 @@ Goals are sentences. `--mode handoff`, the default, walks the sources you name i
 
 Everything the harness writes lives in `.harness/`. The state and the events log are run artifacts and stay out of git. The profile, lessons, proposals and reports are committed.
 
-Once a goal is done the harness is dormant: work on a new branch as you would in any repository. Only the default branch and the reviewed goal branch stay protected from edits until the next goal starts.
+Once a goal is done the harness is dormant: edit on a new branch, and the stage lanes no longer apply. The default branch and the reviewed goal branch stay protected from edits until the next goal starts, and the git guard's standing rules (no history rewrites, no bulk staging or pushing, never push the default branch) hold as always.
 
 ## The guards
 
@@ -135,7 +135,7 @@ Claude Code stops a session after eight consecutive Stop-hook continuations. `no
 
 ## Tests
 
-`npm test` runs 92 tests in under half a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
+`npm test` runs 98 tests in under half a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 

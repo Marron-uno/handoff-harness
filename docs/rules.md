@@ -5,7 +5,8 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | Rule | Where | Evidence |
 |---|---|---|
 | No history rewrites: amend, rebase, reset --hard, force push, branch -D, filter-branch | PreToolUse git guard | Rewrites hide what the agent did; the events log would lie |
-| No bulk staging: `git add -A`, `git add .`, `git add --all` | PreToolUse git guard | A bulk add swept untracked screenshots with real names into a commit |
+| No bulk staging: `git add -A`, `git add .`, `git add --all`; no bulk pushes: `--all`, `--mirror` | PreToolUse git guard | A bulk add swept untracked screenshots with real names into a commit; a bulk push would carry the default branch along |
+| Global git options (`-C <dir>`, `--git-dir`, `--work-tree`, `-c`) are stripped before a command is judged | PreToolUse git guard | A command aimed at a worktree is still the subcommand it runs |
 | Push only the goal branch; never the default branch | PreToolUse git guard | Goal work must stay reviewable as one branch |
 | No edits on the default branch during a goal | PreToolUse path guard | Same |
 | No discard commands: `checkout -- .`, `restore .` | PreToolUse git guard | Discards destroy evidence of an oscillation |
@@ -16,8 +17,8 @@ Every rule below is enforced by a script, not by a prompt. The column "where" na
 | A checkout of the harness is a project like any other when a different, frozen copy enforces the run (`drive.mjs --plugin-root`); the same copy never edits itself | PreToolUse path guard, headless driver | The harness could not build its own changes; loosening the rule would let a run edit the hooks judging it |
 | Sensitive paths never read: `.env*`, keys, credentials, inside or outside the project; a test file named after what it tests is not one | PreToolUse git and path guards | Nothing real may leak into a transcript; the angar run could not read `tests/browser-secret.test.mjs` (field issue 15) |
 | Judges (critic, reviewer, reconciler) write only verdicts and evidence | PreToolUse path guard | A judge that fixes is no longer a judge |
-| Stage lanes: no source edits inside the project in preflight, critic, review, record, report and resting stages other than `done`; paths outside the project are never denied by a lane | PreToolUse path guard | Edits between judge and record make verdicts stale; the angar run was denied notes in another repository during review (field issue 2) |
-| A goal resting in `done` is dormant: edits, branch switches and pushes work on any branch except the default branch and the reviewed goal branch | PreToolUse path and git guards | The angar run needed a full new goal, intake and approval for a few lines of client feedback (field issue 14) |
+| Stage lanes: no source edits inside the project in preflight, critic, review, record, report and resting stages other than `done`; paths outside the project are never denied by a lane, though Claude's configuration (`.claude/**`, `CLAUDE.md`, `AGENTS.md`) stays protected wherever it is, and paths are compared after symlinks and letter case are resolved | PreToolUse path guard | Edits between judge and record make verdicts stale; the angar run was denied notes in another repository during review (field issue 2); a case-flipped spelling must not read as another place |
+| A goal resting in `done` is dormant: file-tool edits work on any branch except the default branch and the reviewed goal branch, branches may be switched, and pushes follow the repository's own rules except that the default branch is never pushed; every other denial below still holds | PreToolUse path and git guards | The angar run needed a full new goal, intake and approval for a few lines of client feedback (field issue 14) |
 | Tool-call budget per stage | PreToolUse | A stage that runs long is a stall, not diligence |
 | Browser read-only outside fixture and preview hosts | PreToolUse browser guard | The reviewer uses the owner's logged-in browser |
 | Prod hosts need `--prod` on the goal | PreToolUse browser guard | Explicit opt-in per goal |

@@ -6,7 +6,7 @@ import { readJson, writeJsonAtomic, nowIso } from "./lib/io.mjs";
 import { harnessPaths, hasHarness, pluginRoot, samePath, findProjectRoot } from "./lib/paths.mjs";
 import { newState, loadState, saveState, transition, currentSlice, RESTING } from "./lib/state.mjs";
 import { loadProfile } from "./lib/profile.mjs";
-import { git, isRepo, currentBranch, defaultBranch, changedFiles, workHash, headSha, hasCommits } from "./lib/git.mjs";
+import { git, isRepo, currentBranch, defaultBranch, changedFiles, untrackedFiles, workHash, headSha, hasCommits } from "./lib/git.mjs";
 import { appendEvent, readEvents } from "./lib/events.mjs";
 import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
@@ -211,7 +211,9 @@ const commands = {
       const slice = flags.id ? state.slices.find((s) => s.id === flags.id) : currentSlice(state);
       if (!slice) fail(flags.id ? `no slice ${flags.id}` : "no active slice; name one with --id S-n");
       if (slice.status === "done" || slice.status === "skipped") fail(`${slice.id} is ${slice.status}; a recorded slice is not amended`);
-      const paths = [].concat(flags.paths ?? [], rest ?? []).map(String);
+      if (state.slice?.id === slice.id && ["preflight", "critic", "review", "record"].includes(state.stage)) fail(`${slice.id} is under judgment (stage ${state.stage}); amend it while it builds or once the run rests, so the packet the judges read matches`);
+      // `--add <glob>` reads as a flag with a value; that value is a path too.
+      const paths = [].concat(flags.paths ?? [], typeof flags.add === "string" ? flags.add : [], rest ?? []).map(String);
       if (!paths.length) fail('usage: slice amend [--id S-n] --paths <glob>... [--add]; a human decision that widens the files the slice may touch');
       const before = [...slice.paths];
       slice.paths = flags.add ? [...new Set([...before, ...paths])] : paths;
@@ -244,17 +246,21 @@ const commands = {
     // With the spec stage on, the slice's OpenSpec tasks are ticked here, after the judges and
     // before the commit, so the tick lands in the slice commit and never in a reviewed diff.
     const ticked = tickSliceTasks(cwd, state, slice);
-    const all = changedFiles(cwd);
-    const files = all.filter((f) => !f.startsWith(".harness/"));
-    if (!files.length && headSha(cwd) === state.slice.startHead) fail("nothing to record: no changed files and no new commit");
-    // Harness configuration that changed during the slice (profile, lessons, proposals) is committed
-    // apart, first, so the slice commit holds the reviewed diff and nothing else.
-    const config = all.filter((f) => f.startsWith(".harness/proposals/") || f === ".harness/profile.json" || f === ".harness/lessons.md");
+    const tracked = changedFiles(cwd);
+    const files = tracked.filter((f) => !f.startsWith(".harness/"));
+    // Harness configuration that changed during the slice (profile, lessons, proposals, new files
+    // included, which changedFiles leaves out under .harness/) is committed apart, first, so the
+    // slice commit holds the reviewed diff and nothing else.
+    const isConfig = (f) => f.startsWith(".harness/proposals/") || f === ".harness/profile.json" || f === ".harness/lessons.md";
+    const config = [...new Set([...tracked, ...untrackedFiles(cwd, { includeHarness: true })])].filter(isConfig).sort();
+    if (!files.length && !config.length && headSha(cwd) === state.slice.startHead) fail("nothing to record: no changed files and no new commit");
     let configCommit = null;
     if (config.length) {
       const add = git(cwd, ["add", "--", ...config]);
       if (add.code !== 0) fail(`git add failed: ${add.err}`);
-      const c = git(cwd, ["commit", "-q", "-m", `chore: harness config changed during ${slice.id} (${state.goal.id})`, "-m", `Files: ${config.join(", ")}`, "--", ...config]);
+      // With no slice files the config commit is the slice's commit, so it carries the slice id.
+      const subject = files.length ? `chore: harness config changed during ${slice.id} (${state.goal.id})` : `chore: harness config changed during ${slice.id} [${slice.id}] (${state.goal.id})`;
+      const c = git(cwd, ["commit", "-q", "-m", subject, "-m", `Files: ${config.join(", ")}`, "--", ...config]);
       if (c.code !== 0) fail(`git commit failed: ${c.err}`);
       configCommit = headSha(cwd);
     }
@@ -453,12 +459,14 @@ const commands = {
     const state = hasHarness(cwd) ? loadState(cwd) : null;
     // Without a path, the verdict of the current judging stage is the one validated.
     const judging = state && ["critic", "review", "spec_review"].includes(state.stage) && (state.stage === "spec_review" ? state.spec : state.slice);
-    const path = rest[0] ?? (judging ? verdictPath(cwd, state, state.stage === "spec_review" ? "spec" : state.stage) : null);
+    const role = judging ? (state.stage === "spec_review" ? "spec" : state.stage) : null;
+    const path = rest[0] ?? (role ? verdictPath(cwd, state, role) : null);
     if (!path) fail("usage: verdict validate <path>; without a path the run must be in the critic, review or spec_review stage");
     if (!existsSync(path)) fail(`missing verdict file ${path}`, { path });
     const verdict = readJson(path, null);
     const wh = workHash(cwd);
-    const r = validateVerdict(cwd, verdict, { state, profile: loadProfile(cwd), workHash: wh });
+    // Without an explicit path the file is the stage's own verdict, so its role is checked as `next` would.
+    const r = validateVerdict(cwd, verdict, { state, profile: loadProfile(cwd), workHash: wh, ...(rest[0] ? {} : { role }) });
     // A stale verdict names the files that moved, so the judge can tell a stray file from an edit.
     out({ ok: r.ok, path, errors: r.errors, stale: r.stale, workHash: wh, verdictHash: verdict?.diffHash ?? null, ...(r.stale ? { changedFiles: changedFiles(cwd), projectRoot: cwd } : {}) }, r.ok ? 0 : 1);
   },

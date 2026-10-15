@@ -1,8 +1,9 @@
 // Regressions for docs/field-issues.md. Each test names the issue it keeps closed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
+import { writeFileSync, mkdirSync, readFileSync, realpathSync, existsSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
+import { homedir } from "node:os";
 import { runCli, runHook, sh, tmpDir, initRepo, PLUGIN_ROOT } from "./helpers.mjs";
 import { fixtureRepo, writeIntake, state, stop, writeVerdict, hash } from "./fixture.mjs";
 import { loadState, saveState } from "../scripts/lib/state.mjs";
@@ -58,6 +59,8 @@ test("issue 14: a done goal is dormant; follow-up work proceeds on a new branch,
   sh(dir, "git", ["checkout", "-q", "main"]);
   assert.match(reason(hook(dir, { tool_name: "Edit", tool_input: { file_path: join(dir, "src/x.mjs") } })), /done and main is the default branch/);
   assert.match(reason(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "push origin HEAD" } })), /default branch main/, "HEAD on main is main");
+  assert.match(reason(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "push --all origin" } })), /git guard/, "pushing every branch is never allowed");
+  assert.equal(denied(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "checkout goal/G-1" } })), false, "the goal branch may be visited; only its edits are denied");
   sh(dir, "git", ["checkout", "-q", "-b", "fix/follow-up"]);
   assert.equal(denied(hook(dir, { tool_name: "Edit", tool_input: { file_path: join(dir, "src/x.mjs") } })), false, "a new branch may be edited");
   assert.equal(denied(hook(dir, { tool_name: "Bash", tool_input: { command: GIT + "push -u origin fix/follow-up" } })), false, "and pushed");
@@ -248,10 +251,11 @@ test("issue 12: the report takes each criterion from the recorded attempt of the
   const met = (id) => ({ id, status: "met", evidence: [{ type: "file", path: "README.md" }] });
   // Left over from an earlier goal: a pass that marks C-6, a criterion this goal also has.
   writeFileSync(join(vdir, "S-7-a1-r1-reviewer.json"), JSON.stringify({ ...t, agent: "reviewer", goal: "G-9", slice: "S-7", verdict: "pass", summary: "old goal", criteria: [met("C-6"), met("C-99")] }));
-  // The first attempt found C-3 unmet; after a retry, attempt 4 passed, with the reviewer unable to verify C-4.
-  writeFileSync(join(vdir, "S-1-a1-r1-critic.json"), JSON.stringify({ ...t, verdict: "block", summary: "first try", findings: [{ id: "F-1", severity: "block", issue: "x", authority: "criterion:C-3", evidence: [] }], criteria: [{ id: "C-3", status: "unmet" }, { id: "C-4", status: "unverified" }] }));
-  writeFileSync(join(vdir, "S-1-a4-r1-critic.json"), JSON.stringify({ ...t, attempt: 4, verdict: "pass", summary: "fixed", criteria: [met("C-3"), met("C-4")] }));
-  writeFileSync(join(vdir, "S-1-a4-r1-reviewer.json"), JSON.stringify({ ...t, attempt: 4, agent: "reviewer", verdict: "pass", summary: "fixed", criteria: [met("C-3"), { id: "C-4", status: "unverified", note: "no browser" }] }));
+  // Attempt 9 found C-3 unmet; after a retry, attempt 10 passed, with the reviewer unable to verify C-4.
+  // Attempt 10 sorts before attempt 9 by file name, so directory order alone would let the old block win.
+  writeFileSync(join(vdir, "S-1-a9-r1-critic.json"), JSON.stringify({ ...t, attempt: 9, verdict: "block", summary: "before the retry", findings: [{ id: "F-1", severity: "block", issue: "x", authority: "criterion:C-3", evidence: [] }], criteria: [{ id: "C-3", status: "unmet" }, { id: "C-4", status: "unverified" }] }));
+  writeFileSync(join(vdir, "S-1-a10-r1-critic.json"), JSON.stringify({ ...t, attempt: 10, verdict: "pass", summary: "fixed", criteria: [met("C-3"), met("C-4")] }));
+  writeFileSync(join(vdir, "S-1-a10-r1-reviewer.json"), JSON.stringify({ ...t, attempt: 10, agent: "reviewer", verdict: "pass", summary: "fixed", criteria: [met("C-3"), { id: "C-4", status: "unverified", note: "no browser" }] }));
   const text = renderReport(dir, state(dir));
   assert.match(text, /\| C-3 \| met \|/, "the recorded attempt wins over the pre-retry one");
   assert.match(text, /\| C-4 \| unverified \|/, "the reviewer's status wins over the critic's in the same attempt");
@@ -274,17 +278,19 @@ test("issue 6: record commits harness configuration apart from the slice", () =>
   const profile = JSON.parse(readFileSync(profilePath, "utf8"));
   profile.budgets = { ...(profile.budgets ?? {}), browserActionsPerReview: 500 };
   writeFileSync(profilePath, JSON.stringify(profile, null, 2) + "\n");
+  mkdirSync(join(dir, ".harness/proposals"), { recursive: true });
+  writeFileSync(join(dir, ".harness/proposals/retro.md"), "# Proposal\n\nA new, untracked proposal written during the slice.\n");
   const rec = runCli(dir, ["record"]).json;
   assert.equal(rec.ok, true, JSON.stringify(rec));
   assert.deepEqual(rec.files, ["src/notes.mjs"]);
-  assert.deepEqual(rec.harnessConfig.files, [".harness/profile.json"]);
+  assert.deepEqual(rec.harnessConfig.files, [".harness/profile.json", ".harness/proposals/retro.md"], "a new proposal file is config too");
   const subjects = sh(dir, "git", ["log", "-2", "--pretty=%s"]).stdout.trim().split("\n");
   assert.match(subjects[0], /\[S-1\] \(G-1\)$/);
   assert.match(subjects[1], /^chore: harness config changed during S-1 \(G-1\)$/);
   assert.equal(sh(dir, "git", ["show", "--pretty=", "--name-only", "HEAD"]).stdout.trim(), "src/notes.mjs", "the slice commit holds the reviewed diff only");
-  assert.equal(sh(dir, "git", ["show", "--pretty=", "--name-only", "HEAD~1"]).stdout.trim(), ".harness/profile.json");
+  assert.equal(sh(dir, "git", ["show", "--pretty=", "--name-only", "HEAD~1"]).stdout.trim(), ".harness/profile.json\n.harness/proposals/retro.md");
   assert.equal(rec.stage, "building", "the machine moves on to the next slice");
-  assert.deepEqual(runCli(dir, ["events", "--type", "record"]).json.events.find((e) => e.harnessConfig).harnessConfig.files, [".harness/profile.json"], "the record event names the config commit");
+  assert.deepEqual(runCli(dir, ["events", "--type", "record"]).json.events.find((e) => e.harnessConfig).harnessConfig.files, [".harness/profile.json", ".harness/proposals/retro.md"], "the record event names the config commit");
 });
 
 test("issue 3: a human widens a slice's paths after approval; preflight and the plan follow", () => {
@@ -307,8 +313,90 @@ test("issue 3: a human widens a slice's paths after approval; preflight and the 
   pf = runCli(dir, ["preflight"]).json;
   assert.equal(pf.checks.find((c) => c.id === "slice_paths").status, "pass", JSON.stringify(pf.checks));
   assert.deepEqual(runCli(dir, ["slice", "amend", "--id", "S-2", "--paths", "src/**", "docs/**"]).json.paths, ["src/**", "docs/**"], "globs may follow as positionals and replace the list without --add");
+  assert.deepEqual(runCli(dir, ["slice", "amend", "--id", "S-2", "--paths", "src/**", "--add", "assets/**"]).json.paths, ["src/**", "docs/**", "assets/**"], "a glob after --add is a path, not swallowed");
+  assert.match(runCli(dir, ["slice", "amend", "--id", "S-1", "--paths", "x/**"]).json.error, /under judgment \(stage critic\)/, "the active slice is not amended while judges read its packet");
   setStage(dir, (s) => { s.slices[1].status = "done"; });
   assert.match(runCli(dir, ["slice", "amend", "--id", "S-2", "--paths", "x/**"]).json.error, /is done/);
+});
+
+test("review: a case-variant spelling of a project path is still inside the project", (t) => {
+  const dir = buildingRepo();
+  const flipped = join(dirname(dir), basename(dir).toUpperCase());
+  if (flipped === dir || !existsSync(flipped)) return t.skip("case-sensitive filesystem");
+  const profile = loadProfile(dir);
+  const s = loadState(dir); s.stage = "review";
+  assert.match(checkFileAccess({ tool: "Edit", filePath: join(flipped, "src/x.mjs"), cwd: dir, profile, state: s, agentType: null, pluginRoot: PLUGIN_ROOT }).reason, /does not edit source/);
+  assert.match(checkFileAccess({ tool: "Write", filePath: join(flipped, "src/x.mjs"), cwd: dir, profile, state: s, agentType: "handoff-harness:critic", pluginRoot: PLUGIN_ROOT }).reason, /read-only/);
+  const rootFlipped = join(dirname(PLUGIN_ROOT), basename(PLUGIN_ROOT).toUpperCase());
+  assert.equal(checkFileAccess({ tool: "Write", filePath: join(rootFlipped, "scripts/cli.mjs"), cwd: dir, profile, state: s, agentType: null, pluginRoot: PLUGIN_ROOT }).guard, "harness-files", "the enforcing copy is read-only under any spelling");
+});
+
+test("review: Claude's own configuration stays protected outside the project; other notes do not", () => {
+  const dir = buildingRepo();
+  const profile = loadProfile(dir);
+  const s = loadState(dir); s.stage = "review";
+  const check = (filePath, agentType = null) => checkFileAccess({ tool: "Write", filePath, cwd: dir, profile, state: s, agentType, pluginRoot: PLUGIN_ROOT });
+  assert.equal(check(join(homedir(), ".claude", "settings.json")).guard, "protected");
+  assert.equal(check(join(homedir(), ".claude", "settings.json"), "handoff-harness:critic").guard, "protected");
+  assert.equal(check(join(tmpDir("hh-other-"), "CLAUDE.md")).guard, "protected");
+  assert.equal(check(join(tmpDir("hh-other-"), "notes.md")).deny, false);
+});
+
+test("review: the git guard sees through global options and denies pushing every branch", () => {
+  const dir = buildingRepo();
+  const profile = loadProfile(dir);
+  const s = loadState(dir);
+  const bash = (command) => checkBashCommand(command, { profile, state: s, cwd: dir });
+  assert.equal(bash("git -C /tmp/wt " + "push --force origin x").guard, "git");
+  assert.equal(bash("git -C /tmp/wt " + "push origin main").guard, "git");
+  assert.equal(bash("git --git-dir=/tmp/wt/.git " + "checkout main").guard, "git");
+  assert.equal(bash(GIT + "push --all origin").guard, "git");
+  assert.equal(bash("git -c core.pager=cat log --oneline -3").deny, false);
+  s.stage = "done";
+  assert.equal(bash(GIT + "push --mirror origin").guard, "git", "never in done either");
+});
+
+test("review: a slice whose only change is harness configuration records once, with the slice id on the commit", () => {
+  const dir = judgingRepo();
+  let t = runCli(dir, ["verdict", "template"]).json;
+  writeFileSync(t.path, JSON.stringify(passVerdict(t.skeleton)));
+  runCli(dir, ["next"]);
+  t = runCli(dir, ["verdict", "template"]).json;
+  writeFileSync(t.path, JSON.stringify(passVerdict(t.skeleton)));
+  assert.equal(runCli(dir, ["next"]).json.stage, "record");
+  sh(dir, "git", ["checkout", "--", "src/notes.mjs"]);
+  const profilePath = join(dir, ".harness/profile.json");
+  writeFileSync(profilePath, readFileSync(profilePath, "utf8").replace("{", '{\n  "note": "raised during the slice",'));
+  const rec = runCli(dir, ["record"]).json;
+  assert.equal(rec.ok, true, JSON.stringify(rec));
+  assert.deepEqual(rec.files, []);
+  assert.equal(rec.commit, rec.harnessConfig.commit);
+  assert.match(sh(dir, "git", ["log", "-1", "--pretty=%s"]).stdout, /chore: harness config changed during S-1 \[S-1\] \(G-1\)/);
+  assert.equal(rec.stage, "building", "the machine accepts the commit and moves to the next slice");
+  assert.equal(state(dir).slices[0].status, "done");
+});
+
+test("review: verdict validate without a path checks the role the stage expects", () => {
+  const dir = judgingRepo();
+  const t = runCli(dir, ["verdict", "template"]).json;
+  writeFileSync(t.path, JSON.stringify(passVerdict({ ...t.skeleton, agent: "reviewer" })));
+  const v = runCli(dir, ["verdict", "validate"]).json;
+  assert.equal(v.ok, false);
+  assert.match(v.errors.join("\n"), /expected a critic verdict, got reviewer/);
+  assert.equal(runCli(dir, ["verdict", "validate", t.path]).json.ok, true, "an explicit path validates the file as any verdict");
+});
+
+test("review: PostToolUse lints prose inside the project only; credentials are caught everywhere", () => {
+  const dir = buildingRepo();
+  const post = (file) => runHook("post-tool-use", { cwd: dir, hook_event_name: "PostToolUse", tool_name: "Write", tool_input: { file_path: file }, tool_response: {} });
+  const outside = join(tmpDir("hh-notes-"), "notes.md");
+  writeFileSync(outside, "# Notes\n\nA dash \u2014 here, and a thought.\n");
+  assert.equal(post(outside).json, null, "a scratchpad note is not this project's prose");
+  mkdirSync(join(dir, "docs"), { recursive: true });
+  writeFileSync(join(dir, "docs/notes.md"), "# Notes\n\nA dash \u2014 here, and a thought.\n");
+  assert.match(post(join(dir, "docs/notes.md")).json.reason, /em-dash/);
+  writeFileSync(outside, "AWS_KEY=AKIAIOSFODNN7EXAMPLE\n");
+  assert.match(post(outside).json.reason, /aws-access-key/);
 });
 
 test("issue 11: a human decision is recorded, listed in the slice's packet, and citable as an authority", () => {

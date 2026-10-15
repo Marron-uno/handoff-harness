@@ -59,7 +59,7 @@
   },
   "git": {
     "denyPatterns": [
-      "git\\s+push\\b[^|;&]*(--force|-f\\b|--force-with-lease|--delete|\\+[A-Za-z]|\\s[^\\s:]+:[^\\s]+)",
+      "git\\s+push\\b[^|;&]*(--force|-f\\b|--force-with-lease|--delete|--all\\b|--mirror\\b|\\+[A-Za-z]|\\s[^\\s:]+:[^\\s]+)",
       "git\\s+commit\\b[^|;&]*--amend",
       "git\\s+rebase\\b",
       "git\\s+reset\\s+--hard",

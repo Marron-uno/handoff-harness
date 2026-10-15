@@ -25,8 +25,13 @@ function writesStateFile(text) {
   return false;
 }
 
+// Global git options between `git` and the subcommand (-C <dir>, --git-dir, --work-tree, -c k=v,
+// pager flags) are dropped before matching, so a command aimed at another directory or worktree is
+// judged as the subcommand it runs.
+const GLOBAL_OPTIONS = /\bgit(?:\s+(?:-C\s+\S+|--git-dir(?:=\S+|\s+\S+)|--work-tree(?:=\S+|\s+\S+)|-c\s+\S+|--no-pager|-p|--paginate))+(?=\s)/g;
+
 export function checkBashCommand(command, { profile, state, cwd }) {
-  const text = String(command ?? "");
+  const text = String(command ?? "").replace(GLOBAL_OPTIONS, "git");
   for (const p of profile.git.denyPatterns) {
     if (new RegExp(p).test(text)) return { deny: true, guard: "git", reason: `Blocked by the git guard: history rewrites, bulk staging and discard commands are not allowed (${p}). Stage files explicitly and let \`harness record\` commit.` };
   }
@@ -43,7 +48,7 @@ export function checkBashCommand(command, { profile, state, cwd }) {
     if (push && profile.git.pushOnlyGoalBranch) {
       const args = push[1].trim().split(/\s+/).filter((a) => a && !a.startsWith("-"));
       // A push of HEAD is a push of the current branch; judge it as that branch.
-      const named = args.slice(1).map((a) => (a === "HEAD" ? branch : a));
+      const named = args.slice(1).map((a) => (a === "HEAD" ? branch ?? a : a));
       if (named.some((a) => a === def || a.endsWith(`/${def}`))) return { deny: true, guard: "git", reason: `Blocked: pushing to the default branch ${def} is not allowed from a session.${dormant ? "" : ` Push ${state.branch} only.`}` };
       if (dormant) {
         if (!named.length && branch === def) return { deny: true, guard: "git", reason: `Blocked: pushing the default branch ${def} is not allowed from a session.` };
