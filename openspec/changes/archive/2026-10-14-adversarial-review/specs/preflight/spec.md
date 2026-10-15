@@ -36,6 +36,11 @@
 - **WHEN** the slice adds an untracked test file
 - **THEN** the packet's diff shows it as an addition against /dev/null
 
+#### Scenario: Decision for the slice
+
+- **WHEN** a human recorded a decision with `harness decide --slice S-n`
+- **THEN** the packet for S-n lists it under defaults and decisions with its id
+
 #### Scenario: Case-insensitive filesystem
 
 - **WHEN** the packet is written on a filesystem where two spellings of a name open the same file
