@@ -43,6 +43,9 @@ export function validateVerdict(cwd, verdict, { state, profile, workHash, role }
   for (const f of verdict.findings) {
     if (ids.has(f.id)) errors.push(`duplicate finding id ${f.id}`);
     ids.add(f.id);
+    // A decision authority must name a decision that was made (`harness decide`, or an answered hold).
+    const decision = /^decision:(D-\d+)$/.exec(f.authority ?? "");
+    if (decision && state && !state.defaults.some((d) => d.id === decision[1])) errors.push(`${f.id}: authority ${f.authority} names no recorded decision; the packet lists the D-n ids that exist`);
     for (const e of f.evidence ?? []) errors.push(...checkEvidence(cwd, e, f.id));
   }
   for (const c of verdict.criteria) {

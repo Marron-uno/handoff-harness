@@ -24,9 +24,14 @@ export function renderReport(cwd, state) {
     lines.push(`Archive by hand when the branch merges: \`openspec archive ${state.spec.change} --yes\`.`, "");
   }
 
-  const verdicts = existsSync(p.verdicts) ? readdirSync(p.verdicts).filter((n) => n.endsWith(".json")).map((n) => ({ name: n, v: readJson(join(p.verdicts, n), null) })).filter((x) => x.v) : [];
+  // Criteria from this goal's slice verdicts only, with the recorded attempt winning: a later attempt
+  // over an earlier one, a later round over an earlier one, the reviewer over the critic. A verdict
+  // left by a previous goal or by a pre-retry attempt no longer sets a criterion's status.
+  const rank = (v) => [v.attempt ?? 0, v.round ?? 0, /reviewer/.test(v.agent ?? "") ? 1 : 0];
+  const verdicts = existsSync(p.verdicts) ? readdirSync(p.verdicts).filter((n) => n.endsWith(".json")).map((n) => readJson(join(p.verdicts, n), null)).filter((v) => v && v.goal === state.goal.id && v.slice) : [];
+  verdicts.sort((a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i]; return 0; });
   const criteria = new Map();
-  for (const { v } of verdicts) for (const c of v.criteria ?? []) criteria.set(c.id, c.status);
+  for (const v of verdicts) for (const c of v.criteria ?? []) criteria.set(c.id, c.status);
   if (criteria.size) {
     lines.push("## Criteria", "", "| Criterion | Status |", "|---|---|");
     for (const [id, status] of [...criteria.entries()].sort()) lines.push(`| ${id} | ${status} |`);
@@ -58,7 +63,7 @@ export function renderReport(cwd, state) {
   }
   if (state.defaults.length) {
     lines.push("## Defaults applied", "");
-    for (const d of state.defaults) lines.push(`- ${d.id}: ${d.question} → ${d.chosen}`);
+    for (const d of state.defaults) lines.push(`- ${d.id}${d.slice ? ` (${d.slice}, human decision)` : ""}: ${d.question} → ${d.chosen}`);
     lines.push("");
   }
   const blocks = events.filter((e) => e.type === "block");

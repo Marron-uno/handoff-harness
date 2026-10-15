@@ -50,7 +50,7 @@ export function runPreflight(cwd, state, profile, { extraChecks = [] } = {}) {
     if (!slice || !slice.paths.length) return { status: "skip", details: "slice declares no paths" };
     const allowed = slice.paths.map(globToRegExp);
     const outside = files.filter((f) => !allowed.some((re) => re.test(f)));
-    return outside.length ? { status: "fail", details: `files outside slice paths: ${outside.join(", ")}` } : { status: "pass", details: `${files.length} files within declared paths` };
+    return outside.length ? { status: "fail", details: `files outside slice paths: ${outside.join(", ")}. If the plan missed them, a human widens the slice: harness slice amend --id ${slice.id} --paths <glob>... --add` } : { status: "pass", details: `${files.length} files within declared paths` };
   }));
 
   checks.push(timed("openspec_validate", () => {

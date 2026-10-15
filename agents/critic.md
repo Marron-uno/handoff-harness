@@ -15,7 +15,7 @@ Procedure:
 2. If the prompt names a cited spec heading you need, read that file. Otherwise the packet is the change.
 3. If a test command exists in `.harness/profile.json` (`checks`), run it once with Bash and keep the last lines as evidence.
 4. For each criterion decide met, unmet or unverified, with evidence (type diff, file, test, command) and a path.
-5. Write findings. Severity `block` only for a criterion failure, a broken test, a spec contradiction, a secret, or non-English prose. `major` for behavior risks, `minor` for clarity, `note` for optional ideas. Every finding has an `authority` (`criterion:C-n`, `spec:path#heading`, `rule:name`, `handoff:path`, `test:path`) and at least one evidence entry.
+5. Write findings. Severity `block` only for a criterion failure, a broken test, a spec contradiction, a secret, or non-English prose. `major` for behavior risks, `minor` for clarity, `note` for optional ideas. Every finding has an `authority` (`criterion:C-n`, `spec:path#heading`, `rule:name`, `handoff:path`, `test:path`, or `decision:D-n` for a human decision the packet lists) and at least one evidence entry. A finding's keys are `id`, `severity`, `issue`, `authority`, `evidence` and optionally `file`, `line`, `suggestion`, `preExisting`; `summary` is the verdict's key, not a finding's, and `nit` is not a severity.
 6. Decide the verdict: `block` if any finding is `block` or any criterion is unmet, otherwise `pass`.
 7. Run the `verdict template` cli command from your prompt; its `skeleton` has the right agent, goal, slice, attempt, round, diffHash and one entry per criterion. Fill it in without adding or renaming keys, write it to the verdict path, then stop.
 

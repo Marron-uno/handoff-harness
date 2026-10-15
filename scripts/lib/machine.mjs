@@ -57,7 +57,9 @@ function sliceVars(cwd, state, profile) {
     "spec.change": state.spec?.change, "spec.attempt": state.spec?.attempt, "spec.summary": state.spec?.summary,
     "slice.id": slice?.id, "slice.title": slice?.title, "slice.criteria": slice?.criteria, "slice.paths": slice?.paths,
     "slice.ui": slice?.ui ? "yes" : "no",
-    attempt: state.slice?.attempt, maxAttempts: profile.caps.maxAttempts,
+    // Attempts count across human retries; the cap window moves with each retry, so the brief
+    // reads "attempt 4 of 6" after one retry rather than "4 of 3".
+    attempt: state.slice?.attempt, maxAttempts: (state.slice?.attemptBase ?? 0) + profile.caps.maxAttempts,
     round: state.review.rounds + 1, roundsAuthorized: state.review.roundsAuthorized,
     "devServer.url": profile.devServer?.url ?? "(none configured)", "devServer.start": profile.devServer?.start ?? "(none configured)",
     changedFiles: changedFiles(cwd).filter((f) => !f.startsWith(".harness/")).slice(0, 40),
@@ -143,9 +145,12 @@ function startSlice(cwd, state, slice) {
 function failAttempt(cwd, state, profile, code, detail) {
   const slice = currentSlice(state);
   state.slice.rejections = (state.slice.rejections ?? 0) + 1;
-  if (state.slice.attempt >= profile.caps.maxAttempts) {
+  // The cap counts attempts since the last human retry; the attempt number itself keeps counting,
+  // so the report shows every build and each attempt has its own verdict paths.
+  const base = state.slice.attemptBase ?? 0;
+  if (state.slice.attempt - base >= profile.caps.maxAttempts) {
     return rest(cwd, state, "awaiting_human", "attempt_cap",
-      `Slice ${slice.id} failed ${state.slice.attempt} attempts (${code}). A human decides: fix by hand, raise caps in .harness/profile.json, or skip with \`harness slice skip\`.`);
+      `Slice ${slice.id} failed ${state.slice.attempt} attempt(s) (${code})${base ? `, ${state.slice.attempt - base} since the last retry` : ""}. A human decides: fix by hand, then \`harness retry\` continues the slice with ${profile.caps.maxAttempts} more attempts and the count kept; or skip it with \`harness slice skip --reason "..."\`.`);
   }
   state.slice.attempt += 1;
   slice.attempts = state.slice.attempt;
@@ -333,8 +338,8 @@ export function loadPlanIntoState(cwd, state, profile) {
       appendEvent(cwd, { type: "hold", id: q.id, question: q.question, blocks: q.blocks ?? [] });
     }
     if (q.kind === "default" && !state.defaults.some((d) => d.id === q.id)) {
-      state.defaults.push({ id: q.id, question: q.question, chosen: q.chosen ?? "", appliedAt: nowIso() });
-      appendEvent(cwd, { type: "default", id: q.id, question: q.question, chosen: q.chosen ?? "" });
+      state.defaults.push({ id: q.id, question: q.question, chosen: q.chosen ?? "", appliedAt: nowIso(), ...(q.slice ? { slice: q.slice } : {}) });
+      appendEvent(cwd, { type: "default", id: q.id, question: q.question, chosen: q.chosen ?? "", slice: q.slice ?? null });
     }
   }
   if (state.slices.length > state.goal.budget.maxSlices) return [`plan has ${state.slices.length} slices, budget allows ${state.goal.budget.maxSlices}`];

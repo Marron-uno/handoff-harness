@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync, cpSync } from "node:fs";
 import { join } from "node:path";
 import { readJson, writeJsonAtomic, nowIso } from "./lib/io.mjs";
-import { harnessPaths, hasHarness, pluginRoot, samePath } from "./lib/paths.mjs";
+import { harnessPaths, hasHarness, pluginRoot, samePath, findProjectRoot } from "./lib/paths.mjs";
 import { newState, loadState, saveState, transition, currentSlice, RESTING } from "./lib/state.mjs";
 import { loadProfile } from "./lib/profile.mjs";
 import { git, isRepo, currentBranch, defaultBranch, changedFiles, workHash, headSha, hasCommits } from "./lib/git.mjs";
@@ -12,7 +12,7 @@ import { runPreflight } from "./lib/preflight.mjs";
 import { prepareReconcile, loadReconcile } from "./lib/reconcile.mjs";
 import { renderReport } from "./lib/report.mjs";
 import { goalCheck } from "./lib/goal-check.mjs";
-import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal, verdictTemplate, answerHold } from "./lib/machine.mjs";
+import { briefFor, loadPlanIntoState, advanceFromCli, approveGoal, verdictTemplate, verdictPath, answerHold } from "./lib/machine.mjs";
 import { writePacket } from "./lib/packet.mjs";
 import { changeSlug, specCheck, planTaskProblems, taskStatus, tickSliceTasks } from "./lib/openspec.mjs";
 import { validateVerdict } from "./lib/verdict.mjs";
@@ -27,8 +27,20 @@ import { jevPrefilter } from "./lib/jev/inventory-prefilter.mjs";
 import { jevClassifyTrace } from "./lib/jev/trace-classify.mjs";
 import { calibrate, renderCalibration } from "./lib/jev/calibrate.mjs";
 
-const cwd = process.env.HARNESS_CWD || process.cwd();
+// Commands resolve to the project root, so `verdict validate` from a subfolder hashes the same tree
+// as `harness next` at the root.
+const cwd = process.env.HARNESS_CWD || findProjectRoot(process.cwd());
 const argv = process.argv.slice(2);
+
+// One finding with every key that validates, printed next to the verdict skeleton. Judges have
+// written `summary` for `issue`, a severity `nit`, and authorities with spaces; this is the shape.
+const FINDING_EXAMPLE = {
+  id: "F-1", severity: "major", file: "src/example.mjs", line: 12,
+  issue: "One sentence naming the defect and where it shows.",
+  suggestion: "Optional: the smallest change that fixes it.",
+  authority: "criterion:C-1",
+  evidence: [{ type: "diff", path: "src/example.mjs", line: 12, quote: "the line the finding rests on" }],
+};
 
 function parse(args) {
   const flags = {}; const rest = [];
@@ -173,7 +185,7 @@ const commands = {
     fail(`unknown goal subcommand ${sub}`);
   },
 
-  slice(sub, { flags }) {
+  slice(sub, { flags, rest }) {
     const state = requireState();
     if (sub === "done") {
       if (state.stage !== "building" || !state.slice) fail(`stage is ${state.stage}; slice done only applies while building`);
@@ -193,7 +205,25 @@ const commands = {
       appendEvent(cwd, { type: "note", slice: slice.id, text: `slice skipped: ${flags.reason ?? "no reason given"}` });
       out({ ok: true, skipped: slice.id, next: "Stop now; the Stop hook advances." });
     }
-    fail(`unknown slice subcommand ${sub}`);
+    // A human widens the files a slice may touch after approval, instead of aborting the goal and
+    // planning again. The plan is updated too, so judges reading plan.json see the same paths.
+    if (sub === "amend") {
+      const slice = flags.id ? state.slices.find((s) => s.id === flags.id) : currentSlice(state);
+      if (!slice) fail(flags.id ? `no slice ${flags.id}` : "no active slice; name one with --id S-n");
+      if (slice.status === "done" || slice.status === "skipped") fail(`${slice.id} is ${slice.status}; a recorded slice is not amended`);
+      const paths = [].concat(flags.paths ?? [], rest ?? []).map(String);
+      if (!paths.length) fail('usage: slice amend [--id S-n] --paths <glob>... [--add]; a human decision that widens the files the slice may touch');
+      const before = [...slice.paths];
+      slice.paths = flags.add ? [...new Set([...before, ...paths])] : paths;
+      const planPath = harnessPaths(cwd).plan;
+      const plan = existsSync(planPath) ? readJson(planPath, null) : null;
+      const planned = plan?.slices?.find((s) => s.id === slice.id);
+      if (planned) { planned.paths = slice.paths; writeJsonAtomic(planPath, plan); }
+      saveState(cwd, state);
+      appendEvent(cwd, { type: "slice", action: "amend", id: slice.id, pathsBefore: before, paths: slice.paths, by: "human" });
+      out({ ok: true, slice: slice.id, paths: slice.paths, pathsBefore: before, next: RESTING.has(state.stage) ? "The run is resting; `harness retry` continues the slice with the amended paths." : "Preflight judges the slice against the amended paths from now on." });
+    }
+    fail(`unknown slice subcommand ${sub}; use done, skip or amend`);
   },
 
   preflight() {
@@ -214,8 +244,20 @@ const commands = {
     // With the spec stage on, the slice's OpenSpec tasks are ticked here, after the judges and
     // before the commit, so the tick lands in the slice commit and never in a reviewed diff.
     const ticked = tickSliceTasks(cwd, state, slice);
-    const files = changedFiles(cwd).filter((f) => !f.startsWith(".harness/") || f.startsWith(".harness/proposals/") || f === ".harness/profile.json" || f === ".harness/lessons.md");
+    const all = changedFiles(cwd);
+    const files = all.filter((f) => !f.startsWith(".harness/"));
     if (!files.length && headSha(cwd) === state.slice.startHead) fail("nothing to record: no changed files and no new commit");
+    // Harness configuration that changed during the slice (profile, lessons, proposals) is committed
+    // apart, first, so the slice commit holds the reviewed diff and nothing else.
+    const config = all.filter((f) => f.startsWith(".harness/proposals/") || f === ".harness/profile.json" || f === ".harness/lessons.md");
+    let configCommit = null;
+    if (config.length) {
+      const add = git(cwd, ["add", "--", ...config]);
+      if (add.code !== 0) fail(`git add failed: ${add.err}`);
+      const c = git(cwd, ["commit", "-q", "-m", `chore: harness config changed during ${slice.id} (${state.goal.id})`, "-m", `Files: ${config.join(", ")}`, "--", ...config]);
+      if (c.code !== 0) fail(`git commit failed: ${c.err}`);
+      configCommit = headSha(cwd);
+    }
     if (files.length) {
       const add = git(cwd, ["add", "--", ...files]);
       if (add.code !== 0) fail(`git add failed: ${add.err}`);
@@ -229,10 +271,10 @@ const commands = {
       const r = git(cwd, ["push", "-q", "-u", "origin", state.branch]);
       push = { attempted: true, ok: r.code === 0, detail: r.code === 0 ? "" : r.err.slice(-300) };
     }
-    appendEvent(cwd, { type: "record", slice: slice.id, commit: sha, files, push, tasks: ticked.ticked });
+    appendEvent(cwd, { type: "record", slice: slice.id, commit: sha, files, push, tasks: ticked.ticked, harnessConfig: config.length ? { files: config, commit: configCommit } : null });
     const adv = advanceFromCli(cwd, state, loadProfile(cwd));
     saveState(cwd, state);
-    out({ ok: true, commit: sha, files, tasks: ticked.ticked, push, stage: adv.stage, brief: adv.brief });
+    out({ ok: true, commit: sha, files, harnessConfig: config.length ? { files: config, commit: configCommit } : null, tasks: ticked.ticked, push, stage: adv.stage, brief: adv.brief });
   },
 
   // The deterministic spec check: change folder present, delta format, `openspec validate --strict`,
@@ -344,11 +386,19 @@ const commands = {
       to = flags.stage;
     }
     state.halt = null; state.guards.blocks = 0; state.guards.diffHashes = [];
-    if (state.slice && to === "building") { state.slice.buildDone = false; state.slice.attempt = 1; state.slice.rejections = 0; state.slice.staleVerdicts = 0; }
+    if (state.slice && to === "building") {
+      // The attempt count is cumulative: the retried build is the next attempt, with its own verdict
+      // paths, and the cap counts from here. Raising caps.maxAttempts is not needed.
+      state.slice.attemptBase = state.slice.attempt;
+      state.slice.attempt += 1;
+      const slice = currentSlice(state);
+      if (slice) slice.attempts = state.slice.attempt;
+      state.slice.buildDone = false; state.slice.rejections = 0; state.slice.staleVerdicts = 0;
+    }
     if (state.slice && to !== "building") state.slice.buildDone = true;
     transition(cwd, state, to, flags.stage ? `human_retry_at_${to}` : "human_retry");
     saveState(cwd, state);
-    out({ ok: true, stage: to });
+    out({ ok: true, stage: to, attempt: state.slice?.attempt ?? null });
   },
 
   hold(sub, { flags }) {
@@ -369,19 +419,48 @@ const commands = {
     out({ ok: true, hold: id });
   },
 
+  // A human decision after approval: a spec conflict settled, a criterion read one way. Recorded as
+  // an applied default, scoped to a slice when one is named, so its packet lists the decision and
+  // judges cite it as `decision:D-n`.
+  decide(_, { flags }) {
+    const state = requireState();
+    if (!flags.text) fail('usage: decide --text "..." [--slice S-n] [--question "..."]');
+    const sliceId = flags.slice ? String(flags.slice) : null;
+    if (sliceId && !state.slices.some((s) => s.id === sliceId)) fail(`no slice ${sliceId}`);
+    const raised = readEvents(cwd, (e) => e.type === "default" && typeof e.id === "string").map((e) => Number(e.id.slice(2)) || 0);
+    const id = `D-${Math.max(0, ...state.defaults.map((d) => Number(d.id.slice(2)) || 0), ...raised) + 1}`;
+    const def = { id, question: String(flags.question ?? `Human decision${sliceId ? ` for ${sliceId}` : ""}`), chosen: String(flags.text), appliedAt: nowIso(), ...(sliceId ? { slice: sliceId } : {}) };
+    state.defaults.push(def);
+    const planPath = harnessPaths(cwd).plan;
+    const plan = existsSync(planPath) ? readJson(planPath, null) : null;
+    if (plan) {
+      plan.questions = [...(plan.questions ?? []), { id, question: def.question, kind: "default", chosen: def.chosen, ...(sliceId ? { slice: sliceId } : {}) }];
+      writeJsonAtomic(planPath, plan);
+    }
+    saveState(cwd, state);
+    appendEvent(cwd, { type: "default", id, question: def.question, chosen: def.chosen, slice: sliceId, by: "human" });
+    out({ ok: true, decision: def, cite: `decision:${id}`, note: sliceId ? `Listed in ${sliceId}'s packet from the next preflight; judges cite it as decision:${id}.` : `Listed in every packet from the next preflight; judges cite it as decision:${id}.` });
+  },
+
   verdict(sub, { flags, rest }) {
     if (sub === "template") {
       const state = requireState();
       const t = verdictTemplate(cwd, state, loadProfile(cwd), { agent: flags.agent ? String(flags.agent) : null });
       if (flags.write) { mkdirSync(harnessPaths(cwd).verdicts, { recursive: true }); writeJsonAtomic(t.path, t.skeleton); }
-      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; every evidence entry is an object {type, path, quote?, line?} and never a string; the skeleton does not validate until you do", skeleton: t.skeleton });
+      out({ ok: true, role: t.role, agent: t.agent, path: t.path, written: Boolean(flags.write), note: "fill summary, verdict, findings and each criterion's status and evidence; keep every key as given; a finding has the keys of findingExample and no others (severity block, major, minor or note; authority one token such as criterion:C-1, spec:path#heading, rule:name, handoff:path, test:path or decision:D-n); every evidence entry is an object {type, path, quote?, line?} and never a string; the skeleton does not validate until you do", findingExample: FINDING_EXAMPLE, skeleton: t.skeleton });
     }
-    if (sub !== "validate") fail("usage: verdict validate <path> | verdict template [--write] [--agent name]");
+    if (sub !== "validate") fail("usage: verdict validate [path] | verdict template [--write] [--agent name]");
     const state = hasHarness(cwd) ? loadState(cwd) : null;
-    const path = rest[0];
-    if (!path || !existsSync(path)) fail(`missing verdict file ${path}`);
-    const r = validateVerdict(cwd, readJson(path, null), { state, profile: loadProfile(cwd), workHash: workHash(cwd) });
-    out({ ok: r.ok, errors: r.errors, stale: r.stale }, r.ok ? 0 : 1);
+    // Without a path, the verdict of the current judging stage is the one validated.
+    const judging = state && ["critic", "review", "spec_review"].includes(state.stage) && (state.stage === "spec_review" ? state.spec : state.slice);
+    const path = rest[0] ?? (judging ? verdictPath(cwd, state, state.stage === "spec_review" ? "spec" : state.stage) : null);
+    if (!path) fail("usage: verdict validate <path>; without a path the run must be in the critic, review or spec_review stage");
+    if (!existsSync(path)) fail(`missing verdict file ${path}`, { path });
+    const verdict = readJson(path, null);
+    const wh = workHash(cwd);
+    const r = validateVerdict(cwd, verdict, { state, profile: loadProfile(cwd), workHash: wh });
+    // A stale verdict names the files that moved, so the judge can tell a stray file from an edit.
+    out({ ok: r.ok, path, errors: r.errors, stale: r.stale, workHash: wh, verdictHash: verdict?.diffHash ?? null, ...(r.stale ? { changedFiles: changedFiles(cwd), projectRoot: cwd } : {}) }, r.ok ? 0 : 1);
   },
 
   async jev(sub, { flags, rest }) {

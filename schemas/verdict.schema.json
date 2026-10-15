@@ -33,7 +33,7 @@
         "line": { "type": ["integer", "null"] },
         "issue": { "type": "string", "minLength": 1 },
         "suggestion": { "type": "string" },
-        "authority": { "type": "string", "pattern": "^(criterion|spec|rule|handoff|test):[^\\s]+$" },
+        "authority": { "type": "string", "pattern": "^(criterion|spec|rule|handoff|test|decision):[^\\s]+$" },
         "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
         "preExisting": { "type": "boolean" },
         "disputed": { "type": "boolean" }

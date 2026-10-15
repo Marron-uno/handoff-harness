@@ -89,6 +89,8 @@ Goals are sentences. `--mode handoff`, the default, walks the sources you name i
 
 Everything the harness writes lives in `.harness/`. The state and the events log are run artifacts and stay out of git. The profile, lessons, proposals and reports are committed.
 
+Once a goal is done the harness is dormant: work on a new branch as you would in any repository. Only the default branch and the reviewed goal branch stay protected from edits until the next goal starts.
+
 ## The guards
 
 Hooks are the enforcement surface. Each is a Node script with no dependencies; input arrives on stdin and decisions leave as JSON.
@@ -104,6 +106,8 @@ Two judges per slice, both read-only subagents that write JSON. Preflight writes
 A rejection sends the slice back to build with the findings quoted. After two rejections the strong model takes over for both judges. After the caps, a human decides: fix by hand, raise the cap, or skip the slice with a reason. Rounds past the cap have found real bugs before, so the cap asks a human instead of ending the run.
 
 Verdicts carry a hash of the change set they judged. An edit after the judge looked makes the verdict stale, and the validator says so.
+
+Two commands exist for what intake could not foresee, both human decisions logged as events: `harness slice amend` widens the files a slice may touch when the plan missed one, and `harness decide` records a ruling on a spec conflict that the judges then see in their packet and cite as `decision:D-n`. After the attempt cap, `harness retry` continues the slice with its attempt count kept rather than reset.
 
 Default models: the critic on Haiku, the reviewer and the spec reviewer on Sonnet, the reconciler and both strong judges on Opus, set in `agents/*.md`. The main session runs whatever model your session runs.
 
@@ -131,7 +135,7 @@ Claude Code stops a session after eight consecutive Stop-hook continuations. `no
 
 ## Tests
 
-`npm test` runs 64 tests in a few seconds with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path.
+`npm test` runs 91 tests in under half a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 
