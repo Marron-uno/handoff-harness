@@ -1,0 +1,478 @@
+{
+  "goal": "G-3",
+  "diffHash": "797223bdf8d85929",
+  "at": "2026-10-16T20:29:45.435Z",
+  "items": [
+    {
+      "id": "I-1",
+      "kind": "block",
+      "title": "Heredoc bodies written to a file are dropped from the judged text",
+      "criteria": [
+        {
+          "id": "C-1",
+          "text": "A heredoc body that a command only writes to a file (cat or tee with a redirect) is left out of the text before the deny patterns, the push rule and the sensitive-path scan run, so prose in the body is not judged as a command line."
+        },
+        {
+          "id": "C-2",
+          "text": "A heredoc fed to a shell or an interpreter (bash, sh, zsh, node, python and the like) is still scanned in full."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/README.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/README.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/events.jsonl",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/jev.jsonl",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/spec-a1-spec-reviewer.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/goal-card.md",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/inventory.json",
+          "quote": "I-1"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/reconcile-input.json",
+          "quote": "I-1"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-2",
+      "kind": "block",
+      "title": "Push deny pattern and push rule match within one line",
+      "criteria": [
+        {
+          "id": "C-3",
+          "text": "The git push deny pattern in the profile and the push rule in the git guard match within a single line, so words on later lines of a command do not count as push arguments."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/spec-a1-spec-reviewer.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/inventory.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/reconcile-input.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/verdicts/reconcile.json",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/archive/2026-10-14-g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/tasks.md",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/field-issues.test.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/fixture.mjs",
+          "quote": "I-2"
+        },
+        {
+          "type": "file",
+          "path": "tests/jev.test.mjs",
+          "quote": "I-2"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-3",
+      "kind": "criterion",
+      "title": "Tests for each case",
+      "criteria": [
+        {
+          "id": "C-4",
+          "text": "A test in tests/ covers each case: a cat heredoc, a tee heredoc, a heredoc fed to a shell, a heredoc fed to an interpreter, and a push command followed by prose on another line."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/inventory.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/reconcile-input.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/verdicts/reconcile.json",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/archive/2026-10-14-g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/tasks.md",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "tests/jev.test.mjs",
+          "quote": "I-3"
+        },
+        {
+          "type": "file",
+          "path": "tests/spec-stage.test.mjs",
+          "quote": "I-3"
+        },
+        {
+          "type": "commit",
+          "quote": "C-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/analysis.md",
+          "quote": "C-4"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    },
+    {
+      "id": "I-4",
+      "kind": "string",
+      "title": "rules.md row for command lines, not prose",
+      "criteria": [
+        {
+          "id": "C-5",
+          "text": "docs/rules.md has a row stating that the Bash guard judges command lines, not prose, with the failure that motivated it."
+        }
+      ],
+      "ui": false,
+      "inScope": true,
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-1/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/S-2-a1-r1-critic.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-2/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-fixture-run-3/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/goal-card.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/inventory.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/reconcile-input.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "docs/runs/2026-10-14-self-run-1/verdicts/reconcile.json",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "fixture/handoff/HANDOFF.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "fixture/openspec/changes/lantern-v0-2/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/archive/2026-10-14-g-1-add-a-bundle-size-preflight-check-budgets-bundle/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/tasks.md",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "tests/field-issues.test.mjs",
+          "quote": "I-4"
+        },
+        {
+          "type": "file",
+          "path": "tests/fixture.mjs",
+          "quote": "I-4"
+        }
+      ],
+      "bucket": "deterministic",
+      "decided": "done"
+    }
+  ]
+}

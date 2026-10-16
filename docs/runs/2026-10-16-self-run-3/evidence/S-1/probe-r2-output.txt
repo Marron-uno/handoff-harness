@@ -1,0 +1,67 @@
+# Guard: HEAD vs working tree (stage building, branch goal/G-3)
+R1 a4r1-F1: unquoted delim, 'E\' 'OF' join, reset after: HEAD DENY(git) | worktree DENY(git)
+R2 a4r1-F2: push goal $( / echo main / ): HEAD DENY(git) | worktree DENY(git)
+R3 a4r1-F2: push goal ` / echo --force / `: HEAD DENY(git) | worktree DENY(git)
+R4 a3-F1: cat > >(bash): HEAD DENY(git) | worktree DENY(git)
+R5 a3-F3: write then bash < file: HEAD DENY(git) | worktree DENY(git)
+C1 terminator 'EOF\r' ends heredoc 1 for the guard only; reset runs after the real EOF: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C2 same, force push to main: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C3 same, secrets read: HEAD DENY(sensitive) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C4 same, rm -rf /: HEAD DENY(shell) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C5 \r on the heredoc line (bash delimiter is EOF\r), plain EOF is body for bash: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C6 tee variant of C1: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+C7 control: all-CRLF prose heredoc (test line 225, intended allow): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+X1 xargs push goal branch, heredoc supplies main: HEAD DENY(git) | worktree DENY(git)
+X2 xargs push goal branch, heredoc supplies --force: HEAD DENY(git) | worktree DENY(git)
+X3 xargs push goal branch, heredoc supplies a refspec HEAD:main: HEAD DENY(git) | worktree DENY(git)
+X4 xargs push, unquoted delimiter: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+X5 git global options before push: HEAD DENY(git) | worktree DENY(git)
+P1 write target with parent segments outside project: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+P2 write target git hook (runs at the next commit): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+P3 write target shell startup file: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+P4 upper-case CAT (not cat; must stay scanned): HEAD DENY(git) | worktree DENY(git)
+P5 state file, upper-case spelling (case-insensitive FS): HEAD allow | worktree allow  (both allow)
+P6 state file, doubled slash: HEAD allow | worktree allow  (both allow)
+P7 sensitive target, upper-case .ENV: HEAD DENY(sensitive) | worktree DENY(sensitive)
+P8 tee -a with fd copy then cat redirect 0<&3: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+G1 git -P push --force (pager short flag not in GLOBAL_OPTIONS): HEAD allow | worktree allow  (both allow)
+G2 git --bare push origin main: HEAD allow | worktree allow  (both allow)
+G3 combined short flags -fu: HEAD allow | worktree allow  (both allow)
+G4 alias via -c: HEAD allow | worktree allow  (both allow)
+G5 push HEAD:main: HEAD DENY(git) | worktree DENY(git)
+G6 push --all: HEAD DENY(git) | worktree DENY(git)
+G7 control: push then prose line (intended allow): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+G8 control: two pushes, second to main: HEAD DENY(git) | worktree DENY(git)
+
+# Dormant (stage done)
+C2 same, force push to main: HEAD DENY(git) | worktree allow  <-- REGRESSION
+X1 xargs push goal branch, heredoc supplies main: HEAD DENY(git) | worktree DENY(git)
+X3 xargs push goal branch, heredoc supplies a refspec HEAD:main: HEAD DENY(git) | worktree DENY(git)
+G2 git --bare push origin main: HEAD allow | worktree allow
+D1 dormant delete main :main: HEAD allow | worktree allow
+
+# What the guard judges after dropFileHeredocs (C1, C5)
+C1: "cat > a.md <<'EOF'\nEOF\r\ncat > b.md <<'X'\nX"
+C5: "cat > a.md <<'EOF'\r\nEOF\ncat > b.md <<'X'\nX"
+X1 joinOpenPush: "xargs git push origin goal/G-3 <<'EOF' main EOF"
+
+# Write tool to .git/hooks/pre-commit and ~/.zshrc (path guard, content never judged)
+hook: allow
+
+# Real /bin/bash (3.2.57(1)-release)
+C1-shape: stdout="RAN-AFTER-CR-TERMINATOR" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C1-shape.sh: line 7: X: command not f"
+C2-shape (git stub): stdout="git-arg[push] git-arg[--force] git-arg[origin] git-arg[main]" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C2-shape.sh: line 7: X: command not f"
+C5-shape: stdout="RAN-AFTER-CR-DELIMITER" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C5-shape.sh: line 6: X: command not f"
+C6-shape (tee): stdout="RAN-AFTER-CR-TERMINATOR-TEE" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C6-shape.sh: line 7: X: command not f"
+X1-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]" stderr=""
+X2-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[--force]" stderr=""
+X3-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[HEAD:main]" stderr=""
+
+# Real /bin/zsh (5.9)
+C1-shape: stdout="RAN-AFTER-CR-TERMINATOR" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C1-shape.sh:7: command not found: X"
+C2-shape (git stub): stdout="git-arg[push] git-arg[--force] git-arg[origin] git-arg[main]" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C2-shape.sh:7: command not found: X"
+C5-shape: stdout="RAN-AFTER-CR-DELIMITER" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C5-shape.sh:6: command not found: X"
+C6-shape (tee): stdout="RAN-AFTER-CR-TERMINATOR-TEE" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox-r2/C6-shape.sh:7: command not found: X"
+X1-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]" stderr=""
+X2-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[--force]" stderr=""
+X3-shape (git stub): stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[HEAD:main]" stderr=""

@@ -1,0 +1,1 @@
+14:| The Bash guard judges command lines, not prose: the body of a heredoc that `cat` (with a stdout redirect) or `tee` 

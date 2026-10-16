@@ -1,0 +1,97 @@
+{
+  "diffHash": "9ec4e014648107b2",
+  "passed": true,
+  "at": "2026-10-16T15:57:30.707Z",
+  "durationMs": 76672,
+  "checks": [
+    {
+      "id": "branch",
+      "durationMs": 8,
+      "status": "pass",
+      "details": "goal/G-3"
+    },
+    {
+      "id": "diff_budget",
+      "durationMs": 27,
+      "status": "pass",
+      "details": "337 lines in 4 files"
+    },
+    {
+      "id": "bundle_size",
+      "durationMs": 0,
+      "status": "skip",
+      "details": "no budgets.bundleBytes set"
+    },
+    {
+      "id": "protected_paths",
+      "durationMs": 1,
+      "status": "pass",
+      "details": "none touched"
+    },
+    {
+      "id": "slice_paths",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "4 files within declared paths"
+    },
+    {
+      "id": "openspec_validate",
+      "durationMs": 514,
+      "status": "pass",
+      "details": "Totals: 11 passed, 0 failed (11 items)"
+    },
+    {
+      "id": "tests_discriminate",
+      "durationMs": 36432,
+      "status": "pass",
+      "details": "1 changed test file(s) fail without the change:     diff: 'simple' |   }"
+    },
+    {
+      "id": "project:test",
+      "durationMs": 36280,
+      "status": "pass",
+      "details": "ℹ duration_ms 36141.788667"
+    },
+    {
+      "id": "project:check",
+      "durationMs": 3274,
+      "status": "pass",
+      "details": "Totals: 11 passed, 0 failed (11 items)"
+    },
+    {
+      "id": "language",
+      "durationMs": 4,
+      "status": "pass",
+      "details": "4 files English"
+    },
+    {
+      "id": "secrets",
+      "durationMs": 2,
+      "status": "pass",
+      "details": "no secrets in changed files"
+    },
+    {
+      "id": "prose",
+      "durationMs": 1,
+      "status": "pass",
+      "details": "prose clean"
+    },
+    {
+      "id": "test_weakening",
+      "durationMs": 40,
+      "status": "pass",
+      "details": "+0 -0 test blocks"
+    },
+    {
+      "id": "dependencies",
+      "durationMs": 0,
+      "status": "pass",
+      "details": "no dependency manifest changed"
+    }
+  ],
+  "guardBearing": true,
+  "guardFiles": [
+    "profiles/default.json",
+    "scripts/lib/guards/git-guard.mjs"
+  ]
+}

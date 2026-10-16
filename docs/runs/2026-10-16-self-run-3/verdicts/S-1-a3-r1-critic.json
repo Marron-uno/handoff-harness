@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "agent": "critic-strong",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 3,
+  "round": 1,
+  "diffHash": "1e4264a50d06aaa5",
+  "verdict": "block",
+  "summary": "npm test passes 116/116, npm run check passes 11/11 and tests/bash-prose.test.mjs passes 9/9. C-3, C-4 and C-5 are met. The verdict is still block, and the earlier rounds explain why. Both earlier critics probed only one kind of input: a file written by a heredoc and run later (a1 F-2, a2 F-1). Each attempt patched the spellings that critic listed, and every check passed against the next round's probes. Nobody probed how dropFileHeredocs finds the end of the body or decides what the heredoc is fed to. I ran the same inputs against a HEAD copy and against the working tree, and found three classes that HEAD denies and the working tree allows. (1) A heredoc fed to bash through process substitution (`cat > >(bash) <<'EOF'`, `tee /dev/null >(bash) <<'EOF'`) is dropped, which breaks C-2. (2) Two terminator-detection bugs drop real command lines after the body. Backslash-newline is joined before heredocs are parsed, so a quoted body line ending in a backslash swallows the terminator. A partly quoted delimiter (`<<E'OF'`) is read as `E`. In both cases everything to the end of the text is dropped, including a destructive command after the terminator. Real bash runs that command; I confirmed this with echo stand-ins. This breaks C-1's 'only the body' wording. (3) The run-later exception is still incomplete: `bash < run.sh`, `eval \"$(cat run.sh)\"`, mv-then-run and a glob all pass. The earlier findings were factually correct, so none is disputed. Their remedy (keep listing run spellings) cannot converge, though. A file written with the Write tool and run in a later Bash call was never guarded at HEAD either. F-4 asks for a fail-safe rule instead of another spelling patch.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 43,
+      "issue": "writtenFile treats a process substitution target as a file: `cat > >(bash) <<'EOF'` takes `(bash)` as the written file, and `tee /dev/null >(bash) <<'EOF'` takes /dev/null. In both cases the body is dropped even though it is fed to a shell, contrary to C-2.",
+      "suggestion": "Return null from writtenFile when the seg or rest contains `>(` or `<(` (or any `(`), so the body stays scanned.",
+      "authority": "criterion:C-2",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "probe (destructive reset in the body) HEAD vs working tree: 'cat to process substitution bash' HEAD => DENY(git), worktree => allow; 'tee file plus process substitution' HEAD => DENY(git), worktree => allow"
+        },
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "bash t3.sh where t3.sh is: cat > >(bash) <<'EOF' / echo RAN-IN-PROCSUB / EOF  => prints RAN-IN-PROCSUB (the body runs)"
+        }
+      ]
+    },
+    {
+      "id": "F-2",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 88,
+      "issue": "The terminator search misses two delimiters that bash accepts, and the drop then runs to the end of the text, so a destructive command after the heredoc is not judged. (1) Backslash-newline is joined before heredocs are parsed, so a quoted body line ending in `\\` merges with its terminator. (2) The HEREDOC regex reads a partly quoted delimiter `<<E'OF'` or `<<\"E\"OF` as `E`.",
+      "suggestion": "Join backslash-newlines only outside heredoc bodies (or after dropFileHeredocs, on the kept text), and parse the delimiter as the full word with quotes removed. When no terminator is found, keep the text instead of dropping to the end.",
+      "authority": "criterion:C-1",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "probe HEAD vs working tree, destructive reset on the line after EOF: 'quoted delim, body line ends in backslash' HEAD => DENY(git), worktree => allow; 'partly quoted delimiter E'OF'' HEAD => DENY(git), worktree => allow; 'partly quoted delimiter \"E\"OF' HEAD => DENY(git), worktree => allow; control 'plain reset after body' worktree => DENY(git)"
+        },
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "bash t1.sh (cat > n1.md <<'EOF' / text \\ / EOF / echo RAN-AFTER-BACKSLASH) => RAN-AFTER-BACKSLASH; bash t2.sh (cat > n2.md <<E'OF' / text / EOF / echo RAN-AFTER-PARTQUOTE) => RAN-AFTER-PARTQUOTE"
+        },
+        {
+          "type": "diff",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "line": 88,
+          "quote": "const text = dropFileHeredocs(String(command ?? \"\").replace(/\\\\\\r?\\n/g, \" \")).replace(GLOBAL_OPTIONS, \"git\");"
+        }
+      ]
+    },
+    {
+      "id": "F-3",
+      "severity": "major",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 52,
+      "issue": "The rules.md row promises that a written file the same command later runs keeps its body scanned, but isRunLater still misses `bash < run.sh`, `eval \"$(cat run.sh)\"`, a mv or cp before the run, and a glob such as `bash ru*.sh`. All four were denied at HEAD and are allowed now, including a body that pushes to main.",
+      "suggestion": "See F-4: replace the spelling list with a fail-safe condition rather than adding these four spellings.",
+      "authority": "rule:bash-guard-judges-command-lines",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "HEAD => DENY(git) for all; worktree => allow: 'write then bash < file', 'write then eval cat', 'write then mv then run', 'write then glob run', 'write push-main then bash < file'"
+        }
+      ]
+    },
+    {
+      "id": "F-4",
+      "severity": "major",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 81,
+      "issue": "Three attempts have chased spellings of write-then-run: a2 added bare names, a3 added case and paths, and the inputs in F-3 remain. A name-matching list cannot converge, and D-1's rule that an unknown command fails safe is inverted here: any unrecognized way of running the file drops the body.",
+      "suggestion": "Drop a file-writing heredoc body only when nothing but whitespace or further file-writing heredocs follows its terminator, and when the heredoc's own line has no `&&`, `;`, `|` or `(` after the redirect. Otherwise keep the body. This covers the intake use case (writing change files) and fails safe for every run spelling. Cross-call write-then-run (Write tool, then `bash run.sh` in a later Bash call) was already unguarded at HEAD and is out of scope for this slice.",
+      "authority": "decision:D-1",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "worktree probes: 'write then bash < file' => allow, 'write then glob run' => allow, while tests/bash-prose.test.mjs 'letter case', 'a parent path', 'an absolute path' (the a2 probes) now pass: node --test tests/bash-prose.test.mjs => pass 9, fail 0"
+        },
+        {
+          "type": "file",
+          "path": ".harness/verdicts/S-1-a2-r1-critic.json",
+          "quote": "Match the run-later name case-insensitively and accept any path whose final segment equals the written file name"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "unmet",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "worktree: 'control: prose note' => allow (body dropped as intended), but 'quoted delim, body line ends in backslash' and 'partly quoted delimiter E'OF'' => allow with a destructive reset after the terminator, which is not body text (F-2)"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a cat heredoc that only writes a file is prose, not a command line (passes)"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "unmet",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "worktree: 'cat to process substitution bash' => allow; 'tee file plus process substitution' => allow; control 'bash heredoc' => DENY(git) (F-1)"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a heredoc fed to a shell is still scanned in full (passes, but covers only a direct shell head)"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "the push rule and the push deny pattern match within one line"
+        },
+        {
+          "type": "command",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "node --test tests/bash-prose.test.mjs => tests 9, pass 9, fail 0 (includes push then prose allowed; push on a later line, two pushes, and backslash-continued push denied)"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "tests for a cat heredoc, a tee heredoc, a heredoc fed to a shell, a heredoc fed to an interpreter, and a push followed by prose on another line"
+        },
+        {
+          "type": "command",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "npm test => tests 116, pass 116, fail 0; npm run check => Totals: 11 passed, 0 failed"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "docs/rules.md",
+          "line": 14,
+          "quote": "grep -n \"judges command lines\" docs/rules.md => 14:| The Bash guard judges command lines, not prose: ... | PreToolUse git guard | A note that mentioned a forced push or a secrets path was denied as if it were run, ..."
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-15T19:35:04.602Z"
+}

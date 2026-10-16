@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "agent": "critic-strong",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 5,
+  "round": 3,
+  "diffHash": "228fa0c1f07b8418",
+  "verdict": "block",
+  "summary": "Block. npm test passes 123 of 123, npm run check 11 of 11, tests/bash-prose.test.mjs 16 of 16. The a4-r3 delimiter fix holds, and the heredoc pass, which applies only when the whole call is plain file writes, showed no line the shell runs and the guard drops. I first suspected joinOpenPush runs before global options are stripped; that was wrong (line 124 strips them first, probes R1-R8 are denied). The loop repeats one pattern. Each round narrows a newline-spanning match to fit the criteria, checks the shell's own continuations, and misses another reader that rebuilds one command from several lines. This round: C-3 changed `git\\s+push` to `git[ \\t]+push`, so `git` ending one line and `push ...` on the next is no longer caught, though HEAD caught it because \\s spans newlines. When xargs, tr or paste turns heredoc lines into arguments (`xargs <<EOF git` / `push origin main` / `EOF`), real bash 3.2.57 and zsh 5.9 push main, HEAD:main or --force in all eight cases. HEAD denied all eight; the worktree allows them in building and in done (F-1). This is the a4-r2 reviewer's F-2 class, fixed only for `git push` written together on the header line. Earlier findings were correct; none is disputed. The criteria are not contradictory: the patterns can match within one line after the guard joins lines a reader may rebuild, as joinOpenPush already does, so no human hold is needed. To stop the loop, apply the allow-list to the whole text: keep a newline as a boundary only between lines of plain words, and join from the first other line to the end.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 116,
+      "issue": "The push deny pattern and push rule now require `git` and `push` on one line, and joinOpenPush joins lines only from a line holding `git push`, so a heredoc whose lines xargs, tr or paste rebuild into one command (`xargs <<EOF git` / `push origin main` / `EOF`, `tr '\\n' ' ' <<'EOF' | bash` / `git` / `push origin main` / `EOF`) pushes main, HEAD:main or --force in building and in done, all of which HEAD denied.",
+      "suggestion": "Keep the allow-list approach but apply it to the whole text: in joinOpenPush, join every line from the first non-blank line that is not made of plain words (the WORD class, no quotes, `<`, `|`, `$`, backticks or parentheses) through the end of the text. The push line itself is not exempt from this rule. A plain push followed by plain or non-plain prose stays separate, so tests/bash-prose.test.mjs lines 401 to 406 still pass. Add X1 through X8 from /tmp/s1-a5-critic/probe2.mjs to the push test as denied cases.",
+      "authority": "spec:openspec/specs/guards/spec.md#no-history-rewrites-and-no-bulk-staging",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/probe2-output.txt",
+          "line": 1,
+          "quote": "X1 building: xargs <<EOF git / push origin goal/G-3 / main: HEAD DENY(git) | worktree allow  <-- REGRESSION; X2 ... push --force origin goal/G-3: HEAD DENY(git) | worktree allow; X4 done: xargs <<EOF git / push origin main: HEAD DENY(git) | worktree allow; X5 building: tr newline to space, piped to bash: HEAD DENY(git) | worktree allow; X8 ... push origin HEAD:main: HEAD DENY(git) | worktree allow"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/shell-output.txt",
+          "line": 1,
+          "quote": "/bin/bash 3.2.57(1)-release X1: stdout=\"git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]\"; X2: \"git-arg[push] git-arg[--force] ...\"; X5: \"git-arg[push] git-arg[origin] git-arg[main]\"; /bin/zsh 5.9 X1-X8 identical"
+        },
+        {
+          "type": "diff",
+          "path": "profiles/default.json",
+          "line": 63,
+          "quote": "-      \"git\\\\s+push\\\\b[^|;&]*(...)\" +      \"git[ \\\\t]+push\\\\b[^|;&\\\\n]*(...)\""
+        }
+      ]
+    },
+    {
+      "id": "F-2",
+      "severity": "minor",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 116,
+      "issue": "A push line that is not bare `git push` plus plain words, such as the common `cd repo && git push origin goal/G-3`, is joined with every later line, so prose on the next line still counts as push arguments (`echo main is next` is denied), which is the failure C-3 targets, though in the fail-safe direction.",
+      "suggestion": "Optional: allow leading `cd WORD &&` segments in PLAIN_PUSH as PLAIN_WRITE already does.",
+      "authority": "criterion:C-3",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/probe2-output.txt",
+          "line": 10,
+          "quote": "K2 control: cd && push then prose: HEAD DENY(git) | worktree DENY(git)"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a5-critic/bash-prose-test.txt",
+          "quote": "✔ a cat heredoc that only writes a file is prose, not a command line; ✔ a tee heredoc that names a file is prose, not a command line; ✔ a delimiter with a quote or a backslash inside it is read by the shell as written, so only plain parts are accepted"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/probe-output.txt",
+          "line": 15,
+          "quote": "H3 heredoc: prose with quoted delimiter (intended allow): HEAD DENY(git) | worktree allow"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a5-critic/bash-prose-test.txt",
+          "quote": "✔ a heredoc fed to a shell is still scanned in full; ✔ a heredoc fed to an interpreter is still scanned in full; ✔ a heredoc that reaches a shell by another route is still scanned"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/probe2-output.txt",
+          "line": 9,
+          "quote": "K1 control: plain push then prose (intended allow): HEAD DENY(git) | worktree allow"
+        },
+        {
+          "type": "test",
+          "path": "/tmp/s1-a5-critic/bash-prose-test.txt",
+          "quote": "✔ the push rule and the push deny pattern match within one line"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a5-critic/bash-prose-test.txt",
+          "quote": "ℹ tests 16 ℹ pass 16 ℹ fail 0 (cat heredoc, tee heredoc, heredoc fed to a shell, heredoc fed to an interpreter, push followed by prose on another line)"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a5-critic/npm-test.txt",
+          "quote": "npm test: ℹ tests 123 ℹ pass 123 ℹ fail 0; npm run check: Totals: 11 passed, 0 failed (11 items)"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "docs/rules.md",
+          "line": 14,
+          "quote": "grep \"judges command lines, not prose\" docs/rules.md: 1 match, the row ending \"A note that mentioned a forced push or a secrets path was denied as if it were run, and this goal's own intake could not write its change files through a heredoc\""
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-16T15:51:46.644Z"
+}

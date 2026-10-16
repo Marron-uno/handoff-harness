@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "agent": "critic-strong",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 6,
+  "round": 3,
+  "diffHash": "9ec4e014648107b2",
+  "verdict": "block",
+  "summary": "Block. npm test passes 123 of 123, npm run check passes 11 of 11, and tests/bash-prose.test.mjs passes 16 of 16. The a5 fix holds: the X1-X8 shapes are denied, and a terminator fuzz (6 headers, 16 near-terminator lines, real bash 3.2.57 and zsh 5.9) found no line the shell runs that the strip pass drops. C-1, C-2, C-4 and C-5 are met. The loop repeats one pattern again. Each fix adds a pass that reads the text as the shell would, but the passes run on a text that an earlier pass has already rewritten. Line 124 runs GLOBAL_OPTIONS before joinOpenLines. Its option value `\\S+` swallows shell metacharacters that touch the value, such as `<<EOF` in `git -C .<<EOF`. joinOpenLines then sees only plain lines and keeps the newlines. But the shell still has the heredoc, and xargs turns its lines into push arguments. So `xargs git -C .<<EOF push origin goal/G-3` / `main` / `EOF` pushes main, and the same works with --force, with HEAD:main, and with `git -C .<<EOF` / `push origin main` in done. HEAD denied all seven of these. The worktree allows them, and real bash and zsh run them (F-1). This is the a5 F-1 class reached through a different pass. Earlier findings were correct and none is disputed. The criteria are not contradictory, so no human hold is needed. To stop the loop, decide whether the text is plain on the raw command before any rewrite. That means running joinOpenLines before GLOBAL_OPTIONS, or limiting option values to the WORD class. A simulation of that order denies the probes and keeps the push-then-prose case allowed.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 124,
+      "issue": "GLOBAL_OPTIONS runs before joinOpenLines, and its `\\S+` option value swallows a heredoc operator attached to it (`git -C .<<EOF`, `-c x.y=<<'EOF'`, `--work-tree=.<<EOF`), so joinOpenLines sees only plain lines and keeps the newlines, while xargs rebuilds the heredoc lines into push arguments; main, --force or HEAD:main is pushed in building and main in done, all of which HEAD denied.",
+      "suggestion": "Judge plainness on the text before any rewrite: compute `joinOpenLines(dropFileHeredocs(raw).replace(/\\\\\\r?\\n/g, \" \"))` first and apply GLOBAL_OPTIONS to its result (and/or restrict GLOBAL_OPTIONS values to the WORD class so no metacharacter is ever consumed). Add P1 through P7 from /tmp/s1-a6-critic/probe.mjs to the push test as denied cases; the existing allow cases at tests/bash-prose.test.mjs lines 401 to 406 still pass under the reordered pipeline (simulated in /tmp/s1-a6-critic/reorder-output.txt).",
+      "authority": "spec:openspec/specs/guards/spec.md#no-history-rewrites-and-no-bulk-staging",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/probe-output.txt",
+          "line": 1,
+          "quote": "P1 building: xargs git -C .<<EOF push goal branch / main: HEAD DENY(git) | worktree allow  <-- REGRESSION; P2 ... / --force: HEAD DENY(git) | worktree allow; P4 done: xargs git -C .<<EOF / push origin main: HEAD DENY(git) | worktree allow; P5 -c x.y=<<'EOF': HEAD DENY(git) | worktree allow; worktree judged text for P1: \"xargs git push origin goal/G-3\\nmain\\nEOF\""
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/shell-output.txt",
+          "line": 2,
+          "quote": "/bin/bash 3.2.57 P1 -c: git-arg[-C] git-arg[.] git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]; P2: ... git-arg[--force]; P4: git-arg[-C] git-arg[.] git-arg[push] git-arg[origin] git-arg[main]; /bin/zsh 5.9 P1-P7 identical, under -c and eval"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/reorder-output.txt",
+          "line": 1,
+          "quote": "reordered text \"xargs git push origin goal/G-3 --force EOF\" | one-line deny pattern matches: true; push then prose: reordered text keeps the newline | matches: false"
+        },
+        {
+          "type": "file",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "line": 124,
+          "quote": "const text = joinOpenLines(dropFileHeredocs(String(command ?? \"\")).replace(/\\\\\\r?\\n/g, \" \").replace(GLOBAL_OPTIONS, \"git\"));"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a6-critic/bash-prose-test.txt",
+          "quote": "✔ a cat heredoc that only writes a file is prose, not a command line; ✔ a tee heredoc that names a file is prose, not a command line"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/term-output.txt",
+          "line": 1,
+          "quote": "192 shell runs, 0 where the shell ran a line the guard dropped"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a6-critic/bash-prose-test.txt",
+          "quote": "✔ a heredoc fed to a shell is still scanned in full; ✔ a heredoc fed to an interpreter is still scanned in full; ✔ a heredoc that reaches a shell by another route is still scanned"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/probe-output.txt",
+          "line": 9,
+          "quote": "K2 control: plain push then prose (intended allow): HEAD allow | worktree allow"
+        },
+        {
+          "type": "test",
+          "path": "/tmp/s1-a6-critic/bash-prose-test.txt",
+          "quote": "✔ the push rule and the push deny pattern match within one line"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-a6-critic/bash-prose-test.txt",
+          "quote": "ℹ tests 16 ℹ pass 16 ℹ fail 0 (cat heredoc, tee heredoc, heredoc fed to a shell, heredoc fed to an interpreter, push followed by prose on another line)"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/npm-test.txt",
+          "quote": "ℹ tests 123 ℹ pass 123 ℹ fail 0; test exit 0; Totals: 11 passed, 0 failed (11 items); check exit 0"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-a6-critic/rules-grep.txt",
+          "line": 1,
+          "quote": "grep -n \"judges command lines, not prose\" docs/rules.md: 14:| The Bash guard judges command lines, not prose: the bod (1 match)"
+        },
+        {
+          "type": "diff",
+          "path": "docs/rules.md",
+          "line": 14,
+          "quote": "| The Bash guard judges command lines, not prose: ... | PreToolUse git guard | A note that mentioned a forced push or a secrets path was denied as if it were run, and this goal's own intake could not write its change files through a heredoc |"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-16T16:04:23.890Z"
+}

@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "caps": {
+    "maxAttempts": 3,
+    "roundsAuthorized": 3,
+    "maxConsecutiveBlocks": 7,
+    "oscillationWindow": 4,
+    "maxStaleVerdicts": 2
+  },
+  "budgets": {
+    "toolCallsPerStage": {
+      "intake": 150,
+      "spec_review": 40,
+      "planning": 80,
+      "building": 250,
+      "preflight": 40,
+      "critic": 40,
+      "review": 60,
+      "record": 30,
+      "reconcile": 120,
+      "report": 30
+    },
+    "browserActionsPerReview": 60,
+    "diffLinesPerSlice": 1200,
+    "bundleBytes": {}
+  },
+  "models": {
+    "critic": "haiku",
+    "critic-strong": "opus",
+    "reviewer": "sonnet",
+    "reviewer-strong": "opus",
+    "spec-reviewer": "sonnet",
+    "reconciler": "opus",
+    "escalateAfterRejections": 2
+  },
+  "lanes": {
+    "subagentWritable": [
+      ".harness/verdicts/**",
+      ".harness/evidence/**"
+    ],
+    "protectedPaths": [
+      "openspec/specs/**",
+      ".harness/state.json",
+      ".harness/events.jsonl",
+      ".harness/plugin-root",
+      ".claude/**",
+      "CLAUDE.md",
+      "AGENTS.md"
+    ],
+    "sensitivePaths": [
+      ".env",
+      ".env.*",
+      "**/*.pem",
+      "**/*.key",
+      "**/id_rsa*",
+      "**/credentials*",
+      "**/*secret*"
+    ],
+    "proposalsDir": ".harness/proposals"
+  },
+  "git": {
+    "denyPatterns": [
+      "git\\s+push\\b[^|;&]*(--force|-f\\b|--force-with-lease|--delete|--all\\b|--mirror\\b|\\+[A-Za-z]|\\s[^\\s:]+:[^\\s]+)",
+      "git\\s+commit\\b[^|;&]*--amend",
+      "git\\s+rebase\\b",
+      "git\\s+reset\\s+--hard",
+      "git\\s+filter-branch\\b",
+      "git\\s+branch\\s+-D\\b",
+      "git\\s+add\\s+(-A|--all|\\.)(\\s|$)",
+      "git\\s+checkout\\s+--\\s+\\.",
+      "git\\s+restore\\s+\\."
+    ],
+    "pushOnlyGoalBranch": true,
+    "noWorkOnDefaultBranch": true
+  },
+  "shell": {
+    "denyPatterns": [
+      "\\brm\\s+-[a-zA-Z]*r[a-zA-Z]*f?\\s+(/|~|\\$HOME|\\.\\.)(\\s|$)",
+      "\\brm\\s+-rf\\s+\\*",
+      "\\bmkfs\\b",
+      ">\\s*/dev/sd",
+      "\\bdd\\s+if=",
+      "curl[^|]*\\|\\s*(ba)?sh",
+      "wget[^|]*\\|\\s*(ba)?sh"
+    ]
+  },
+  "hosts": {
+    "fixture": [
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "[::1]"
+    ],
+    "preview": [],
+    "prod": []
+  },
+  "browser": {
+    "readOnlyToolsOutsideFixture": [
+      "mcp__claude-in-chrome__form_input",
+      "mcp__claude-in-chrome__javascript_tool",
+      "mcp__claude-in-chrome__file_upload",
+      "mcp__claude-in-chrome__upload_image"
+    ],
+    "typingActions": [
+      "type",
+      "key"
+    ]
+  },
+  "language": {
+    "minWords": 15,
+    "minForeignHits": 3,
+    "exemptGlobs": [
+      "**/locales/**",
+      "**/i18n/**",
+      "**/messages/**",
+      "**/fixtures/**",
+      "**/*.po",
+      "**/*.csv"
+    ],
+    "exemptEnglishLocale": [
+      "en",
+      "en-US",
+      "en-GB"
+    ],
+    "textExtensions": [
+      ".md",
+      ".mdx",
+      ".txt",
+      ".json",
+      ".yaml",
+      ".yml",
+      ".ts",
+      ".tsx",
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".cjs",
+      ".py",
+      ".rb",
+      ".go",
+      ".rs",
+      ".java",
+      ".kt",
+      ".swift",
+      ".html",
+      ".css",
+      ".scss",
+      ".vue",
+      ".svelte",
+      ".astro",
+      ".php",
+      ".sql"
+    ]
+  },
+  "prose": {
+    "banEmDash": true,
+    "bannedPhrases": [
+      "delve",
+      "leverage",
+      "seamless",
+      "robust solution",
+      "it's worth noting",
+      "in today's fast-paced",
+      "game-changer"
+    ]
+  },
+  "secrets": {
+    "allow": [
+      "fixture-token-not-real",
+      "example.com",
+      "555-0100"
+    ],
+    "extraPatterns": []
+  },
+  "checks": [],
+  "review": {
+    "guardPaths": [],
+    "discriminatingTests": true,
+    "testCheck": "test",
+    "note": "guardPaths: globs whose change widens or narrows what the harness allows; a slice touching one is guard-bearing, which brings the adversarial review brief, the strong reviewer from round one, and command or test evidence for every met criterion and block or major finding. discriminatingTests: preflight runs the slice's changed tests against the tree before the slice, with the project check named by testCheck, and fails when they pass without the change."
+  },
+  "openspec": {
+    "validate": true,
+    "specsReadOnly": true,
+    "author": false,
+    "note": "author: true adds the spec stage: intake writes or adopts an OpenSpec change that cites the inventory, `harness spec check` verifies it, the spec-reviewer judges it before the goal card, approval commits it, record ticks its tasks, and the goal needs every task ticked. `--openspec` or `--no-openspec` on `goal new` overrides it per goal."
+  },
+  "pricing": {
+    "note": "USD per million tokens from the published price list of 2026-10-14. cacheWrite is the five-minute write, cacheWrite1h the one-hour write Claude Code uses for the main conversation on a subscription. Haiku has a long-context tier over 100k prompt tokens. Set these to your contract.",
+    "perMillion": {
+      "default": {
+        "input": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite1h": 4,
+        "cacheRead": 0.1
+      },
+      "haiku": {
+        "input": 0.1,
+        "output": 0.5,
+        "cacheWrite": 0.125,
+        "cacheWrite1h": 0.2,
+        "cacheRead": 0.01,
+        "longContext": {
+          "over": 100000,
+          "input": 0.5,
+          "output": 2.5,
+          "cacheWrite": 0.625,
+          "cacheWrite1h": 1,
+          "cacheRead": 0.05
+        }
+      },
+      "sonnet": {
+        "input": 2,
+        "output": 10,
+        "cacheWrite": 2.5,
+        "cacheWrite1h": 4,
+        "cacheRead": 0.1
+      },
+      "opus": {
+        "input": 4,
+        "output": 20,
+        "cacheWrite": 5,
+        "cacheWrite1h": 8,
+        "cacheRead": 0.2
+      },
+      "fable": {
+        "input": 15,
+        "output": 75,
+        "cacheWrite": 18.75,
+        "cacheWrite1h": 30,
+        "cacheRead": 1.5
+      }
+    }
+  },
+  "jev": {
+    "enabled": false,
+    "provider": "typesafe",
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "model": "jev-latest",
+    "keyEnv": "TYPESAFE_API_KEY",
+    "timeoutMs": 5000,
+    "questionsFile": "profiles/jev-questions.v1.json",
+    "redact": [
+      "(?i)(api[_-]?key|token|secret|password)\\s*[:=]\\s*\\S+"
+    ],
+    "thresholds": {
+      "evidence_supports": 0.4,
+      "severity_consistent": 0.4,
+      "summary_consistent": 0.5,
+      "reusable": 0.7
+    },
+    "buckets": {
+      "missingBelow": 0.2,
+      "doneAbove": 0.8
+    },
+    "maxStateChars": 60000
+  },
+  "devServer": {
+    "url": null,
+    "start": null,
+    "note": "URL the reviewer opens for UI criteria and the command that starts it. The reviewer starts it in the background when the URL does not answer."
+  }
+}

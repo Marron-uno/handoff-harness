@@ -1,0 +1,9 @@
+✔ the push rule and the push deny pattern match within one line (206.931083ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1622.669208

@@ -1,0 +1,5 @@
+cat > notes2.md <<-EOF
+	E\
+OF
+echo RAN-AFTER-JOINED-TERMINATOR-DASH
+	EOF

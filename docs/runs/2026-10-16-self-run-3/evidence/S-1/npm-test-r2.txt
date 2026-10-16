@@ -1,0 +1,12 @@
+✔ transcript rows parse and price by model family and context tier (2.197708ms)
+✔ rows that share a message id count once; one-hour cache writes use their own price (0.601584ms)
+✔ usageDelta subtracts what earlier usage events already recorded (0.429208ms)
+✔ usage is attributed to the stage active at each message, split by scope (102.16475ms)
+ℹ tests 121
+ℹ suites 0
+ℹ pass 121
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 39529.439708

@@ -1,0 +1,47 @@
+{
+  "goal": "G-3",
+  "sources": [],
+  "items": [
+    {
+      "id": "I-1",
+      "kind": "block",
+      "title": "Heredoc bodies written to a file are dropped from the judged text",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-1", "text": "A heredoc body that a command only writes to a file (cat or tee with a redirect) is left out of the text before the deny patterns, the push rule and the sensitive-path scan run, so prose in the body is not judged as a command line." },
+        { "id": "C-2", "text": "A heredoc fed to a shell or an interpreter (bash, sh, zsh, node, python and the like) is still scanned in full." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-2",
+      "kind": "block",
+      "title": "Push deny pattern and push rule match within one line",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-3", "text": "The git push deny pattern in the profile and the push rule in the git guard match within a single line, so words on later lines of a command do not count as push arguments." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-3",
+      "kind": "criterion",
+      "title": "Tests for each case",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-4", "text": "A test in tests/ covers each case: a cat heredoc, a tee heredoc, a heredoc fed to a shell, a heredoc fed to an interpreter, and a push command followed by prose on another line." }
+      ],
+      "ui": false
+    },
+    {
+      "id": "I-4",
+      "kind": "string",
+      "title": "rules.md row for command lines, not prose",
+      "source": "goal sentence",
+      "criteria": [
+        { "id": "C-5", "text": "docs/rules.md has a row stating that the Bash guard judges command lines, not prose, with the failure that motivated it." }
+      ],
+      "ui": false
+    }
+  ]
+}
