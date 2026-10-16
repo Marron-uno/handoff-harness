@@ -2,7 +2,7 @@
 
 ### Requirement: The Bash guard judges command lines, not prose
 
-The Bash guard SHALL leave out of the judged text the body of a heredoc that its command only writes to a file (`cat` with a redirect, `tee` with a file argument), SHALL keep scanning in full a heredoc fed to a shell, an interpreter or any other command, and SHALL match the push deny pattern and the push rule within a single line.
+The Bash guard SHALL leave out of the judged text the body of a heredoc that its command only writes to a file (`cat` with a redirect, `tee` with a file argument), and SHALL keep scanning in full a heredoc fed to a shell, an interpreter or any other command.
 
 #### Scenario: Prose in a cat heredoc
 
@@ -24,20 +24,10 @@ The Bash guard SHALL leave out of the judged text the body of a heredoc that its
 - **WHEN** the model runs `node <<'EOF'` or `python3 <<'EOF'` with a body that runs a denied command
 - **THEN** the hook denies the call (C-2)
 
-#### Scenario: Push followed by prose
-
-- **WHEN** the model pushes the goal branch and a later line of the same command contains words such as `fix:` or `--all`
-- **THEN** the deny pattern and the push rule judge only the push line, and the call is allowed (C-3)
-
-#### Scenario: Push on a later line still denied
-
-- **WHEN** a command has a force push of the goal branch on its second line
-- **THEN** the hook denies the call (C-3)
-
 #### Scenario: Each case has a test
 
 - **WHEN** `npm test` runs
-- **THEN** `tests/bash-prose.test.mjs` exercises the cat, tee, shell, interpreter and push-then-prose cases (C-4)
+- **THEN** `tests/bash-prose.test.mjs` exercises the cat, tee, shell and interpreter cases (C-4)
 
 #### Scenario: Rules catalog
 

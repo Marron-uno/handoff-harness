@@ -7,8 +7,7 @@ The Bash guard runs its deny patterns, the push rule and the sensitive-path scan
 ## What Changes
 
 - `checkBashCommand` removes the body and terminator of a heredoc whose command only writes to a file (`cat` with a redirect, `tee` with a file argument) before the deny patterns, the push rule and the sensitive-path scan run. Any other command keeps its heredoc in the text, so a heredoc fed to `bash`, `sh`, `zsh`, `node`, `python` or an unknown command is still scanned in full.
-- The push deny pattern in `profiles/default.json` and the push rule in the git guard match within a single line.
-- `tests/bash-prose.test.mjs` covers a `cat` heredoc, a `tee` heredoc, a heredoc fed to a shell, a heredoc fed to an interpreter, and a push followed by prose on another line.
+- `tests/bash-prose.test.mjs` covers a `cat` heredoc, a `tee` heredoc, a heredoc fed to a shell, a heredoc fed to an interpreter, and the shapes the adversarial review found, which stay denied.
 - `docs/rules.md` gains a row for the rule.
 
 ## Hypothesis
@@ -23,8 +22,10 @@ The change touches guard-bearing paths (`scripts/lib/guards`, `profiles`). It la
 
 Parsing shell grammar beyond heredocs (here-strings, command substitution, quoted newlines). Changing any other deny pattern.
 
+The push deny pattern and the push rule matching within one line, which this change first proposed. Slice S-1 tried it over six attempts; each adversarial round found another shell mechanism that carries words across a newline into a push (`$(` and backticks, quotes, a heredoc that `xargs`, `tr` or `paste` rebuilds into arguments, a global option value touching `<<`). A human cut it on 2026-10-16 (decision D-4): the whole-text match stays, so a push followed by prose on a later line is still read as one push with those words as arguments. A later change may take it up with a shell parser rather than another pattern.
+
 ## Impact
 
 - Specs: `guards` (added requirement)
-- Code: `scripts/lib/guards/git-guard.mjs`, `profiles/default.json`, `tests/bash-prose.test.mjs`
+- Code: `scripts/lib/guards/git-guard.mjs`, `tests/bash-prose.test.mjs`
 - Docs: `docs/rules.md`
