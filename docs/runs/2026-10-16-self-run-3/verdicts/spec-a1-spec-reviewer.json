@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "agent": "spec-reviewer",
+  "goal": "G-3",
+  "slice": null,
+  "attempt": 1,
+  "round": 1,
+  "diffHash": "f273a59199fa639e",
+  "verdict": "pass",
+  "summary": "The single added guards requirement and its 8 scenarios cover C-1 to C-5 with testable behavior, and tasks 1.1, 1.2, 2.1 and 3.1 map to I-1 to I-4. Nothing is invented: the cat and tee file-writing shape and the fail-safe default for other commands are recorded as D-1 and D-2 in plan.json. Two minor points: the motivating claim in the proposal is not backed by docs/field-issues.md, and the spec does not say that the command line carrying the heredoc marker is still judged.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "minor",
+      "issue": "The proposal says the motivating shape is in docs/field-issues.md (angar run), but that file has no entry about heredocs or denied notes. The failure that the C-5 rules row must state is therefore not sourced from the file the proposal cites.",
+      "authority": "criterion:C-5",
+      "file": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/proposal.md",
+      "line": 5,
+      "suggestion": "Cite the real motivating failure (the denied heredoc write during this intake) or add the entry to docs/field-issues.md, and base the rules.md row on it.",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/proposal.md",
+          "quote": "The motivating shape is the field issues in `docs/field-issues.md` (the angar run): notes and commit messages written through heredocs were denied as commands."
+        }
+      ]
+    },
+    {
+      "id": "F-2",
+      "severity": "minor",
+      "issue": "The requirement removes the heredoc body and terminator, but no scenario checks that the command line carrying the heredoc marker (for example `cat > f <<EOF && git reset --hard`) is still judged. A critic cannot verify that only the body is dropped.",
+      "authority": "criterion:C-1",
+      "file": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/specs/guards/spec.md",
+      "line": 5,
+      "suggestion": "Add a scenario where a denied command shares a line with a cat or tee heredoc marker and the call is still denied.",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/specs/guards/spec.md",
+          "quote": "SHALL leave out of the judged text the body of a heredoc that its command only writes to a file"
+        }
+      ]
+    }
+  ],
+  "criteria": [],
+  "writtenAt": "2026-10-15T19:18:43.915Z"
+}

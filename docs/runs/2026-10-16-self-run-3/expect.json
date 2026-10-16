@@ -1,0 +1,6 @@
+{
+  "note": "Replay expectations for self-run 3: a guard-bearing change on the harness's own checkout (G-3, the Bash guard judges command lines, not prose), enforced by the installed 0.5.0 copy for the six attempts and by 0.5.1 for the close-out. The slice was skipped after six attempts when a human cut criterion C-3 (decision D-4); the heredoc half landed by hand as pull request 7. The numbers cover the whole events file, which also holds G-1 and G-2 and the session's work after done (retro finding R-2): G-3 alone had 2 halts, 17 guard denials, 15 verdict writes and 4 invalid ones. schemaValidVerdicts is false because four of the five rejected writes were rejected by the live guard-bearing probe rule, not by the schema, and would pass a pure schema check (finding R-7).",
+  "metrics": { "stage": "done", "haltCode": "attempt_cap", "slicesDone": 0, "slicesSkipped": 1, "slicesTotal": 1, "blocks": 0, "guardDenials": 34, "halts": 4, "sessions": 4, "costReported": 23.787, "verdictWrites": 19, "invalidVerdicts": 5, "judgeStopsExtra": 5, "specAttempts": 1, "specFindings": 2, "reconcilePasses": 1, "reconcileMissing": 0, "criticCalls.max": 122, "reviewerCalls.max": 41 },
+  "heldPending": [],
+  "schemaValidVerdicts": false
+}

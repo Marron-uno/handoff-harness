@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "goal": {
+    "id": "G-3",
+    "sentence": "the Bash guard judges command lines, not prose: a heredoc body that a command only writes to a file (cat or tee with a redirect) is left out of the text before the deny patterns, the push rule and the sensitive-path scan run, a heredoc fed to a shell or an interpreter is still scanned, the push deny pattern and the push rule match within one line, with tests for each case and a rules.md row",
+    "mode": "feature",
+    "sources": [],
+    "createdAt": "2026-10-15T19:17:23.100Z",
+    "approvedAt": "2026-10-15T19:19:06.919Z",
+    "autoApprove": true,
+    "budget": {
+      "usd": 60,
+      "minutes": 4500,
+      "maxSlices": 20
+    },
+    "environments": {
+      "prod": false,
+      "preview": null
+    },
+    "jev": false
+  },
+  "stage": "done",
+  "stageEnteredAt": "2026-10-16T20:32:42.376Z",
+  "branch": "goal/G-3",
+  "defaultBranch": "main",
+  "slice": null,
+  "slices": [
+    {
+      "id": "S-1",
+      "title": "Bash guard judges command lines: heredoc stripping, one-line push match, tests, rules row",
+      "status": "skipped",
+      "dependsOn": [],
+      "criteria": [
+        "C-1",
+        "C-2",
+        "C-3",
+        "C-4",
+        "C-5"
+      ],
+      "paths": [
+        "scripts/lib/guards/git-guard.mjs",
+        "profiles/default.json",
+        "tests/bash-prose.test.mjs",
+        "docs/rules.md"
+      ],
+      "attempts": 6,
+      "ui": false,
+      "tasks": [
+        "1.1",
+        "1.2",
+        "2.1",
+        "3.1"
+      ],
+      "diffHash": null,
+      "commit": null,
+      "origin": "plan"
+    }
+  ],
+  "review": {
+    "rounds": 2,
+    "roundsAuthorized": 3
+  },
+  "preflight": {
+    "diffHash": "9ec4e014648107b2",
+    "passed": true,
+    "at": "2026-10-16T15:57:30.707Z",
+    "durationMs": 76672,
+    "checks": [
+      {
+        "id": "branch",
+        "durationMs": 8,
+        "status": "pass",
+        "details": "goal/G-3"
+      },
+      {
+        "id": "diff_budget",
+        "durationMs": 27,
+        "status": "pass",
+        "details": "337 lines in 4 files"
+      },
+      {
+        "id": "bundle_size",
+        "durationMs": 0,
+        "status": "skip",
+        "details": "no budgets.bundleBytes set"
+      },
+      {
+        "id": "protected_paths",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "none touched"
+      },
+      {
+        "id": "slice_paths",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "4 files within declared paths"
+      },
+      {
+        "id": "openspec_validate",
+        "durationMs": 514,
+        "status": "pass",
+        "details": "Totals: 11 passed, 0 failed (11 items)"
+      },
+      {
+        "id": "tests_discriminate",
+        "durationMs": 36432,
+        "status": "pass",
+        "details": "1 changed test file(s) fail without the change:     diff: 'simple' |   }"
+      },
+      {
+        "id": "project:test",
+        "durationMs": 36280,
+        "status": "pass",
+        "details": "ℹ duration_ms 36141.788667"
+      },
+      {
+        "id": "project:check",
+        "durationMs": 3274,
+        "status": "pass",
+        "details": "Totals: 11 passed, 0 failed (11 items)"
+      },
+      {
+        "id": "language",
+        "durationMs": 4,
+        "status": "pass",
+        "details": "4 files English"
+      },
+      {
+        "id": "secrets",
+        "durationMs": 2,
+        "status": "pass",
+        "details": "no secrets in changed files"
+      },
+      {
+        "id": "prose",
+        "durationMs": 1,
+        "status": "pass",
+        "details": "prose clean"
+      },
+      {
+        "id": "test_weakening",
+        "durationMs": 40,
+        "status": "pass",
+        "details": "+0 -0 test blocks"
+      },
+      {
+        "id": "dependencies",
+        "durationMs": 0,
+        "status": "pass",
+        "details": "no dependency manifest changed"
+      }
+    ],
+    "guardBearing": true,
+    "guardFiles": [
+      "profiles/default.json",
+      "scripts/lib/guards/git-guard.mjs"
+    ]
+  },
+  "verdicts": {
+    "critic": "/Users/jmarron/Developer/personal/handoff-harness/.harness/verdicts/S-1-a6-r3-critic.json",
+    "review": "/Users/jmarron/Developer/personal/handoff-harness/.harness/verdicts/S-1-a4-r2-reviewer.json"
+  },
+  "guards": {
+    "blocks": 0,
+    "diffHashes": [
+      "7a524c31f13486ce",
+      "eec460a2f46b9025",
+      "4435d26627c3355d",
+      "228fa0c1f07b8418",
+      "9ec4e014648107b2",
+      "797223bdf8d85929"
+    ],
+    "continuations": 0
+  },
+  "counters": {
+    "toolCalls": {
+      "intake": 16,
+      "spec_review": 1,
+      "building": 110,
+      "preflight": 4,
+      "critic": 14,
+      "review": 2,
+      "awaiting_human": 3,
+      "record": 14,
+      "reconcile": 7,
+      "report": 1,
+      "done": 38
+    },
+    "browserActions": 0
+  },
+  "browser": {
+    "lastHost": null
+  },
+  "holds": [],
+  "defaults": [
+    {
+      "id": "D-1",
+      "question": "Which commands count as feeding a heredoc to a shell or interpreter?",
+      "chosen": "Anything that is not cat or tee with a redirect keeps its heredoc scanned; only the file-writing shape is stripped, so an unknown command fails safe.",
+      "appliedAt": "2026-10-15T19:19:06.986Z"
+    },
+    {
+      "id": "D-2",
+      "question": "Does a tee without a file argument count as writing to a file?",
+      "chosen": "No; tee must name a file, and cat must redirect to a file, otherwise the body stays in the text.",
+      "appliedAt": "2026-10-15T19:19:06.986Z"
+    },
+    {
+      "id": "D-4",
+      "question": "Does C-3 (the push deny pattern and the push rule match within one line) stay in the goal after six attempts?",
+      "chosen": "No. C-3 is cut; the push deny pattern and the push rule go back to the whole-text match, so a push followed by prose on a later line stays a known false positive. Each adversarial round found another shell mechanism carrying words across a newline into a push: open expansions and quotes (a4-r1), an unquoted heredoc rebuilt by xargs (a4-r2), git and push split across heredoc lines (a5), a global option value touching << (a6). The heredoc half (C-1, C-2) with tests (C-4) and the rules row (C-5) lands by hand on goal/G-3 as a pull request; the goal stays in awaiting_human.",
+      "appliedAt": "2026-10-16T18:05:07.271Z",
+      "slice": "S-1"
+    }
+  ],
+  "reconcile": {
+    "diffHash": "797223bdf8d85929",
+    "at": "2026-10-16T20:32:32.992Z",
+    "missing": 0,
+    "path": "/Users/jmarron/Developer/personal/handoff-harness/.harness/verdicts/reconcile.json"
+  },
+  "spec": {
+    "change": "g-3-the-bash-guard-judges-command-lines-not-prose-a",
+    "attempt": 1,
+    "verdict": "/Users/jmarron/Developer/personal/handoff-harness/.harness/verdicts/spec-a1-spec-reviewer.json",
+    "summary": "1 requirement(s), 8 scenario(s), 4 task(s), 5/5 criteria cited, validate pass",
+    "committed": "a23682c9a1d420a38d9ec087d7e757722ad26de6"
+  },
+  "transcriptPath": "/Users/jmarron/.claude/projects/-Users-jmarron-Developer-personal-handoff-harness/b7f64144-7a16-4e5b-8d9e-a38e6b5f5062.jsonl",
+  "pluginRoot": "/Users/jmarron/.claude/plugins/cache/marron-uno/handoff-harness/0.5.1",
+  "halt": {
+    "reason": "Slice S-1 failed 6 attempt(s) (critic_block), 3 since the last retry. A human decides: fix by hand, then `harness retry` continues the slice with 3 more attempts and the count kept; or skip it with `harness slice skip --reason \"...\"`.",
+    "at": "2026-10-16T16:05:45.409Z",
+    "code": "attempt_cap"
+  },
+  "updatedAt": "2026-10-16T21:56:23.280Z",
+  "reconcilePasses": 1
+}

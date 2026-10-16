@@ -1,0 +1,52 @@
+# Guard: HEAD vs working tree (state building, branch goal/G-3)
+A0 control: cat heredoc of prose (intended allow): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A1 unquoted delim, body line 'E\' then 'OF' (bash joins to EOF), reset after: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A2 same with <<- and tab-led lines: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A3 same, force push to main after the joined terminator: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A4 same, sensitive read after the joined terminator: HEAD DENY(sensitive) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A5 control: quoted delim with the same body (bash does not join): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A6 upper-case CAT (zsh/bash on darwin: command lookup is case-sensitive): HEAD DENY(git) | worktree DENY(git)
+A7 tee to /dev/stdout only: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A8 cat to a parent-directory path: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A9 cat writes a git hook (run later by git commit): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A10 cd - prefix: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+A11 fd copy after redirect, cat > notes.md >&3: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B1 push goal branch, $( on line 1, main on line 2: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B2 push goal branch, $( on line 1, --force on line 2: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B3 push goal branch, backtick on line 1, main on line 2: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B4 push goal branch, $(cat heredoc) with main in the body: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B5 push goal branch, open quote in an option, main on line 2: HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B6 control: one-line push to main with global options: HEAD DENY(git) | worktree DENY(git)
+B7 control: push then prose line (intended allow): HEAD DENY(git) | worktree allow  <-- REGRESSION (HEAD denies, worktree allows)
+B8 control: backslash-CRLF continuation to main: HEAD DENY(git) | worktree DENY(git)
+B9 pre-existing: one-line quoted main: HEAD allow | worktree allow
+B10 pre-existing: one-line $(echo main): HEAD allow | worktree allow
+
+# Dormant (stage done) on the multi-line push shapes
+B1 push goal branch, $( on line 1, main on line 2: HEAD DENY(git) | worktree allow
+B2 push goal branch, $( on line 1, --force on line 2: HEAD DENY(git) | worktree allow
+B3 push goal branch, backtick on line 1, main on line 2: HEAD DENY(git) | worktree allow
+B4 push goal branch, $(cat heredoc) with main in the body: HEAD DENY(git) | worktree allow
+B5 push goal branch, open quote in an option, main on line 2: HEAD DENY(git) | worktree allow
+
+# dropFileHeredocs output for A1
+"cat > notes.md <<EOF\nEOF"
+
+# Write tool to .git/hooks/pre-commit (content never judged, pre-existing path)
+allow
+
+# Real bash (GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26))
+A1-shape: stdout="RAN-AFTER-JOINED-TERMINATOR" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox/A1-shape.sh: line 5: EOF: command not fo"
+A2-shape: stdout="RAN-AFTER-JOINED-TERMINATOR-DASH" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox/A2-shape.sh: line 5: EOF: command not fo"
+A5-shape: stdout="" stderr=""
+B1-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[main]" stderr=""
+B4-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[main]" stderr=""
+B5-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[--push-option=a\nb]\ngit-arg[main]" stderr=""
+
+# Real zsh (zsh 5.9 (arm64-apple-darwin26.0))
+A1-shape: stdout="RAN-AFTER-JOINED-TERMINATOR" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox/A1-shape.sh:5: command not found: EOF"
+A2-shape: stdout="RAN-AFTER-JOINED-TERMINATOR-DASH" stderr="/Users/jmarron/Developer/personal/handoff-harness/.harness/evidence/S-1/sandbox/A2-shape.sh:5: command not found: EOF"
+A5-shape: stdout="" stderr=""
+B1-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[main]" stderr=""
+B4-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[main]" stderr=""
+B5-shape: stdout="git-arg[push]\ngit-arg[origin]\ngit-arg[goal/G-3]\ngit-arg[--push-option=a\nb]\ngit-arg[main]" stderr=""

@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 2,
+  "round": 1,
+  "diffHash": "17897f31e04c2995",
+  "verdict": "block",
+  "summary": "All five criteria are met on their own wording and the tests pass (npm test 116/116, npm run check 11/11, tests/bash-prose.test.mjs 9/9). The block is a guard regression: the run-later exemption in isRunLater is case-sensitive and only recognises a bare or ./-prefixed file name, so on this case-insensitive darwin filesystem a heredoc written to one spelling and run under another, or run by an absolute or parent path, is dropped from the judged text and a git reset --hard passes. That breaks the exception the docs/rules.md row promises, and the same command was denied before this change.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 52,
+      "issue": "isRunLater compares the written file name case-sensitively and only against bare or ./-prefixed paths, so a heredoc written as RUN.sh and run as run.sh, or run through an absolute or parent path, has its body dropped and a denied git reset --hard passes, contrary to the rules.md row's stated exception that a later-run file stays scanned.",
+      "suggestion": "Match the run-later name case-insensitively and accept any path whose final segment equals the written file name, or keep the body whenever the file's basename appears as an argument after a shell word in the tail.",
+      "authority": "rule:bash-guard-judges-command-lines",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "case-mismatch run later {\"deny\":false}  (probe: cat > RUN.sh <<'EOF' / git reset --hard / EOF / bash run.sh)"
+        },
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "absolute path run later {\"deny\":false}  (probe: cat > run.sh <<'EOF' / git reset --hard / EOF / bash /tmp/x/run.sh); parent path run later {\"deny\":false}  (bash ../run.sh); tee case-mismatch {\"deny\":false}  (tee run.sh <<'EOF' ... sh Run.sh)"
+        },
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "env wrapper run later {\"deny\":true,\"guard\":\"git\"}  (probe: cat > run.sh <<'EOF' / git reset --hard / EOF / env bash run.sh), the same shape denied when the spelling matches"
+        },
+        {
+          "type": "file",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "line": 78,
+          "quote": "if (isRunLater(file, [rest, ...lines.slice(end + 1)].join(\"\\n\"))) continue;"
+        },
+        {
+          "type": "file",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "line": 54,
+          "quote": "return new RegExp(`(?:^|[;&|(\\n][ \\t]*|\\b(?:sh|bash|zsh|dash|ksh|source|node|python[\\d.]*|ruby|perl|php|deno|bun|env|exec|sudo|xargs|eval|\\.)[ \\t]+(?:-\\S+[ \\t]+)*)[\"']?(?:\\./)?${f}\\b`).test(tail);"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a cat heredoc that only writes a file is prose, not a command line"
+        },
+        {
+          "type": "command",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "node --test tests/bash-prose.test.mjs: ℹ pass 9, ℹ fail 0"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a heredoc fed to a shell is still scanned in full; a heredoc fed to an interpreter is still scanned in full"
+        },
+        {
+          "type": "command",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "node --test tests/bash-prose.test.mjs: ℹ pass 9, ℹ fail 0"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "the push rule and the push deny pattern match within one line"
+        },
+        {
+          "type": "command",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "quote": "push then prose line {\"deny\":true,\"guard\":\"git\"}; push CRLF then push main {\"deny\":true,\"guard\":\"git\"}; push global opt main {\"deny\":true,\"guard\":\"git\"}; push double spaces main {\"deny\":true,\"guard\":\"git\"}"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "tests: a cat heredoc; a tee heredoc; a heredoc fed to a shell; a heredoc fed to an interpreter; the push rule within one line"
+        },
+        {
+          "type": "command",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "node --test tests/bash-prose.test.mjs: ℹ pass 9, ℹ fail 0"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "docs/rules.md",
+          "quote": "grep -n \"The Bash guard judges command lines, not prose\" docs/rules.md -> 14:| The Bash guard judges command lines, not prose: the body of a heredoc that `cat` (with a redirect) or `tee` (with a file) only writes to a file is left out ..."
+        },
+        {
+          "type": "file",
+          "path": "docs/rules.md",
+          "line": 14,
+          "quote": "| The Bash guard judges command lines, not prose: the body of a heredoc that `cat` (with a redirect) or `tee` (with a file) only writes to a file is left out ..."
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-15T19:27:27.413Z"
+}

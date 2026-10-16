@@ -1,0 +1,111 @@
+{
+  "goal": "G-3",
+  "at": "2026-10-16T21:20:16.963Z",
+  "transcriptPath": "/Users/jmarron/.claude/projects/-Users-jmarron-Developer-personal-handoff-harness/b7f64144-7a16-4e5b-8d9e-a38e6b5f5062.jsonl",
+  "totalUsd": 25.298247315000005,
+  "mainUsd": 14.523415499999997,
+  "subagentUsd": 10.774831815000004,
+  "byStage": {
+    "record": {
+      "calls": 14,
+      "input": 420,
+      "cacheWrite": 69963,
+      "cacheWrite1h": 68531,
+      "cacheRead": 1013294,
+      "output": 13979,
+      "usd": 4.657446
+    },
+    "reconcile": {
+      "calls": 11,
+      "input": 250,
+      "cacheWrite": 62181,
+      "cacheWrite1h": 18287,
+      "cacheRead": 1076073,
+      "output": 8889,
+      "usd": 2.853789
+    },
+    "report": {
+      "calls": 1,
+      "input": 32,
+      "cacheWrite": 469,
+      "cacheWrite1h": 469,
+      "cacheRead": 113598,
+      "output": 339,
+      "usd": 0.210372
+    },
+    "done": {
+      "calls": 24,
+      "input": 1002,
+      "cacheWrite": 300902,
+      "cacheWrite1h": 27587,
+      "cacheRead": 4286385,
+      "output": 19760,
+      "usd": 13.878873750000002
+    },
+    "spec_review": {
+      "calls": 2,
+      "input": 14,
+      "cacheWrite": 28635,
+      "cacheWrite1h": 0,
+      "cacheRead": 51406,
+      "output": 265,
+      "usd": 0.0794061
+    },
+    "critic": {
+      "calls": 14,
+      "input": 244,
+      "cacheWrite": 474592,
+      "cacheWrite1h": 0,
+      "cacheRead": 4403468,
+      "output": 13235,
+      "usd": 2.2528293649999998
+    },
+    "review": {
+      "calls": 3,
+      "input": 82,
+      "cacheWrite": 187950,
+      "cacheWrite1h": 0,
+      "cacheRead": 2086451,
+      "output": 2291,
+      "usd": 1.3655311
+    }
+  },
+  "byModel": {
+    "claude-fable-5-1": {
+      "calls": 48,
+      "input": 1684,
+      "cacheWrite": 389621,
+      "cacheWrite1h": 114874,
+      "cacheRead": 6356165,
+      "output": 42504,
+      "usd": 21.34503375
+    },
+    "claude-sonnet-5-5": {
+      "calls": 3,
+      "input": 22,
+      "cacheWrite": 40167,
+      "cacheWrite1h": 0,
+      "cacheRead": 87317,
+      "output": 787,
+      "usd": 0.11706319999999999
+    },
+    "claude-haiku-5-5": {
+      "calls": 9,
+      "input": 114,
+      "cacheWrite": 196501,
+      "cacheWrite1h": 0,
+      "cacheRead": 1501562,
+      "output": 9303,
+      "usd": 0.20283316499999998
+    },
+    "claude-opus-5-5": {
+      "calls": 9,
+      "input": 224,
+      "cacheWrite": 498403,
+      "cacheWrite1h": 0,
+      "cacheRead": 5085631,
+      "output": 6164,
+      "usd": 3.6333171999999996
+    }
+  }
+}

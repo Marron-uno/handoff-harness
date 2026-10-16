@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "agent": "critic",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 4,
+  "round": 2,
+  "diffHash": "eec460a2f46b9025",
+  "verdict": "pass",
+  "summary": "All five criteria are met. npm test passes 121 of 121 (tests/bash-prose.test.mjs runs 14 of them, all passing when run alone), npm run check passes 11 of 11, and the probes match the tests: file-writing heredoc prose passes, heredocs fed to a shell or interpreter stay scanned, a push followed by prose on the next line passes, and a push whose arguments continue across a backslash-newline or an open construct is denied. Two note-level observations: a file-writing heredoc body is not judged even when its target is a shell startup file, which is the reading C-1 states, and the current guard also allows the same payload written with echo, so this slice adds no new route for that payload; and a push line with a parenthesis joins following prose lines into the push, which over-blocks in the fail-safe direction.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "note",
+      "issue": "The body of a cat or tee heredoc whose target is a shell startup file is not judged, so a denied command written there as prose passes the guard, as C-1 states.",
+      "authority": "criterion:C-1",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "suggestion": "No change required by this slice; a later slice could also judge bodies whose target is a shell startup file or a hook path.",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1.mjs",
+          "quote": "p3 {\"deny\":false}"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1b.mjs",
+          "quote": "q1 {\"deny\":false}"
+        }
+      ]
+    },
+    {
+      "id": "F-2",
+      "severity": "note",
+      "issue": "A push line with a parenthesis or other open-construct character joins every following line into the push, so prose on a later line is denied as push arguments; the over-block is in the fail-safe direction.",
+      "authority": "criterion:C-3",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "suggestion": "Optional: stop the join at a comment marker on the push line.",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1.mjs",
+          "quote": "p9 {\"deny\":true,\"guard\":\"git\"}"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1.mjs",
+          "quote": "p7 {\"deny\":false}"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a cat heredoc that only writes a file is prose, not a command line"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1.mjs",
+          "quote": "p10 {\"deny\":true,\"guard\":\"shell\"}"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a heredoc fed to an interpreter is still scanned in full"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic/probe-s1.mjs",
+          "quote": "p8 {\"deny\":false}"
+        },
+        {
+          "type": "diff",
+          "path": "profiles/default.json",
+          "quote": "git[ \\\\t]+push"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "the push rule and the push deny pattern match within one line"
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a tee heredoc that names a file is prose, not a command line"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "a heredoc fed to a shell is still scanned in full"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "quote": "git push origin goal/G-3\", \"fix: keep the guard honest\""
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "file",
+          "path": "docs/rules.md",
+          "quote": "The Bash guard judges command lines, not prose"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-16T15:22:12.813Z"
+}

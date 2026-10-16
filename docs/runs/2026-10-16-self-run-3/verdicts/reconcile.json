@@ -1,0 +1,56 @@
+{
+  "goal": "G-3",
+  "diffHash": "797223bdf8d85929",
+  "at": "2026-10-16T20:40:00.000Z",
+  "items": [
+    {
+      "id": "I-1",
+      "status": "done",
+      "bucket": "model",
+      "evidence": [
+        { "type": "file", "path": "scripts/lib/guards/git-guard.mjs", "quote": "file-writing cat/tee heredoc body is dropped before the deny patterns, the push rule and the sensitive-path scan" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a cat heredoc that only writes a file is prose, not a command line" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a heredoc fed to a shell is still scanned in full" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a heredoc fed to an interpreter is still scanned in full" },
+        { "type": "command", "quote": "node --test tests/bash-prose.test.mjs: 17 pass, 0 fail on tree 797223bdf8d85929 (HEAD ecbd07a)" }
+      ],
+      "note": "Verified on the current tree, not on the stale S-1-a4 critic verdicts. C-1 and C-2 hold: the tests for cat and tee heredocs pass, and so do the tests for heredocs fed to bash/sh/zsh/node/python and other commands. Merged to main as PR 7."
+    },
+    {
+      "id": "I-2",
+      "status": "out_of_scope",
+      "bucket": "model",
+      "evidence": [
+        { "type": "file", "path": "scripts/lib/guards/git-guard.mjs", "quote": "text.matchAll(/git\\s+push\\b([^|;&]*)/g)" },
+        { "type": "file", "path": "profiles/default.json", "quote": "git\\\\s+push\\\\b[^|;&]*(--force|..." },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "the push rule reads the whole text, so a push followed by prose on a later line is still one push" },
+        { "type": "file", "path": "openspec/changes/g-3-the-bash-guard-judges-command-lines-not-prose-a/proposal.md", "quote": "A human cut it on 2026-10-16 (decision D-4)" },
+        { "type": "file", "path": ".harness/state.json", "quote": "D-4: C-3 is cut; the push deny pattern and the push rule go back to the whole-text match" }
+      ],
+      "note": "C-3 is not implemented in the tree. The push rule and the profile deny pattern both match across newlines with [^|;&]*, and the last test asserts that behavior on purpose. The deterministic 'done' is wrong: it rests on S-1 attempt-4 critic passes, the reviewer blocked those diffs, and they are not in the tree. A human cut C-3 from the goal on 2026-10-16 (decision D-4; the proposal's Out of scope section; tasks.md task 1.2 is struck out), so it is out of scope here, not missing. A later change may take it up with a shell parser."
+    },
+    {
+      "id": "I-3",
+      "status": "done",
+      "bucket": "model",
+      "evidence": [
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a cat heredoc that only writes a file is prose, not a command line" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a tee heredoc that names a file is prose, not a command line" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a heredoc fed to a shell is still scanned in full" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "a heredoc fed to an interpreter is still scanned in full" },
+        { "type": "file", "path": "tests/bash-prose.test.mjs", "quote": "the push rule reads the whole text, so a push followed by prose on a later line is still one push" }
+      ],
+      "note": "Each of the five cases C-4 lists has a test, and all of them pass. The fifth case (a push followed by prose on another line) asserts deny: true, the whole-text behavior that D-4 kept, not the one-line behavior C-3 asked for. C-4 asks for a test that covers the case and says nothing about the expected outcome, so this counts. The fifth case's original intent belongs to the cut C-3 (I-2)."
+    },
+    {
+      "id": "I-4",
+      "status": "done",
+      "bucket": "model",
+      "evidence": [
+        { "type": "file", "path": "docs/rules.md", "quote": "| The Bash guard judges command lines, not prose: ... | PreToolUse git guard | A note that mentioned a forced push or a secrets path was denied as if it were run, and this goal's own intake could not write its change files through a heredoc |" }
+      ],
+      "note": "docs/rules.md line 14 has the row, with the motivating failure in the last column. The row also records that the one-line push match was cut."
+    }
+  ],
+  "newSlices": []
+}

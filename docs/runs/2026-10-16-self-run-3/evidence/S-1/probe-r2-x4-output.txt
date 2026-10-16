@@ -1,0 +1,16 @@
+building X4a main: HEAD DENY(git) | worktree allow  <-- REGRESSION
+building X4b force: HEAD DENY(git) | worktree allow  <-- REGRESSION
+building X4c HEAD:main: HEAD DENY(git) | worktree allow  <-- REGRESSION
+building X4d bare-remote: HEAD DENY(git) | worktree DENY(git)
+done X4a main: HEAD DENY(git) | worktree allow  <-- REGRESSION
+done X4b force: HEAD DENY(git) | worktree allow  <-- REGRESSION
+done X4c HEAD:main: HEAD DENY(git) | worktree allow  <-- REGRESSION
+done X4d bare-remote: HEAD DENY(git) | worktree allow  <-- REGRESSION
+real /bin/bash X4a main: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]"
+real /bin/bash X4b force: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[--force]"
+real /bin/bash X4c HEAD:main: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[HEAD:main]"
+real /bin/bash X4d bare-remote: stdout="git-arg[push] git-arg[origin] git-arg[main]"
+real /bin/zsh X4a main: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[main]"
+real /bin/zsh X4b force: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[--force]"
+real /bin/zsh X4c HEAD:main: stdout="git-arg[push] git-arg[origin] git-arg[goal/G-3] git-arg[HEAD:main]"
+real /bin/zsh X4d bare-remote: stdout="git-arg[push] git-arg[origin] git-arg[main]"

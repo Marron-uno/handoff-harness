@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "agent": "critic-strong",
+  "goal": "G-3",
+  "slice": "S-1",
+  "attempt": 4,
+  "round": 3,
+  "diffHash": "4435d26627c3355d",
+  "verdict": "block",
+  "summary": "Block. npm test passes 122 of 122, npm run check passes 11 of 11, and tests/bash-prose.test.mjs passes 15 of 15. Every bypass named from a1 through a4-r2 is now denied: the CR terminator, the xargs heredoc push and the open-construct push. C-2 through C-5 are met. The loop keeps repeating one pattern. The cheaper critic passed twice (a4-r1, a4-r2) without testing how the shell itself reads the text. The strong reviewer then found a place where the guard and the shell disagree about where a heredoc ends, and the builder patched only that one spelling. This round finds the next such disagreement, in the delimiter. dropFileHeredocs line 84 builds the delimiter by deleting every quote and backslash (`word.replace(/[\"'\\\\]/g, \"\")`). The shell instead removes quotes: a backslash inside single quotes stays, and a quote character inside the other kind of quotes stays. So `<<'E\\OF'`, `<<\"E'OF\"`, `<<'E\"OF'`, `<<\"E\\\\OF\"`, `<<\\'EOF` and `<<E\\\\OF` all end the heredoc for the shell at a body line the guard keeps reading as body. The guard drops the next line, so a reset, a force push to main, a secrets read or rm -rf / that follows is allowed. HEAD denied each of these. I confirmed with echo stand-ins that both real /bin/bash 3.2.57 and /bin/zsh 5.9 run that line, whether the text is run as a file or through eval. This breaks C-1, which drops only the body. It is the a3 F-2 class (partly quoted delimiter) again: the fix handled `E'OF'` and `\"E\"OF` but not a quote or backslash that sits inside quotes. The earlier findings were correct and none is disputed. The a4-r2 reviewer's notes (a hook or startup-file target, and the pre-existing global-option gaps) still stand. To stop the loop, the fix should accept only delimiters whose quote removal is trivially exact and keep the text whole for any other delimiter. Another hand-written emulation of quote removal would just give the next round a new spelling to find. The criteria are sound and no human hold is needed.",
+  "findings": [
+    {
+      "id": "F-1",
+      "severity": "block",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 84,
+      "issue": "dropFileHeredocs builds the delimiter by deleting every quote and backslash, so the guard reads a delimiter the shell reads with a quote or backslash inside it (`<<'E\\OF'`, `<<\"E'OF\"`, `<<'E\"OF'`, `<<\"E\\\\OF\"`, `<<\\'EOF`, `<<E\\\\OF`) as `EOF`; the shell ends the heredoc at an earlier body line, and the guard then drops the next command line as body, allowing a reset, force push to main, secrets read or rm -rf / that HEAD denied and that bash and zsh both run.",
+      "suggestion": "Fail safe on the delimiter instead of emulating quote removal: accept the word only when it is a sequence of plain parts, each one `[\\w.-]+`, `'[\\w.-]*'`, `\"[\\w.-]*\"` or `\\\\[\\w.-]`. For such a word, deleting the quotes is exact. Otherwise return the text whole. Add D1 through D7 from /tmp/s1-critic-r3/probe.mjs to tests/bash-prose.test.mjs as denied cases. The existing `<<E'OF'` and `<<\\\\EOF` allow cases still pass under this rule.",
+      "authority": "criterion:C-1",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic-r3/probe-output.txt",
+          "line": 1,
+          "quote": "D1 <<'E\\OF', body line E\\OF, then reset: HEAD DENY(git) | worktree allow  <-- REGRESSION; D2 <<\"E'OF\" ... then reset: HEAD DENY(git) | worktree allow; D3 <<'E\"OF' ... then force push main: HEAD DENY(git) | worktree allow; D4 <<\"E\\\\OF\" ... then secrets read: HEAD DENY(sensitive) | worktree allow; D5 <<\\'EOF ... then rm -rf /: HEAD DENY(shell) | worktree allow; D6 tee: HEAD DENY(git) | worktree allow; D7 <<E\\\\OF: HEAD DENY(git) | worktree allow; D8 stage done, push main: HEAD DENY(git) | worktree allow"
+        },
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic-r3/shell-output.txt",
+          "line": 1,
+          "quote": "/bin/bash D1: file stdout=\"RAN-AFTER-D1\" eval stdout=\"RAN-AFTER-D1\" ... /bin/bash D7: stdout=\"RAN-AFTER-D7\"; /bin/zsh D1-D7 identical; ctl (plain quoted heredoc): stdout=\"\""
+        },
+        {
+          "type": "file",
+          "path": "scripts/lib/guards/git-guard.mjs",
+          "line": 84,
+          "quote": "const delim = word.replace(/[\"'\\\\]/g, \"\");"
+        }
+      ]
+    },
+    {
+      "id": "F-2",
+      "severity": "minor",
+      "file": "scripts/lib/guards/git-guard.mjs",
+      "line": 31,
+      "issue": "GLOBAL_OPTIONS takes `-c\\s+\\S+`, so a quoted -c value with a space or newline (`git -c \"core.x=a b\" push origin main`, or the value closed on the next line) leaves a stray quote between git and push, and neither the deny pattern nor the push rule sees the push; HEAD allows it too.",
+      "suggestion": "A separate goal, together with the a4-r2 reviewer's F-4: treat any quote between `git` and the subcommand as unknown and deny the push.",
+      "authority": "spec:openspec/specs/guards/spec.md#no-history-rewrites-and-no-bulk-staging",
+      "preExisting": true,
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic-r3/probe-output.txt",
+          "line": 11,
+          "quote": "G1 pre-existing: -c quoted value spanning a newline, push main: HEAD allow | worktree allow; G2 pre-existing: -c quoted value with a space, push main: HEAD allow | worktree allow"
+        }
+      ]
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C-1",
+      "status": "unmet",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic-r3/probe-output.txt",
+          "line": 9,
+          "quote": "ctl quoted prose heredoc (intended allow): HEAD DENY(git) | worktree allow; but D1-D8 (lines 1-8): a command line after the shell's terminator is left out of the judged text and runs in real bash and zsh (F-1)"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "line": 19,
+          "quote": "a cat heredoc that only writes a file is prose, not a command line (passes; no case puts a quote or backslash inside a quoted delimiter)"
+        }
+      ]
+    },
+    {
+      "id": "C-2",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-critic-r3/bash-prose-test.txt",
+          "quote": "✔ a heredoc fed to a shell is still scanned in full; ✔ a heredoc fed to an interpreter is still scanned in full; ✔ a heredoc that reaches a shell by another route is still scanned; ℹ tests 15 ℹ pass 15 ℹ fail 0"
+        },
+        {
+          "type": "test",
+          "path": "tests/bash-prose.test.mjs",
+          "line": 278,
+          "quote": "for (const head of [\"node\", \"node -\", \"python3\", \"python3 -\", \"ruby\", \"perl\", \"osascript -l JavaScript\", \"some-unknown-tool\"])"
+        }
+      ]
+    },
+    {
+      "id": "C-3",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-critic-r3/bash-prose-test.txt",
+          "quote": "✔ the push rule and the push deny pattern match within one line"
+        },
+        {
+          "type": "diff",
+          "path": "profiles/default.json",
+          "line": 63,
+          "quote": "git[ \\\\t]+push\\\\b[^|;&\\\\n]*(--force|-f\\\\b|..."
+        }
+      ]
+    },
+    {
+      "id": "C-4",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "test",
+          "path": "/tmp/s1-critic-r3/bash-prose-test.txt",
+          "quote": "✔ a cat heredoc that only writes a file is prose, not a command line; ✔ a tee heredoc that names a file is prose, not a command line; ✔ a heredoc fed to a shell is still scanned in full; ✔ a heredoc fed to an interpreter is still scanned in full; ✔ the push rule and the push deny pattern match within one line"
+        },
+        {
+          "type": "command",
+          "path": "package.json",
+          "quote": "npm test: ℹ tests 122 ℹ pass 122 ℹ fail 0; npm run check: Totals: 11 passed, 0 failed (11 items)"
+        }
+      ]
+    },
+    {
+      "id": "C-5",
+      "status": "met",
+      "evidence": [
+        {
+          "type": "command",
+          "path": "/tmp/s1-critic-r3/rules-grep.txt",
+          "quote": "14:| The Bash guard judges command lines, not prose: the body of a heredoc that `cat` (with a stdout redirect) or `tee` (with a file argument) only writes to a"
+        },
+        {
+          "type": "file",
+          "path": "docs/rules.md",
+          "line": 14,
+          "quote": "A note that mentioned a forced push or a secrets path was denied as if it were run, and this goal's own intake could not write its change files through a heredoc"
+        }
+      ]
+    }
+  ],
+  "writtenAt": "2026-10-16T15:37:29.630Z"
+}

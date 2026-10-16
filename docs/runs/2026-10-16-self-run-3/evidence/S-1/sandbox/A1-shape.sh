@@ -1,0 +1,5 @@
+cat > notes.md <<EOF
+E\
+OF
+echo RAN-AFTER-JOINED-TERMINATOR
+EOF

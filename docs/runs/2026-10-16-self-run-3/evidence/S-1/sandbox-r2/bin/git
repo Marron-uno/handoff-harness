@@ -1,0 +1,2 @@
+#!/bin/sh
+for a in "$@"; do printf 'git-arg[%s] ' "$a"; done; echo

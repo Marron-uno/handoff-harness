@@ -1,0 +1,55 @@
+{
+  "goal": "G-3",
+  "slices": [
+    {
+      "id": "S-1",
+      "title": "Bash guard judges command lines: heredoc stripping, one-line push match, tests, rules row",
+      "dependsOn": [],
+      "criteria": [
+        "C-1",
+        "C-2",
+        "C-3",
+        "C-4",
+        "C-5"
+      ],
+      "paths": [
+        "scripts/lib/guards/git-guard.mjs",
+        "profiles/default.json",
+        "tests/bash-prose.test.mjs",
+        "docs/rules.md"
+      ],
+      "ui": false,
+      "tasks": [
+        "1.1",
+        "1.2",
+        "2.1",
+        "3.1"
+      ],
+      "estimate": {
+        "usd": 2,
+        "minutes": 15
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "D-1",
+      "question": "Which commands count as feeding a heredoc to a shell or interpreter?",
+      "kind": "default",
+      "chosen": "Anything that is not cat or tee with a redirect keeps its heredoc scanned; only the file-writing shape is stripped, so an unknown command fails safe."
+    },
+    {
+      "id": "D-2",
+      "question": "Does a tee without a file argument count as writing to a file?",
+      "kind": "default",
+      "chosen": "No; tee must name a file, and cat must redirect to a file, otherwise the body stays in the text."
+    },
+    {
+      "id": "D-4",
+      "question": "Does C-3 (the push deny pattern and the push rule match within one line) stay in the goal after six attempts?",
+      "kind": "default",
+      "chosen": "No. C-3 is cut; the push deny pattern and the push rule go back to the whole-text match, so a push followed by prose on a later line stays a known false positive. Each adversarial round found another shell mechanism carrying words across a newline into a push: open expansions and quotes (a4-r1), an unquoted heredoc rebuilt by xargs (a4-r2), git and push split across heredoc lines (a5), a global option value touching << (a6). The heredoc half (C-1, C-2) with tests (C-4) and the rules row (C-5) lands by hand on goal/G-3 as a pull request; the goal stays in awaiting_human.",
+      "slice": "S-1"
+    }
+  ]
+}
