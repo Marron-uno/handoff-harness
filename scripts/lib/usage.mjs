@@ -61,10 +61,17 @@ function add(bucket, row, pricing) {
 // Stage windows come from `stage` events; a row belongs to the stage active at its timestamp.
 // Subagent rows arrive pre-summarized (one per usage event) with their stage already set.
 export function attributeByStage(cwd, state, profile, { transcriptPath = state.transcriptPath, agentRows = [] } = {}) {
-  const stages = readEvents(cwd, (e) => e.type === "stage").map((e) => ({ at: Date.parse(e.ts), stage: e.to }));
-  const goalStart = readEvents(cwd, (e) => e.type === "goal" && e.action === "new" && e.id === state.goal.id)[0];
-  const since = goalStart ? Date.parse(goalStart.ts) : 0;
-  const rows = readTranscriptUsage(transcriptPath).filter((r) => r.ts === null || r.ts >= since);
+  const log = readEvents(cwd);
+  const stages = log.filter((e) => e.type === "stage").map((e) => ({ at: Date.parse(e.ts), stage: e.to }));
+  // Rows count between the goal's creation and its completion: what a session does in the dormant
+  // project after `done` is not the goal's cost (self-run 3's retro, R-2). The done event carries
+  // no goal id, so the first one after this goal's new event is its own.
+  const start = log.findIndex((e) => e.type === "goal" && e.action === "new" && e.id === state.goal.id);
+  const since = start >= 0 ? Date.parse(log[start].ts) : 0;
+  const done = start >= 0 ? log.slice(start + 1).find((e) => e.type === "goal" && e.action === "done") : null;
+  const until = done ? Date.parse(done.ts) : Infinity;
+  const inGoal = (r) => r.ts === null || r.ts === undefined || (r.ts >= since && r.ts <= until);
+  const rows = readTranscriptUsage(transcriptPath).filter(inGoal);
   const byStage = {};
   const byModel = {};
   const byScope = { main: emptyBucket(), subagent: emptyBucket() };
@@ -73,7 +80,7 @@ export function attributeByStage(cwd, state, profile, { transcriptPath = state.t
     for (const s of stages) { if (ts === null || s.at <= ts) current = s.stage; else break; }
     return current;
   };
-  for (const row of [...rows.map((r) => ({ ...r, stage: stageAt(r.ts), scope: "main" })), ...agentRows.map((r) => ({ ...r, scope: "subagent" }))]) {
+  for (const row of [...rows.map((r) => ({ ...r, stage: stageAt(r.ts), scope: "main" })), ...agentRows.filter(inGoal).map((r) => ({ ...r, scope: "subagent" }))]) {
     byStage[row.stage] ??= emptyBucket();
     byModel[row.model] ??= emptyBucket();
     add(byStage[row.stage], row, profile.pricing);
@@ -102,7 +109,9 @@ export function usageDelta(total, previous) {
   return delta;
 }
 
-// Usage events as rows for attribution; every event is already a delta, so they add up.
+// Usage events as rows for attribution; every event is already a delta, so they add up. Each row
+// carries the event's time, so a judge that ran for an earlier goal, or after this one was done,
+// stays out of the bill.
 export function subagentUsageRows(cwd) {
-  return readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent").map((e) => ({ stage: e.stage, agent: e.agent, model: e.model, input: e.input ?? 0, cacheWrite: e.cacheWrite ?? 0, cacheWrite1h: e.cacheWrite1h ?? 0, cacheRead: e.cacheRead ?? 0, output: e.output ?? 0 }));
+  return readEvents(cwd, (e) => e.type === "usage" && e.scope === "subagent").map((e) => ({ stage: e.stage, agent: e.agent, model: e.model, input: e.input ?? 0, cacheWrite: e.cacheWrite ?? 0, cacheWrite1h: e.cacheWrite1h ?? 0, cacheRead: e.cacheRead ?? 0, output: e.output ?? 0, ts: typeof e.ts === "string" ? Date.parse(e.ts) : typeof e.ts === "number" ? e.ts : null }));
 }

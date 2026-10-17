@@ -5,6 +5,7 @@ import { harnessPaths, pluginRoot } from "./paths.mjs";
 import { git, workHash } from "./git.mjs";
 import { validate } from "./schema.mjs";
 import { appendEvent } from "./events.mjs";
+import { recordedCriteria } from "./criteria.mjs";
 
 const SKIP_DIRS = new Set([".git", "node_modules", ".harness", "dist", "build", ".next", "coverage"]);
 
@@ -28,15 +29,10 @@ export function prepareReconcile(cwd, state) {
   const files = walk(cwd);
   const contents = new Map(files.map((f) => [f, (() => { try { return readFileSync(join(cwd, f), "utf8"); } catch { return ""; } })()]));
   const log = git(cwd, ["log", "--pretty=%s%n%b", "-n", "500"]).out;
-  const met = new Set();
-  if (existsSync(p.verdicts)) {
-    for (const name of readdirSync(p.verdicts)) {
-      if (!name.endsWith(".json") || name.startsWith("reconcile") || name.startsWith("spec-")) continue;
-      const v = readJson(join(p.verdicts, name), null);
-      // Criterion ids repeat across goals, so only this goal's verdicts count.
-      if (v?.goal === state.goal.id && v?.verdict === "pass") for (const c of v.criteria ?? []) if (c.status === "met") met.add(c.id);
-    }
-  }
+  // A criterion is met when the recorded attempt of an unskipped slice of this goal says so; a pass
+  // from an attempt the human retried past, from a skipped slice or from another goal does not
+  // count (scripts/lib/criteria.mjs).
+  const met = new Set([...recordedCriteria(cwd, state)].filter(([, status]) => status === "met").map(([id]) => id));
   const items = inventory.items.map((item) => {
     const ids = [item.id, ...item.criteria.map((c) => c.id)];
     const evidence = [];

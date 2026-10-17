@@ -226,4 +226,5 @@ test("a goal runs intake → approval → two slices → reconcile → report �
   const g2 = runCli(dir, ["goal", "new", "--sentence", "Add tag filtering", "--mode", "feature"]);
   assert.equal(g2.json.goal.id, "G-2");
   assert.equal(g2.json.branch, "goal/G-2");
+  assert.ok(existsSync(join(dir, ".harness/runs/G-1/events.jsonl")), "the first goal's log is kept apart from the second's");
 });

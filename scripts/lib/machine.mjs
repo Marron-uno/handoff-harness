@@ -495,7 +495,7 @@ export function briefFor(cwd, state, profile) {
     case "preflight": return renderBrief("preflight", vars);
     case "critic": return renderBrief("critic", { ...vars, agent: pickAgent(state, profile, "critic"), verdictPath: verdictPath(cwd, state, "critic") });
     case "review": return renderBrief(reviewBriefName(state), { ...vars, agent: pickAgent(state, profile, "review"), verdictPath: verdictPath(cwd, state, "review", state.review.rounds + 1) });
-    case "record": return renderBrief("record", vars);
+    case "record": return renderBrief(state.slice ? "record" : "record-advance", vars);
     case "reconcile": return renderBrief("reconcile", vars);
     case "report": return renderBrief("report", vars);
     default: return `Stage ${state.stage}: ${state.halt?.reason ?? "nothing to do"}`;

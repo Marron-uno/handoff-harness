@@ -1,9 +1,10 @@
-import { existsSync, readdirSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { existsSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 import { readJson } from "./io.mjs";
 import { harnessPaths } from "./paths.mjs";
 import { readEvents } from "./events.mjs";
 import { taskStatus } from "./openspec.mjs";
+import { recordedCriteria } from "./criteria.mjs";
 
 export function renderReport(cwd, state) {
   const p = harnessPaths(cwd);
@@ -24,14 +25,9 @@ export function renderReport(cwd, state) {
     lines.push(`Archive by hand when the branch merges: \`openspec archive ${state.spec.change} --yes\`.`, "");
   }
 
-  // Criteria from this goal's slice verdicts only, with the recorded attempt winning: a later attempt
-  // over an earlier one, a later round over an earlier one, the reviewer over the critic. A verdict
-  // left by a previous goal or by a pre-retry attempt no longer sets a criterion's status.
-  const rank = (v) => [v.attempt ?? 0, v.round ?? 0, /reviewer/.test(v.agent ?? "") ? 1 : 0];
-  const verdicts = existsSync(p.verdicts) ? readdirSync(p.verdicts).filter((n) => n.endsWith(".json")).map((n) => readJson(join(p.verdicts, n), null)).filter((v) => v && v.goal === state.goal.id && v.slice) : [];
-  verdicts.sort((a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i]; return 0; });
-  const criteria = new Map();
-  for (const v of verdicts) for (const c of v.criteria ?? []) criteria.set(c.id, c.status);
+  // Criteria from the recorded attempt of this goal's unskipped slices, the reviewer winning over
+  // the critic; a skipped slice's criteria read `skipped` (scripts/lib/criteria.mjs).
+  const criteria = recordedCriteria(cwd, state);
   if (criteria.size) {
     lines.push("## Criteria", "", "| Criterion | Status |", "|---|---|");
     for (const [id, status] of [...criteria.entries()].sort()) lines.push(`| ${id} | ${status} |`);

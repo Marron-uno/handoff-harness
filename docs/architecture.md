@@ -2,7 +2,7 @@
 
 ## One run, one state file
 
-`.harness/state.json` is the single source of truth for a goal. It is written only by `scripts/cli.mjs` and by the hooks; the model never edits it. Its schema is `schemas/state.schema.json`, and every write validates against it. `.harness/events.jsonl` is the append-only log that every report, lesson and cost table is rendered from.
+`.harness/state.json` is the single source of truth for a goal. It is written only by `scripts/cli.mjs` and by the hooks; the model never edits it. Its schema is `schemas/state.schema.json`, and every write validates against it. `.harness/events.jsonl` is the append-only log of the current goal that every report, lesson and cost table is rendered from; `goal new` moves the previous goal's log, cost summary and intake artifacts under `.harness/runs/<goal id>/`.
 
 ```
 goal new ─▶ intake ─▶ [spec_review] ─▶ awaiting_approval ─▶ planning ─▶ building ─▶ preflight ─▶ critic ─▶ review ─▶ record ─┐
@@ -104,6 +104,7 @@ The path guard denies writes under the enforcing plugin root, so a goal on the h
   evidence/<slice>/    screenshots, gifs
   reconcile-input.json deterministic evidence per item, Jev buckets
   usage.json           cost per stage
+  runs/<goal id>/      the previous goals' logs, cost summaries and intake artifacts (ignored)
   report.md            final report; copied to reports/<goal>.md (committed)
   lessons.md           cited lessons (committed)
   jev.jsonl            every Jev answer, for calibration
