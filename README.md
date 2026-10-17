@@ -56,6 +56,8 @@ Three recorded runs on the fixture, a small notes app with a deliberately incomp
 | Stop-hook blocks | 24 | 0 | 0 |
 | Invalid verdict writes | 0 | 5 of 14 | 2 of 7 |
 
+The two self-runs, the harness building a change on its own checkout under a frozen copy of itself, are recorded the same way: [self-run 1](docs/runs/2026-10-14-self-run-1/README.md) landed a feature in one slice, 4.4 minutes and $0.77 with every verdict a pass; [self-run 3](docs/runs/2026-10-16-self-run-3/README.md) hit the attempt cap on a guard-bearing slice after 6 attempts and $22.70 of headless sessions, and was closed by a human decision that cut one criterion.
+
 Each run produced ranked findings, and most of them became fixes before the next run. One example of the loop working: run 2's reviewer passed the UI slice and still wrote this finding on it.
 
 > The module-level store is an empty array with no write path, so the count is always 0 and the fetch-driven update is never exercised with N > 0.
@@ -133,11 +135,11 @@ Whether a change helped is measured in three tiers, written up in [docs/evals.md
 
 ## Headless runs
 
-Claude Code stops a session after eight consecutive Stop-hook continuations. `node scripts/drive.mjs --cwd <project>` loops headless sessions until the run rests, records each session's cost, and refreshes the report with it. All three recorded runs used it.
+Claude Code stops a session after eight consecutive Stop-hook continuations. `node scripts/drive.mjs --cwd <project>` loops headless sessions until the run rests, records each session's cost, and refreshes the report with it. The recorded runs used it.
 
 ## Tests
 
-`npm test` runs 107 tests in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
+`npm test` runs the suite in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 
@@ -159,6 +161,6 @@ evals/            plugin eval cases; bench results land here, ignored by git
 
 ## Status
 
-Version 0.5.0. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. [Pull request 3](https://github.com/Marron-uno/handoff-harness/pull/3) closes the fifteen field issues from the first real-project run (`docs/field-issues.md`) and adds the adversarial review of guard-bearing slices, after an independent review of those fixes found three guard escapes the author's own review had missed. The harness carries its own `openspec/`: baseline specs derived from the rule catalog, with its first five changes archived into them under `openspec/changes/archive/`. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, git-side hooks for commit messages, and a self-run on a change that touches a guard. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. [Pull request 3](https://github.com/Marron-uno/handoff-harness/pull/3) closes the fifteen field issues from the first real-project run (`docs/field-issues.md`) and adds the adversarial review of guard-bearing slices, after an independent review of those fixes found three guard escapes the author's own review had missed. The harness carries its own `openspec/`: baseline specs derived from the rule catalog, with every change so far archived into them under `openspec/changes/archive/`. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, and git-side hooks for commit messages. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.
