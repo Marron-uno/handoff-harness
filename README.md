@@ -8,34 +8,9 @@ A Claude Code plugin that takes a handoff, anything from a full design package t
 
 Contents: [Install](#install), [The idea](#the-idea), [What a run looks like](#what-a-run-looks-like), [What it has done so far](#what-it-has-done-so-far), [Four rules](#four-rules), [Using it on your project](#using-it-on-your-project), [The guards](#the-guards), [The review loop](#the-review-loop), [The spec stage](#the-spec-stage), [Cost](#cost), [Jev](#jev-optional), [Retro and evals](#retro-and-evals), [Headless runs](#headless-runs), [Tests](#tests), [Layout](#layout), [Status](#status).
 
-The goal card from [run 2](docs/runs/2026-10-14-fixture-run-2/README.md), as intake printed it before the run was approved:
+![The harness CLI on a copy of the fixture: goal new, the goal card recorded in run 2, approval, and the first build brief. No model runs during the recording; the three intake files are copied from docs/runs/2026-10-14-fixture-run-2.](docs/demo/goal-card.gif)
 
-```
-# Goal card G-1
-
-**Goal:** "build all of the handoff"
-**Sources:** handoff/HANDOFF.md
-**Change:** openspec/changes/lantern-v0-2 (amended: added the page-count requirement and criterion citations)
-
-## Scope
-- 5 inventory items (I-1..I-5), 7 criteria (C-1..C-7)
-- In scope: 4 items, 5 criteria (C-3..C-7). I-1 (C-1, C-2) is out of scope: already implemented and covered by the existing `notes` spec.
-- UI items: 1 (I-5)
-
-## Slices
-- S-1 Listing: newest first and tag filter — C-3, C-4, C-5 — tasks 1.1, 1.2
-- S-2 Markdown export — C-6 — task 2.1
-- S-3 Note count on the page (UI) — C-7 — task 3.1
-
-## Estimate
-About $1.40 and 28 minutes.
-
-## Defaults applied
-- D-1: tags are case-insensitive, compared lowercased.
-
-## Holds
-- H-1: public URL of the deployed page (only the owner knows). Blocks nothing in the build.
-```
+The recording is [docs/demo/demo.tape](docs/demo/demo.tape) run on a copy of the fixture: `goal new`, the three intake files recorded in run 2 copied in, the goal card, approval, and the first build brief. No model runs during it.
 
 Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
 
@@ -189,7 +164,7 @@ agents/           critic, critic-strong, reviewer, reviewer-strong, spec-reviewe
 skills/           goal, status, resume, init, jev, retro
 fixture/          synthetic project with a handoff and an OpenSpec change
 tests/            node:test, no network, no key
-docs/             rules.md, jev.md, architecture.md, evals.md, runs/
+docs/             rules.md, jev.md, architecture.md, evals.md, runs/, demo/
 openspec/         the harness's own specs and changes
 evals/            plugin eval cases; bench results land here, ignored by git
 ```
