@@ -1,0 +1,6 @@
+{
+  // Issue and pull request templates open with a comment or a checklist, not a heading.
+  "config": {
+    "MD041": false
+  }
+}

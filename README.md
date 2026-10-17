@@ -3,14 +3,37 @@
 A Claude Code plugin that takes a handoff, anything from a full design package to one sentence like "implement the tag filter", and turns it into reviewed, committed code, one slice at a time. Scripts decide, models judge.
 
 [![ci](https://github.com/Marron-uno/handoff-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/Marron-uno/handoff-harness/actions/workflows/ci.yml)
+[![license](https://img.shields.io/github/license/Marron-uno/handoff-harness)](LICENSE)
+[![node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FMarron-uno%2Fhandoff-harness%2Fmain%2Fpackage.json&query=%24.engines.node&label=node)](package.json)
 
-```
+Contents: [Install](#install), [The idea](#the-idea), [What a run looks like](#what-a-run-looks-like), [What it has done so far](#what-it-has-done-so-far), [Four rules](#four-rules), [Using it on your project](#using-it-on-your-project), [The guards](#the-guards), [The review loop](#the-review-loop), [The spec stage](#the-spec-stage), [Cost](#cost), [Jev](#jev-optional), [Retro and evals](#retro-and-evals), [Headless runs](#headless-runs), [Tests](#tests), [Layout](#layout), [Status](#status).
+
+![The harness CLI on a copy of the fixture: goal new, the goal card recorded in run 2, approval, and the first build brief. No model runs during the recording; the three intake files are copied from docs/runs/2026-10-14-fixture-run-2.](docs/demo/goal-card.gif)
+
+Recorded with [docs/demo/demo.tape](docs/demo/demo.tape) on a copy of the fixture, with run 2's intake files copied in; no model runs during it.
+
+Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
+
+| | [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) | [Run 2](docs/runs/2026-10-14-fixture-run-2/README.md) | [Run 3](docs/runs/2026-10-14-fixture-run-3/README.md) |
+|---|---|---|---|
+| What changed | baseline | spec stage on | Jev on, judge packet, verdict skeleton |
+| Slices built | 3 of 3 | 4 of 4, one added by reconciliation | 2 of 3, one waiting on a human |
+| Wall clock | 11.5 min | 11.5 min | 5.5 min |
+| Cost by Claude Code | $1.24 | $1.74 | $0.88 |
+| Stop-hook blocks | 24 | 0 | 0 |
+| Invalid verdict writes | 0 | 5 of 14 | 2 of 7 |
+
+The two self-runs, the harness building a change on its own checkout under a frozen copy of itself, are recorded the same way: [self-run 1](docs/runs/2026-10-14-self-run-1/README.md) landed a feature in one slice, 4.4 minutes and $0.77 with every verdict a pass; [self-run 3](docs/runs/2026-10-16-self-run-3/README.md) hit the attempt cap on a guard-bearing slice after 6 attempts and $22.70 of headless sessions, and was closed by a human decision that cut one criterion.
+
+## Install
+
+```text
 /plugin install handoff-harness --marketplace Marron-uno/handoff-harness
 ```
 
 Then, in any git repository:
 
-```
+```text
 /handoff-harness:init
 /handoff-harness:goal "build all of the handoff" --source docs/HANDOFF.md
 ```
@@ -27,7 +50,7 @@ Each of those has a deterministic answer, and this plugin is the collection of t
 
 ## What a run looks like
 
-```
+```text
 goal sentence
   intake       the model reads the handoff and writes an inventory, a plan of slices, a goal card
   goal card    you approve, or the goal was created with --auto-approve
@@ -45,24 +68,13 @@ A slice is one unit of work with its own criteria and the files it may touch. A 
 
 ## What it has done so far
 
-Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
-
-| | [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) | [Run 2](docs/runs/2026-10-14-fixture-run-2/README.md) | [Run 3](docs/runs/2026-10-14-fixture-run-3/README.md) |
-|---|---|---|---|
-| What changed | baseline | spec stage on | Jev on, judge packet, verdict skeleton |
-| Slices built | 3 of 3 | 4 of 4, one added by reconciliation | 2 of 3, one waiting on a human |
-| Wall clock | 11.5 min | 11.5 min | 5.5 min |
-| Cost by Claude Code | $1.24 | $1.74 | $0.88 |
-| Stop-hook blocks | 24 | 0 | 0 |
-| Invalid verdict writes | 0 | 5 of 14 | 2 of 7 |
-
-Each run produced ranked findings, and most of them became fixes before the next run. One example of the loop working: run 2's reviewer passed the UI slice and still wrote this finding on it.
+The table at the top lists the three fixture runs. Each run produced ranked findings, and most of them became fixes before the next run. One example of the loop working: run 2's reviewer passed the UI slice and still wrote this finding on it.
 
 > The module-level store is an empty array with no write path, so the count is always 0 and the fetch-driven update is never exercised with N > 0.
 
 Severity major, authority `criterion:C-7`, evidence `src/server.mjs` line 7, quote `const store = [];`. The reconciler read that finding, overrode the script's "done" on the item, and proposed a fourth slice that seeded the store. The reviewer then opened the page and verified "3 notes"; [the screenshot](docs/runs/2026-10-14-fixture-run-2/evidence/S-4/count-3.jpg) is in the run folder. And this is how run 3's report ends, both cost figures side by side:
 
-```
+```text
 Total from the price table: $0.774 (main session $0.541, subagents $0.233).
 Reported by Claude Code: $0.884 over 1 headless session(s). This is the number of record; the table is an estimate.
 ```
@@ -133,15 +145,15 @@ Whether a change helped is measured in three tiers, written up in [docs/evals.md
 
 ## Headless runs
 
-Claude Code stops a session after eight consecutive Stop-hook continuations. `node scripts/drive.mjs --cwd <project>` loops headless sessions until the run rests, records each session's cost, and refreshes the report with it. All three recorded runs used it.
+Claude Code stops a session after eight consecutive Stop-hook continuations. `node scripts/drive.mjs --cwd <project>` loops headless sessions until the run rests, records each session's cost, and refreshes the report with it. The recorded runs used it.
 
 ## Tests
 
-`npm test` runs 107 tests in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
+`npm test` runs the suite in under a minute with no network and no key: the state machine end to end on the fixture with synthetic verdicts, every guard and cap, the parsers, the cost attribution, the spec stage, the hold path, and one regression per entry in `docs/field-issues.md`.
 
 ## Layout
 
-```
+```text
 .claude-plugin/   plugin.json, marketplace.json
 hooks/hooks.json  event wiring
 scripts/          cli.mjs, drive.mjs, status-line.mjs, hooks/, lib/ (machine, guards, jev, usage)
@@ -152,13 +164,13 @@ agents/           critic, critic-strong, reviewer, reviewer-strong, spec-reviewe
 skills/           goal, status, resume, init, jev, retro
 fixture/          synthetic project with a handoff and an OpenSpec change
 tests/            node:test, no network, no key
-docs/             rules.md, jev.md, architecture.md, evals.md, runs/
+docs/             rules.md, jev.md, architecture.md, evals.md, runs/, demo/
 openspec/         the harness's own specs and changes
 evals/            plugin eval cases; bench results land here, ignored by git
 ```
 
 ## Status
 
-Version 0.5.0. Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. [Pull request 3](https://github.com/Marron-uno/handoff-harness/pull/3) closes the fifteen field issues from the first real-project run (`docs/field-issues.md`) and adds the adversarial review of guard-bearing slices, after an independent review of those fixes found three guard escapes the author's own review had missed. The harness carries its own `openspec/`: baseline specs derived from the rule catalog, with its first five changes archived into them under `openspec/changes/archive/`. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, git-side hooks for commit messages, and a self-run on a change that touches a guard. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
+Built with Claude Code in small commits, with every run recorded and every finding either fixed or listed here. [Pull request 3](https://github.com/Marron-uno/handoff-harness/pull/3) closes the fifteen field issues from the first real-project run (`docs/field-issues.md`) and adds the adversarial review of guard-bearing slices, after an independent review of those fixes found three guard escapes the author's own review had missed. The harness carries its own `openspec/`: baseline specs derived from the rule catalog, with every change so far archived into them under `openspec/changes/archive/`. [Self-run 1](docs/runs/2026-10-14-self-run-1/README.md) is the harness building a feature on its own checkout, enforced by a frozen copy of itself, with an authored OpenSpec change: one slice, 4.4 minutes, $0.77, no blocks or denials, the result left as [pull request 1](https://github.com/Marron-uno/handoff-harness/pull/1) for a human to merge. From here, every change to the harness lands through a branch and a pull request. Open: a bench of the current version against the recorded runs, a stage-managed dev server, and git-side hooks for commit messages. Proposals go in `.harness/proposals/` of any project that runs it, or in issues here.
 
 License: MIT.

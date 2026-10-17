@@ -5,7 +5,7 @@
   "description": "Multi-stage coding harness for Claude Code: turns a handoff into shipped code under deterministic guards, JSON verdicts, and per-stage cost accounting.",
   "author": {
     "name": "Joe Marron",
-    "url": "https://github.com/joeatmarron"
+    "url": "https://marron.uno"
   },
   "repository": "https://github.com/Marron-uno/handoff-harness",
   "license": "MIT",
