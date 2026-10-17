@@ -3,6 +3,54 @@
 A Claude Code plugin that takes a handoff, anything from a full design package to one sentence like "implement the tag filter", and turns it into reviewed, committed code, one slice at a time. Scripts decide, models judge.
 
 [![ci](https://github.com/Marron-uno/handoff-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/Marron-uno/handoff-harness/actions/workflows/ci.yml)
+[![license](https://img.shields.io/github/license/Marron-uno/handoff-harness)](LICENSE)
+[![node](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FMarron-uno%2Fhandoff-harness%2Fmain%2Fpackage.json&query=%24.engines.node&label=node)](package.json)
+
+Contents: [Install](#install), [The idea](#the-idea), [What a run looks like](#what-a-run-looks-like), [What it has done so far](#what-it-has-done-so-far), [Four rules](#four-rules), [Using it on your project](#using-it-on-your-project), [The guards](#the-guards), [The review loop](#the-review-loop), [The spec stage](#the-spec-stage), [Cost](#cost), [Jev](#jev-optional), [Retro and evals](#retro-and-evals), [Headless runs](#headless-runs), [Tests](#tests), [Layout](#layout), [Status](#status).
+
+The goal card from [run 2](docs/runs/2026-10-14-fixture-run-2/README.md), as intake printed it before the run was approved:
+
+```
+# Goal card G-1
+
+**Goal:** "build all of the handoff"
+**Sources:** handoff/HANDOFF.md
+**Change:** openspec/changes/lantern-v0-2 (amended: added the page-count requirement and criterion citations)
+
+## Scope
+- 5 inventory items (I-1..I-5), 7 criteria (C-1..C-7)
+- In scope: 4 items, 5 criteria (C-3..C-7). I-1 (C-1, C-2) is out of scope: already implemented and covered by the existing `notes` spec.
+- UI items: 1 (I-5)
+
+## Slices
+- S-1 Listing: newest first and tag filter — C-3, C-4, C-5 — tasks 1.1, 1.2
+- S-2 Markdown export — C-6 — task 2.1
+- S-3 Note count on the page (UI) — C-7 — task 3.1
+
+## Estimate
+About $1.40 and 28 minutes.
+
+## Defaults applied
+- D-1: tags are case-insensitive, compared lowercased.
+
+## Holds
+- H-1: public URL of the deployed page (only the owner knows). Blocks nothing in the build.
+```
+
+Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
+
+| | [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) | [Run 2](docs/runs/2026-10-14-fixture-run-2/README.md) | [Run 3](docs/runs/2026-10-14-fixture-run-3/README.md) |
+|---|---|---|---|
+| What changed | baseline | spec stage on | Jev on, judge packet, verdict skeleton |
+| Slices built | 3 of 3 | 4 of 4, one added by reconciliation | 2 of 3, one waiting on a human |
+| Wall clock | 11.5 min | 11.5 min | 5.5 min |
+| Cost by Claude Code | $1.24 | $1.74 | $0.88 |
+| Stop-hook blocks | 24 | 0 | 0 |
+| Invalid verdict writes | 0 | 5 of 14 | 2 of 7 |
+
+The two self-runs, the harness building a change on its own checkout under a frozen copy of itself, are recorded the same way: [self-run 1](docs/runs/2026-10-14-self-run-1/README.md) landed a feature in one slice, 4.4 minutes and $0.77 with every verdict a pass; [self-run 3](docs/runs/2026-10-16-self-run-3/README.md) hit the attempt cap on a guard-bearing slice after 6 attempts and $22.70 of headless sessions, and was closed by a human decision that cut one criterion.
+
+## Install
 
 ```
 /plugin install handoff-harness --marketplace Marron-uno/handoff-harness
@@ -45,20 +93,7 @@ A slice is one unit of work with its own criteria and the files it may touch. A 
 
 ## What it has done so far
 
-Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
-
-| | [Run 1](docs/runs/2026-10-14-fixture-run-1/README.md) | [Run 2](docs/runs/2026-10-14-fixture-run-2/README.md) | [Run 3](docs/runs/2026-10-14-fixture-run-3/README.md) |
-|---|---|---|---|
-| What changed | baseline | spec stage on | Jev on, judge packet, verdict skeleton |
-| Slices built | 3 of 3 | 4 of 4, one added by reconciliation | 2 of 3, one waiting on a human |
-| Wall clock | 11.5 min | 11.5 min | 5.5 min |
-| Cost by Claude Code | $1.24 | $1.74 | $0.88 |
-| Stop-hook blocks | 24 | 0 | 0 |
-| Invalid verdict writes | 0 | 5 of 14 | 2 of 7 |
-
-The two self-runs, the harness building a change on its own checkout under a frozen copy of itself, are recorded the same way: [self-run 1](docs/runs/2026-10-14-self-run-1/README.md) landed a feature in one slice, 4.4 minutes and $0.77 with every verdict a pass; [self-run 3](docs/runs/2026-10-16-self-run-3/README.md) hit the attempt cap on a guard-bearing slice after 6 attempts and $22.70 of headless sessions, and was closed by a human decision that cut one criterion.
-
-Each run produced ranked findings, and most of them became fixes before the next run. One example of the loop working: run 2's reviewer passed the UI slice and still wrote this finding on it.
+The table at the top lists the three fixture runs. Each run produced ranked findings, and most of them became fixes before the next run. One example of the loop working: run 2's reviewer passed the UI slice and still wrote this finding on it.
 
 > The module-level store is an empty array with no write path, so the count is always 0 and the fetch-driven update is never exercised with N > 0.
 
