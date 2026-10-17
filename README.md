@@ -27,13 +27,13 @@ The two self-runs, the harness building a change on its own checkout under a fro
 
 ## Install
 
-```
+```text
 /plugin install handoff-harness --marketplace Marron-uno/handoff-harness
 ```
 
 Then, in any git repository:
 
-```
+```text
 /handoff-harness:init
 /handoff-harness:goal "build all of the handoff" --source docs/HANDOFF.md
 ```
@@ -50,7 +50,7 @@ Each of those has a deterministic answer, and this plugin is the collection of t
 
 ## What a run looks like
 
-```
+```text
 goal sentence
   intake       the model reads the handoff and writes an inventory, a plan of slices, a goal card
   goal card    you approve, or the goal was created with --auto-approve
@@ -74,7 +74,7 @@ The table at the top lists the three fixture runs. Each run produced ranked find
 
 Severity major, authority `criterion:C-7`, evidence `src/server.mjs` line 7, quote `const store = [];`. The reconciler read that finding, overrode the script's "done" on the item, and proposed a fourth slice that seeded the store. The reviewer then opened the page and verified "3 notes"; [the screenshot](docs/runs/2026-10-14-fixture-run-2/evidence/S-4/count-3.jpg) is in the run folder. And this is how run 3's report ends, both cost figures side by side:
 
-```
+```text
 Total from the price table: $0.774 (main session $0.541, subagents $0.233).
 Reported by Claude Code: $0.884 over 1 headless session(s). This is the number of record; the table is an estimate.
 ```
@@ -153,7 +153,7 @@ Claude Code stops a session after eight consecutive Stop-hook continuations. `no
 
 ## Layout
 
-```
+```text
 .claude-plugin/   plugin.json, marketplace.json
 hooks/hooks.json  event wiring
 scripts/          cli.mjs, drive.mjs, status-line.mjs, hooks/, lib/ (machine, guards, jev, usage)

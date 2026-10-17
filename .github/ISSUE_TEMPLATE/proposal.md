@@ -13,7 +13,7 @@ labels: proposal
 
 ## Findings
 
-### F-1 <title>
+### F-1 Title of the finding
 
 - Evidence: <!-- the event, verdict or denial, quoted -->
 - Cause: <!-- file and function -->

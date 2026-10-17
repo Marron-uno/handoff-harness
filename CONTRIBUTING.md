@@ -4,7 +4,7 @@ handoff-harness is a Claude Code plugin: Node scripts with no runtime dependenci
 
 ## Run the tests
 
-```
+```text
 npm ci
 npm run check   # syntax-checks every script and test, then openspec validate --all --strict
 npm test        # node --test over tests/, no network, no key, under a minute
