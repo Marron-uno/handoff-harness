@@ -219,9 +219,9 @@ const commands = {
       slice.status = "skipped";
       if (state.slice?.id === slice.id) state.slice = null;
       // The halt that handed the slice to the human goes with it: a resume must not show a stale
-      // attempt cap next to the brief of the next stage (self-run 3's retro, R-4).
-      state.halt = null;
-      if (!RESTING.has(state.stage) || state.stage === "awaiting_human") transition(cwd, state, "record", "slice_skipped");
+      // attempt cap next to the brief of the next stage (self-run 3's retro, R-4). A budget or
+      // runaway halt is not the slice's and stays until its own command lifts it.
+      if (!RESTING.has(state.stage) || state.stage === "awaiting_human") { state.halt = null; transition(cwd, state, "record", "slice_skipped"); }
       saveState(cwd, state);
       appendEvent(cwd, { type: "note", slice: slice.id, text: `slice skipped: ${flags.reason ?? "no reason given"}` });
       out({ ok: true, skipped: slice.id, next: "Stop now; the Stop hook advances. Or run `harness next`." });
