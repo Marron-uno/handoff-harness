@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // harness CLI. Every command prints one JSON object so the model and tests parse the same thing.
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync, cpSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, rmSync, cpSync, readdirSync, renameSync } from "node:fs";
+import { join, basename } from "node:path";
 import { readJson, writeJsonAtomic, nowIso } from "./lib/io.mjs";
 import { harnessPaths, hasHarness, pluginRoot, samePath, findProjectRoot } from "./lib/paths.mjs";
 import { newState, loadState, saveState, transition, currentSlice, RESTING } from "./lib/state.mjs";
@@ -116,12 +116,14 @@ const commands = {
       if (!flags.sentence) fail("--sentence is required");
       if (!isRepo(cwd) || !hasCommits(cwd)) fail("needs a git repository with at least one commit");
       if (!existsSync(harnessPaths(cwd).profile)) commandsInitQuiet();
-      if (hasHarness(cwd)) {
-        const old = loadState(cwd);
-        if (!RESTING.has(old.stage)) fail(`goal ${old.goal.id} is in stage ${old.stage}; finish or abort it first`);
-      }
-      const prior = readEvents(cwd, (e) => e.type === "goal" && e.action === "new").length;
-      const id = `G-${prior + 1}`;
+      const p = harnessPaths(cwd);
+      const prev = hasHarness(cwd) ? loadState(cwd) : null;
+      if (prev && !RESTING.has(prev.stage)) fail(`goal ${prev.goal.id} is in stage ${prev.stage}; finish or abort it first`);
+      // Ids never repeat: the next number is one past the highest that the previous state, the log
+      // and the kept runs know. The log alone is not enough once each goal has its own (below).
+      const goalNumber = (g) => Number(/^G-(\d+)$/.exec(String(g ?? ""))?.[1] ?? 0);
+      const known = [prev ? goalNumber(prev.goal.id) : 0, ...readEvents(cwd, (e) => e.type === "goal" && e.action === "new").map((e) => goalNumber(e.id)), ...(existsSync(p.runs) ? readdirSync(p.runs).map(goalNumber) : [])];
+      const id = `G-${Math.max(0, ...known) + 1}`;
       const base = currentBranch(cwd);
       const def = defaultBranch(cwd);
       const branch = `goal/${id}`;
@@ -143,10 +145,17 @@ const commands = {
         autoApprove: Boolean(flags["auto-approve"]), environments: { prod: Boolean(flags.prod), preview: flags.preview ?? null }, jev: Boolean(flags.jev), spec,
         branch, defaultBranch: def,
       });
-      // Pre-populate verdicts/evidence folders and clear prior per-goal artifacts.
-      const p = harnessPaths(cwd);
-      for (const f of [p.plan, p.inventory, p.goalCard, p.preflight, p.report, join(p.dir, "reconcile-input.json")]) {
-        if (existsSync(f)) { writeFileSync(f + ".prev", readFileSync(f)); rmSync(f, { force: true }); }
+      // The previous goal's artifacts move under .harness/runs/<its id>/, the events log and the
+      // cost summary included, so the new goal's events, metrics and budget start with nothing of
+      // the old one: self-run 2 halted in intake on the previous goal's usage, and self-run 3's
+      // retro read the events of three goals (its R-2). Without a previous goal the files are kept
+      // beside the new ones with a .prev suffix, as before.
+      const kept = prev ? join(p.runs, prev.goal.id) : null;
+      if (kept) mkdirSync(kept, { recursive: true });
+      for (const f of [p.plan, p.inventory, p.goalCard, p.preflight, p.report, join(p.dir, "reconcile-input.json"), p.events, p.usage]) {
+        if (!existsSync(f)) continue;
+        if (kept) renameSync(f, join(kept, basename(f)));
+        else if (f !== p.events && f !== p.usage) { writeFileSync(f + ".prev", readFileSync(f)); rmSync(f, { force: true }); }
       }
       saveState(cwd, state);
       appendEvent(cwd, { type: "goal", action: "new", id, sentence: state.goal.sentence, mode: state.goal.mode, sources, budget: state.goal.budget, branch, spec: spec?.change ?? null });
@@ -209,10 +218,13 @@ const commands = {
       if (!slice) fail("no active slice and no --id given");
       slice.status = "skipped";
       if (state.slice?.id === slice.id) state.slice = null;
-      if (!RESTING.has(state.stage) || state.stage === "awaiting_human") transition(cwd, state, "record", "slice_skipped");
+      // The halt that handed the slice to the human goes with it: a resume must not show a stale
+      // attempt cap next to the brief of the next stage (self-run 3's retro, R-4). A budget or
+      // runaway halt is not the slice's and stays until its own command lifts it.
+      if (!RESTING.has(state.stage) || state.stage === "awaiting_human") { state.halt = null; transition(cwd, state, "record", "slice_skipped"); }
       saveState(cwd, state);
       appendEvent(cwd, { type: "note", slice: slice.id, text: `slice skipped: ${flags.reason ?? "no reason given"}` });
-      out({ ok: true, skipped: slice.id, next: "Stop now; the Stop hook advances." });
+      out({ ok: true, skipped: slice.id, next: "Stop now; the Stop hook advances. Or run `harness next`." });
     }
     // A human widens the files a slice may touch after approval, instead of aborting the goal and
     // planning again. The plan is updated too, so judges reading plan.json see the same paths.
@@ -250,7 +262,8 @@ const commands = {
 
   record() {
     const state = requireState();
-    if (state.stage !== "record" || !state.slice) fail(`stage is ${state.stage}; record runs in the record stage`);
+    if (state.stage === "record" && !state.slice) fail("no active slice to record: it was skipped; run `harness next` to move on");
+    if (state.stage !== "record") fail(`stage is ${state.stage}; record runs in the record stage`);
     const slice = currentSlice(state);
     // With the spec stage on, the slice's OpenSpec tasks are ticked here, after the judges and
     // before the commit, so the tick lands in the slice commit and never in a reviewed diff.

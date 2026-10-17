@@ -6,7 +6,7 @@ import { tmpDir, initRepo, PLUGIN_ROOT } from "./helpers.mjs";
 import { loadProfile } from "../scripts/lib/profile.mjs";
 import { newState, saveState } from "../scripts/lib/state.mjs";
 import { appendEvent } from "../scripts/lib/events.mjs";
-import { readTranscriptUsage, attributeByStage, costOf, priceFor, usageDelta, summarizeAgentTranscript } from "../scripts/lib/usage.mjs";
+import { readTranscriptUsage, attributeByStage, costOf, priceFor, usageDelta, summarizeAgentTranscript, subagentUsageRows } from "../scripts/lib/usage.mjs";
 
 function row(ts, model, input, output, cacheRead = 0, extra = {}) {
   return JSON.stringify({ type: "assistant", timestamp: new Date(ts).toISOString(), message: { model, usage: { input_tokens: input, output_tokens: output, cache_read_input_tokens: cacheRead, ...extra.usage }, ...(extra.id ? { id: extra.id } : {}) } });
@@ -79,4 +79,31 @@ test("usage is attributed to the stage active at each message, split by scope", 
   assert.ok(Math.abs(summary.mainUsd + summary.subagentUsd - summary.totalUsd) < 1e-9, "scopes add up to the total");
   assert.ok(summary.subagentUsd > 0 && summary.mainUsd > summary.subagentUsd);
   assert.equal(Object.keys(summary.byModel).length, 2);
+});
+
+test("usage stops counting at the goal's done event, and subagent rows carry the time of their event", () => {
+  const dir = initRepo(tmpDir());
+  const profile = loadProfile(dir, PLUGIN_ROOT);
+  const t = join(dir, "t.jsonl");
+  const t0 = Date.now() - 60_000;
+  const state = newState({ id: "G-2", sentence: "Build it", mode: "handoff", branch: "goal/G-2", defaultBranch: "main", transcriptPath: t });
+  saveState(dir, state);
+  // An unrotated log still holds the previous goal; its rows must not count either.
+  appendEvent(dir, { ts: new Date(t0 - 30_000).toISOString(), type: "goal", action: "new", id: "G-1" });
+  appendEvent(dir, { ts: new Date(t0 - 20_000).toISOString(), type: "goal", action: "done" });
+  appendEvent(dir, { ts: new Date(t0).toISOString(), type: "goal", action: "new", id: "G-2" });
+  appendEvent(dir, { ts: new Date(t0 + 10_000).toISOString(), type: "stage", from: "intake", to: "building" });
+  appendEvent(dir, { ts: new Date(t0 + 20_000).toISOString(), type: "stage", from: "report", to: "done" });
+  appendEvent(dir, { ts: new Date(t0 + 20_000).toISOString(), type: "goal", action: "done" });
+  appendEvent(dir, { ts: new Date(t0 + 15_000).toISOString(), type: "usage", scope: "subagent", stage: "building", agent: "critic", agentId: "a1", model: "claude-haiku-5-5", input: 1000, output: 100 });
+  appendEvent(dir, { ts: new Date(t0 + 30_000).toISOString(), type: "usage", scope: "subagent", stage: "done", agent: "critic", agentId: "a2", model: "claude-haiku-5-5", input: 5000, output: 500 });
+  writeFileSync(t, [row(t0 - 25_000, "claude-opus-5-5", 999, 999), row(t0 + 5000, "claude-opus-5-5", 100, 10), row(t0 + 15_000, "claude-opus-5-5", 200, 20), row(t0 + 25_000, "claude-opus-5-5", 300, 30)].join("\n"));
+  const rows = subagentUsageRows(dir);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].ts, t0 + 15_000);
+  const summary = attributeByStage(dir, state, profile, { agentRows: rows });
+  assert.equal(summary.byStage.intake.input, 100, "the previous goal's row is out");
+  assert.equal(summary.byStage.building.input, 1200, "the subagent row inside the goal counts under its own stage");
+  assert.ok(!summary.byStage.done, "rows after done, main or subagent, are not the goal's");
+  assert.equal(Object.values(summary.byStage).reduce((s, b) => s + b.input, 0), 1300);
 });

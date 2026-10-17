@@ -247,6 +247,8 @@ test("issue 10: retry keeps the attempt count; the cap counts from the retry and
 test("issue 12: the report takes each criterion from the recorded attempt of the active goal; reconcile ignores other goals' verdicts", () => {
   const dir = judgingRepo();
   const vdir = join(dir, ".harness/verdicts");
+  // The slice is at its tenth attempt: attempt 9 is a build a human retried past.
+  setStage(dir, (s) => { s.slice.attempt = 10; s.slices[0].attempts = 10; });
   const t = runCli(dir, ["verdict", "template"]).json.skeleton;
   const met = (id) => ({ id, status: "met", evidence: [{ type: "file", path: "README.md" }] });
   // Left over from an earlier goal: a pass that marks C-6, a criterion this goal also has.
@@ -261,7 +263,7 @@ test("issue 12: the report takes each criterion from the recorded attempt of the
   assert.match(text, /\| C-4 \| unverified \|/, "the reviewer's status wins over the critic's in the same attempt");
   assert.doesNotMatch(text, /C-6|C-99/, "another goal's verdicts stay out");
   const items = prepareReconcile(dir, state(dir)).items;
-  assert.equal(items.find((i) => i.id === "I-2").decided, "done", "this goal's pass marks C-3 and C-4");
+  assert.equal(items.find((i) => i.id === "I-2").decided, null, "the reviewer left C-4 unverified in the recorded attempt, so the item is the model's to judge, as the report says");
   assert.equal(items.find((i) => i.id === "I-4").decided, null, "the old goal's pass on C-6 does not count");
 });
 

@@ -57,6 +57,7 @@ export function harnessPaths(cwd) {
     evidence: join(dir, "evidence"),
     packets: join(dir, "packets"),
     usage: join(dir, "usage.json"),
+    runs: join(dir, "runs"),
     jev: join(dir, "jev.jsonl"),
     pluginRoot: join(dir, "plugin-root"),
   };
