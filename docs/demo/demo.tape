@@ -12,9 +12,9 @@
 Output docs/demo/goal-card.gif
 
 Set Shell bash
-Set FontSize 15
+Set FontSize 14
 Set Width 1000
-Set Height 560
+Set Height 480
 Set Padding 16
 Set Framerate 15
 Set TypingSpeed 35ms
@@ -22,6 +22,7 @@ Set TypingSpeed 35ms
 Hide
 Type 'REPO=$PWD; DEMO=$(mktemp -d /tmp/hh-demo.XXXX); mkdir -p $DEMO/handoff-harness $DEMO/lantern; git archive HEAD | tar -x -C $DEMO/handoff-harness; cp -R fixture/. $DEMO/lantern; RUN2=$REPO/docs/runs/2026-10-14-fixture-run-2; cd $DEMO/lantern; git init -q -b main; git config user.email demo@example.com; git config user.name demo; git config commit.gpgsign false; git add .gitignore .harness README.md handoff openspec package.json public src tests; git commit -q -m "fixture: initial"; harness() { node "$DEMO/handoff-harness/scripts/cli.mjs" "$@"; }; clear'
 Enter
+Sleep 1s
 Show
 
 Type 'harness goal new --sentence "build all of the handoff" --source handoff/HANDOFF.md'

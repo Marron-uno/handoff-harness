@@ -10,7 +10,7 @@ Contents: [Install](#install), [The idea](#the-idea), [What a run looks like](#w
 
 ![The harness CLI on a copy of the fixture: goal new, the goal card recorded in run 2, approval, and the first build brief. No model runs during the recording; the three intake files are copied from docs/runs/2026-10-14-fixture-run-2.](docs/demo/goal-card.gif)
 
-The recording is [docs/demo/demo.tape](docs/demo/demo.tape) run on a copy of the fixture: `goal new`, the three intake files recorded in run 2 copied in, the goal card, approval, and the first build brief. No model runs during it.
+Recorded with [docs/demo/demo.tape](docs/demo/demo.tape) on a copy of the fixture, with run 2's intake files copied in; no model runs during it.
 
 Three recorded runs on the fixture, a small notes app with a deliberately incomplete handoff. Every artifact is in `docs/runs/`, including the verdicts and the screenshots.
 
