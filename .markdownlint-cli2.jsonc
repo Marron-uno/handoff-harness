@@ -1,0 +1,11 @@
+{
+  // Prose in this repository is one paragraph per line, so the line-length rule is off.
+  // Tables use a compact separator row (|---|---|) with spaced cells, which MD060 reads as mixed.
+  // CHANGELOG.md repeats Added, Changed and Fixed under every version, as Keep a Changelog does.
+  "config": {
+    "MD013": false,
+    "MD024": { "siblings_only": true },
+    "MD060": false
+  },
+  "ignores": ["node_modules", "docs/runs", ".harness"]
+}
